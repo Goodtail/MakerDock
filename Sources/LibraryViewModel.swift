@@ -263,16 +263,26 @@ final class LibraryViewModel: ObservableObject {
             let working = try workingCopy(for: item)
             let configuration = NSWorkspace.OpenConfiguration()
             configuration.allowsRunningApplicationSubstitution = false
-            if Bundle(url: studioURL)?.bundleIdentifier?.hasPrefix("com.ninepiece.app.mac.plateshelfstudio") == true {
+            let isShelfStudio = Bundle(url: studioURL)?.bundleIdentifier?.hasPrefix("com.ninepiece.app.mac.plateshelfstudio") == true
+            if isShelfStudio {
                 try FileManager.default.createDirectory(at: URL(fileURLWithPath: preferences.archivePath), withIntermediateDirectories: true)
                 configuration.environment = ["PLATESHELF_ARCHIVE_DIR": preferences.archivePath,
                                              "PLATESHELF_CACHE_DIR": rootURL.appendingPathComponent("StudioCache").path]
+                // The fork accepts file paths on its command line. A fresh process also ensures
+                // the archive environment is applied without disturbing an already edited project.
+                configuration.arguments = [working.path]
+                configuration.createsNewApplicationInstance = true
             }
-            NSWorkspace.shared.open([working], withApplicationAt: studioURL, configuration: configuration) { [weak self] _, error in
+            let completion: @Sendable (NSRunningApplication?, Error?) -> Void = { [weak self] _, error in
                 Task { @MainActor in
                     if let error { self?.errorMessage = error.localizedDescription }
                     else { self?.statusMessage = L("studio.opened") }
                 }
+            }
+            if isShelfStudio {
+                NSWorkspace.shared.openApplication(at: studioURL, configuration: configuration, completionHandler: completion)
+            } else {
+                NSWorkspace.shared.open([working], withApplicationAt: studioURL, configuration: configuration, completionHandler: completion)
             }
         } catch { errorMessage = error.localizedDescription }
     }
