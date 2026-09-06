@@ -266,6 +266,17 @@ struct LinkTests {
         try expect(parsed.provenance?.estimatedSeconds == 42120 && parsed.provenance?.plateCount == 7, "Web profile totals remain separate from per-plate estimates")
         try expect(parsed.provenance?.plates == nil, "Never invent per-plate numbers from aggregate time")
         try expect(!parsed.openStudio, "Download intent imports without opening Studio")
+        let formSnapshot = #"{"title":"필라멘트 랙 + 받침","profileTitle":"Mega Pack + PLA"}"#
+        let signedRemote = remote + "&Signature=A+B%2BC"
+        let formLink = "plateshelf://open?url=" + encoded(signedRemote) + "&name=" + encoded("선반 + 받침.3mf").replacingOccurrences(of: "%20", with: "+")
+            + "&source=" + encoded(page) + "&profile=" + encoded(profile)
+            + "&snapshot=" + encoded(formSnapshot).replacingOccurrences(of: "%20", with: "+")
+        let formParsed = try MakerWorldLinkPolicy.parse(URL(string: formLink)!)
+        try expect(formParsed.provenance?.title == "필라멘트 랙 + 받침", "Chrome form-encoded spaces decode while literal plus signs survive")
+        try expect(formParsed.provenance?.profileTitle == "Mega Pack + PLA", "Chrome profile title retains spaces and literal plus signs")
+        try expect(formParsed.displayName == "선반 + 받침.3mf", "Chrome filenames decode form-encoded spaces")
+        try expect(formParsed.downloadURL.absoluteString == signedRemote, "Outer form decoding must not alter nested signed URL bytes")
+        try expect(try MakerWorldLinkPolicy.parse(macLink(signedRemote, name: "A+B.3mf")).displayName == "A+B.3mf", "Legacy Studio links preserve their non-form plus encoding")
         let legacyNested = URL(string: "bambustudio://open?file=" + encoded(remote + "&name=actual.3mf"))!
         try expect(try MakerWorldLinkPolicy.parse(legacyNested).downloadURL.absoluteString == remote, "Real current legacy Studio payload contains name inside file")
         let invalidSources = ["https://makerworld.com/ko/search/models?keyword=rack", "https://evil.test/en/models/123", "https://makerworld.com/api/v1/download/1", "https://public-cdn.bblmw.com/en/models/123", "file:///tmp/x.3mf"]
