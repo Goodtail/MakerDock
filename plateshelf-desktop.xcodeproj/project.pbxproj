@@ -7,28 +7,90 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		1FC6A0F5767F3F0DC315CF8F /* ItemInspector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AAA58F13AEA304189BF6345 /* ItemInspector.swift */; };
+		24B4D0B289775DDCC6FB8B94 /* IntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 040ED809BD14F94480A033AB /* IntegrationTests.swift */; };
+		2904D8CDCCB7D23D80AAD32E /* DesignTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1521DCFAF18C4553D72CCE9D /* DesignTokens.swift */; };
 		44893D2C9A78AEA8B201D0C3 /* App.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8DA4AF85B5843D8CFEE657F /* App.swift */; };
+		673F8E96BC63056119D58100 /* StudioInbox.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADB95C1613120A86A37B149F /* StudioInbox.swift */; };
 		67CDD5D2CE84BDA2E101BCC0 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AEA2A73E5DB9E5C894990A5D /* Assets.xcassets */; };
+		810FABA93837FD5460D9E6C9 /* Fixture.3mf in Resources */ = {isa = PBXBuildFile; fileRef = DE50C74AC6FC33AACC97C5EA /* Fixture.3mf */; };
+		81CCF1ED060BD19767B2EDA7 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82CD39E9F8DF205183B8CF49 /* SettingsView.swift */; };
+		8256703034936714F00678BF /* PlateShelfCore in Frameworks */ = {isa = PBXBuildFile; productRef = 56518E8A52EAF49B75CB3580 /* PlateShelfCore */; };
+		8C51FD22A6F44BB06D0CA5F0 /* PlateZoomView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FEC715B4ACBB3F8A32C80F2 /* PlateZoomView.swift */; };
+		BEB4C06AB417C0985CD811AC /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = C97D7FA18582412B877C026F /* Localizable.strings */; };
+		CA4CA8D83A17063C8AD9523D /* PlateShelfCore in Frameworks */ = {isa = PBXBuildFile; productRef = C301486F81BF550C724655D5 /* PlateShelfCore */; };
+		CD1BE20C4492E2702DE8EB5F /* LibraryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4505945EEEC1C08C64C32C8B /* LibraryViewModel.swift */; };
 		D8EA5BBF5D1521F2D1146A24 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4328522F98647FF99E472A7D /* ContentView.swift */; };
+		EA18373C8696F6C903401868 /* MakerWorldLinkService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 879CEA159C671B0AF8BD9CF0 /* MakerWorldLinkService.swift */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		8876DD85A5527008AD3D9048 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 037552EB53E2678D919A59F4 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F7CA3F15B0B6C84B9404A13D;
+			remoteInfo = "plateshelf-desktop";
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
+		040ED809BD14F94480A033AB /* IntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntegrationTests.swift; sourceTree = "<group>"; };
+		1521DCFAF18C4553D72CCE9D /* DesignTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignTokens.swift; sourceTree = "<group>"; };
+		1AAA58F13AEA304189BF6345 /* ItemInspector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemInspector.swift; sourceTree = "<group>"; };
 		27B6671ED1BC9D958BD95250 /* Dev.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Dev.xcconfig; sourceTree = "<group>"; };
 		4328522F98647FF99E472A7D /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		4505945EEEC1C08C64C32C8B /* LibraryViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryViewModel.swift; sourceTree = "<group>"; };
+		5F1DCA1268B7EE9C009BCF35 /* ko */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ko; path = ko.lproj/Localizable.strings; sourceTree = "<group>"; };
+		7FEC715B4ACBB3F8A32C80F2 /* PlateZoomView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlateZoomView.swift; sourceTree = "<group>"; };
+		82CD39E9F8DF205183B8CF49 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		879CEA159C671B0AF8BD9CF0 /* MakerWorldLinkService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MakerWorldLinkService.swift; sourceTree = "<group>"; };
+		ADB95C1613120A86A37B149F /* StudioInbox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StudioInbox.swift; sourceTree = "<group>"; };
 		AEA2A73E5DB9E5C894990A5D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B53503833DD32F1F9D796AD6 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		C02E7C889F38E6192F51CB85 /* Core */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Core; path = Core; sourceTree = SOURCE_ROOT; };
 		C70E7D5D8D9242EF6968443A /* plateshelf-desktop.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "plateshelf-desktop.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		C720A1BA683FA3BC912414CC /* PlateShelfTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PlateShelfTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		DE50C74AC6FC33AACC97C5EA /* Fixture.3mf */ = {isa = PBXFileReference; path = Fixture.3mf; sourceTree = "<group>"; };
 		E6BDB702FC12972F01C7082F /* Prod.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Prod.xcconfig; sourceTree = "<group>"; };
 		E8DA4AF85B5843D8CFEE657F /* App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		24BD1D64EF61D7D09DEC5E0F /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8256703034936714F00678BF /* PlateShelfCore in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B42F9481021254975AFBD0A2 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CA4CA8D83A17063C8AD9523D /* PlateShelfCore in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		05382F5727A90E460E88F78D /* Products */ = {
 			isa = PBXGroup;
 			children = (
 				C70E7D5D8D9242EF6968443A /* plateshelf-desktop.app */,
+				C720A1BA683FA3BC912414CC /* PlateShelfTests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		06E71D59F72F6DAD15F7B5D4 /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+				C02E7C889F38E6192F51CB85 /* Core */,
+			);
+			name = Packages;
 			sourceTree = "<group>";
 		};
 		7DFB33A96CF949D31425433C /* Sources */ = {
@@ -36,19 +98,62 @@
 			children = (
 				E8DA4AF85B5843D8CFEE657F /* App.swift */,
 				4328522F98647FF99E472A7D /* ContentView.swift */,
+				1521DCFAF18C4553D72CCE9D /* DesignTokens.swift */,
 				B53503833DD32F1F9D796AD6 /* Info.plist */,
+				1AAA58F13AEA304189BF6345 /* ItemInspector.swift */,
+				4505945EEEC1C08C64C32C8B /* LibraryViewModel.swift */,
+				7FEC715B4ACBB3F8A32C80F2 /* PlateZoomView.swift */,
+				82CD39E9F8DF205183B8CF49 /* SettingsView.swift */,
+				ADB95C1613120A86A37B149F /* StudioInbox.swift */,
+				AEB18EC936383977A8C5BB77 /* Services */,
 			);
 			path = Sources;
+			sourceTree = "<group>";
+		};
+		92CE926346A400BC748C3611 /* AppTests */ = {
+			isa = PBXGroup;
+			children = (
+				040ED809BD14F94480A033AB /* IntegrationTests.swift */,
+				9741E471A5B949A0E2BB63DD /* Fixtures */,
+			);
+			path = AppTests;
+			sourceTree = "<group>";
+		};
+		9741E471A5B949A0E2BB63DD /* Fixtures */ = {
+			isa = PBXGroup;
+			children = (
+				DE50C74AC6FC33AACC97C5EA /* Fixture.3mf */,
+			);
+			path = Fixtures;
+			sourceTree = "<group>";
+		};
+		AEB18EC936383977A8C5BB77 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				879CEA159C671B0AF8BD9CF0 /* MakerWorldLinkService.swift */,
+			);
+			path = Services;
 			sourceTree = "<group>";
 		};
 		C3B467A7C1C45256FA5B67EE = {
 			isa = PBXGroup;
 			children = (
 				AEA2A73E5DB9E5C894990A5D /* Assets.xcassets */,
+				92CE926346A400BC748C3611 /* AppTests */,
 				FAE37835C4AB46D8E61D6854 /* Config */,
+				06E71D59F72F6DAD15F7B5D4 /* Packages */,
+				CADD254FE0A186735ABF15AB /* Resources */,
 				7DFB33A96CF949D31425433C /* Sources */,
 				05382F5727A90E460E88F78D /* Products */,
 			);
+			sourceTree = "<group>";
+		};
+		CADD254FE0A186735ABF15AB /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				C97D7FA18582412B877C026F /* Localizable.strings */,
+			);
+			path = Resources;
 			sourceTree = "<group>";
 		};
 		FAE37835C4AB46D8E61D6854 /* Config */ = {
@@ -63,12 +168,34 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		37D56B1FE7A31F05286C17F7 /* PlateShelfTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 0D2A4845EF5CB39BA6B024CA /* Build configuration list for PBXNativeTarget "PlateShelfTests" */;
+			buildPhases = (
+				3883F80349BF11D422214B55 /* Sources */,
+				E0212DC6492D9C2D66493323 /* Resources */,
+				24BD1D64EF61D7D09DEC5E0F /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				C36C9CB27665ADCFDC0E9B9E /* PBXTargetDependency */,
+			);
+			name = PlateShelfTests;
+			packageProductDependencies = (
+				56518E8A52EAF49B75CB3580 /* PlateShelfCore */,
+			);
+			productName = PlateShelfTests;
+			productReference = C720A1BA683FA3BC912414CC /* PlateShelfTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 		F7CA3F15B0B6C84B9404A13D /* plateshelf-desktop */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = ACC0F93B7FBD4FC4FBF7A572 /* Build configuration list for PBXNativeTarget "plateshelf-desktop" */;
 			buildPhases = (
 				9C5D21C6E1F9DB2EA179DE1E /* Sources */,
 				D085CE99A907DE7D0A14E53A /* Resources */,
+				B42F9481021254975AFBD0A2 /* Frameworks */,
 			);
 			buildRules = (
 			);
@@ -76,6 +203,7 @@
 			);
 			name = "plateshelf-desktop";
 			packageProductDependencies = (
+				C301486F81BF550C724655D5 /* PlateShelfCore */,
 			);
 			productName = "plateshelf-desktop";
 			productReference = C70E7D5D8D9242EF6968443A /* plateshelf-desktop.app */;
@@ -90,23 +218,35 @@
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
+					37D56B1FE7A31F05286C17F7 = {
+						DevelopmentTeam = D523TSBMWR;
+						ProvisioningStyle = Manual;
+					};
+					F7CA3F15B0B6C84B9404A13D = {
+						DevelopmentTeam = D523TSBMWR;
+						ProvisioningStyle = Manual;
+					};
 				};
 			};
 			buildConfigurationList = 4679B38467CF561DA98A7D0E /* Build configuration list for PBXProject "plateshelf-desktop" */;
-			developmentRegion = en;
+			developmentRegion = ko;
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				Base,
-				en,
+				ko,
 			);
 			mainGroup = C3B467A7C1C45256FA5B67EE;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				E6D9B70472152D2FCE6048CA /* XCLocalSwiftPackageReference "Core" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 05382F5727A90E460E88F78D /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
 				F7CA3F15B0B6C84B9404A13D /* plateshelf-desktop */,
+				37D56B1FE7A31F05286C17F7 /* PlateShelfTests */,
 			);
 		};
 /* End PBXProject section */
@@ -117,22 +257,65 @@
 			buildActionMask = 2147483647;
 			files = (
 				67CDD5D2CE84BDA2E101BCC0 /* Assets.xcassets in Resources */,
+				BEB4C06AB417C0985CD811AC /* Localizable.strings in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E0212DC6492D9C2D66493323 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				810FABA93837FD5460D9E6C9 /* Fixture.3mf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		3883F80349BF11D422214B55 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				24B4D0B289775DDCC6FB8B94 /* IntegrationTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		9C5D21C6E1F9DB2EA179DE1E /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 				44893D2C9A78AEA8B201D0C3 /* App.swift in Sources */,
 				D8EA5BBF5D1521F2D1146A24 /* ContentView.swift in Sources */,
+				2904D8CDCCB7D23D80AAD32E /* DesignTokens.swift in Sources */,
+				1FC6A0F5767F3F0DC315CF8F /* ItemInspector.swift in Sources */,
+				CD1BE20C4492E2702DE8EB5F /* LibraryViewModel.swift in Sources */,
+				EA18373C8696F6C903401868 /* MakerWorldLinkService.swift in Sources */,
+				8C51FD22A6F44BB06D0CA5F0 /* PlateZoomView.swift in Sources */,
+				81CCF1ED060BD19767B2EDA7 /* SettingsView.swift in Sources */,
+				673F8E96BC63056119D58100 /* StudioInbox.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		C36C9CB27665ADCFDC0E9B9E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F7CA3F15B0B6C84B9404A13D /* plateshelf-desktop */;
+			targetProxy = 8876DD85A5527008AD3D9048 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin PBXVariantGroup section */
+		C97D7FA18582412B877C026F /* Localizable.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				5F1DCA1268B7EE9C009BCF35 /* ko */,
+			);
+			name = Localizable.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
 		1797DCD035ED1CBA9D643C56 /* Release */ = {
@@ -169,8 +352,11 @@
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_APP_SANDBOX = NO;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
@@ -189,7 +375,26 @@
 				SDKROOT = macosx;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 5.9;
+			};
+			name = Release;
+		};
+		5B16444E83E330EC6FF2E375 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = E6BDB702FC12972F01C7082F /* Prod.xcconfig */;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "$(APP_BUNDLE_ID).tests";
+				PRODUCT_NAME = PlateShelfTests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/$(APP_DISPLAY_NAME).app/Contents/MacOS/$(APP_DISPLAY_NAME)";
 			};
 			name = Release;
 		};
@@ -227,8 +432,11 @@
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_APP_SANDBOX = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
@@ -254,7 +462,26 @@
 				SDKROOT = macosx;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 5.9;
+			};
+			name = Debug;
+		};
+		63B5AA5BEB0B8F0A1B197A7F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 27B6671ED1BC9D958BD95250 /* Dev.xcconfig */;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "$(APP_BUNDLE_ID).tests";
+				PRODUCT_NAME = PlateShelfTests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/$(APP_DISPLAY_NAME).app/Contents/MacOS/$(APP_DISPLAY_NAME)";
 			};
 			name = Debug;
 		};
@@ -269,6 +496,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
+				PRODUCT_MODULE_NAME = PlateShelf;
 				PRODUCT_NAME = "$(APP_DISPLAY_NAME)";
 				SDKROOT = macosx;
 			};
@@ -285,6 +513,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
+				PRODUCT_MODULE_NAME = PlateShelf;
 				PRODUCT_NAME = "$(APP_DISPLAY_NAME)";
 				SDKROOT = macosx;
 			};
@@ -293,6 +522,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		0D2A4845EF5CB39BA6B024CA /* Build configuration list for PBXNativeTarget "PlateShelfTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				63B5AA5BEB0B8F0A1B197A7F /* Debug */,
+				5B16444E83E330EC6FF2E375 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
 		4679B38467CF561DA98A7D0E /* Build configuration list for PBXProject "plateshelf-desktop" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -312,6 +550,24 @@
 			defaultConfigurationName = Debug;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		E6D9B70472152D2FCE6048CA /* XCLocalSwiftPackageReference "Core" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Core;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		56518E8A52EAF49B75CB3580 /* PlateShelfCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = PlateShelfCore;
+		};
+		C301486F81BF550C724655D5 /* PlateShelfCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = PlateShelfCore;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 037552EB53E2678D919A59F4 /* Project object */;
 }

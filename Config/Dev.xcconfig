@@ -3,8 +3,9 @@
 
 APP_PHASE = development
 APP_BUNDLE_ID = com.ninepiece.app.mac.plateshelf.dev
-APP_DISPLAY_NAME = plateshelf-dev
+APP_DISPLAY_NAME = PlateShelf-dev
 APP_ICON_NAME = AppIconDev
 API_BASE_URL =
 SEO_BASE_URL =
 SUPPORT_EMAIL =
+DEVELOPMENT_TEAM = D523TSBMWR
