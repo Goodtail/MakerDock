@@ -1,0 +1,35 @@
+name: plateshelf-desktop
+settings:
+  base:
+    PRODUCT_NAME: $(APP_DISPLAY_NAME)
+    ASSETCATALOG_COMPILER_APPICON_NAME: $(APP_ICON_NAME)
+    MACOSX_DEPLOYMENT_TARGET: "13.0"
+    # 번들 ID 는 xcconfig 의 APP_BUNDLE_ID 가 정한다 — dev 는 .dev 접미사가 붙어야
+    # 하므로 여기 리터럴을 박으면 phase 분기가 깨진다(번들 ID 규칙 [고정]).
+    PRODUCT_BUNDLE_IDENTIFIER: $(APP_BUNDLE_ID)
+configs:
+  Debug: debug
+  Release: release
+targets:
+  plateshelf-desktop:
+    type: application
+    platform: macOS
+    sources: [Sources, Assets.xcassets]
+    settings:
+      base:
+        PRODUCT_NAME: $(APP_DISPLAY_NAME)
+        ASSETCATALOG_COMPILER_APPICON_NAME: $(APP_ICON_NAME)
+    # xcconfig 부착 키는 configFiles 다. settings.configs.<Config>.xcconfig 로 쓰면
+    # xcodegen 이 그걸 "xcconfig"라는 이름의 빌드 세팅으로 조용히 처리해서
+    # baseConfigurationReference 가 안 붙는다 — phase 분기가 통째로 죽는다.
+    configFiles:
+      Debug: Config/Dev.xcconfig
+      Release: Config/Prod.xcconfig
+    info:
+      path: Sources/Info.plist
+      properties:
+        CFBundleDisplayName: $(APP_DISPLAY_NAME)
+        CFBundleIconName: $(APP_ICON_NAME)
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        LSMinimumSystemVersion: "13.0"

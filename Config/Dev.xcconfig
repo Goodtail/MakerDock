@@ -1,0 +1,10 @@
+// SPEC §10 환경 분리 — Debug(Dev) 빌드 구성. 공개 앱 정체성만 담고 커밋한다.
+#include "Version.xcconfig"
+
+APP_PHASE = development
+APP_BUNDLE_ID = com.ninepiece.app.mac.plateshelf.dev
+APP_DISPLAY_NAME = plateshelf-dev
+APP_ICON_NAME = AppIconDev
+API_BASE_URL =
+SEO_BASE_URL =
+SUPPORT_EMAIL =

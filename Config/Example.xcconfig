@@ -1,0 +1,10 @@
+// 새 phase를 추가할 때 참고하는 공개 앱 정체성 골격이다. 비밀은 넣지 않는다.
+#include "Version.xcconfig"
+
+APP_PHASE = development
+APP_BUNDLE_ID = com.ninepiece.app.mac.plateshelf.dev
+APP_DISPLAY_NAME = plateshelf-dev
+APP_ICON_NAME = AppIconDev
+API_BASE_URL =
+SEO_BASE_URL =
+SUPPORT_EMAIL =
