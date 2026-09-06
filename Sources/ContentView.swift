@@ -90,9 +90,10 @@ struct ContentView: View {
                     }
                     Spacer()
                     Menu {
-                        Button(L("sort.recent")) { model.newestFirst = true }
-                        Button(L("sort.name")) { model.newestFirst = false }
-                    } label: { Label(L("sort"), systemImage: "arrow.up.arrow.down") }.menuStyle(.borderlessButton).fixedSize()
+                        Picker(L("sort"), selection: $model.sort) {
+                            ForEach(ShelfSort.allCases, id: \.self) { order in Text(order.title).tag(order) }
+                        }
+                    } label: { Label(model.sort.title, systemImage: "arrow.up.arrow.down") }.menuStyle(.borderlessButton).fixedSize()
                     Picker(L("view.mode"), selection: $model.listMode) {
                         Image(systemName: "square.grid.2x2").tag(false)
                         Image(systemName: "list.bullet").tag(true)

@@ -37,6 +37,26 @@ enum ShelfFilter: Hashable {
         }
     }
 }
+enum ShelfSort: CaseIterable {
+    case recent, oldest, name
+    var title: String {
+        switch self {
+        case .recent: return L("sort.recent")
+        case .oldest: return L("sort.oldest")
+        case .name: return L("sort.name")
+        }
+    }
+    func precedes(_ lhs: ShelfItem, _ rhs: ShelfItem) -> Bool {
+        let left = lhs.fileAddedAt ?? lhs.importedAt, right = rhs.fileAddedAt ?? rhs.importedAt
+        switch self {
+        case .recent: return left == right ? lhs.id > rhs.id : left > right
+        case .oldest: return left == right ? lhs.id < rhs.id : left < right
+        case .name:
+            let comparison = lhs.title.localizedStandardCompare(rhs.title)
+            return comparison == .orderedSame ? lhs.id < rhs.id : comparison == .orderedAscending
+        }
+    }
+}
 @MainActor
 final class LibraryViewModel: ObservableObject {
     @Published var items: [ShelfItem] = []
@@ -52,7 +72,7 @@ final class LibraryViewModel: ObservableObject {
     @Published var preferences = ShelfPreferences()
     @Published var showSettings = false
     @Published var listMode = false
-    @Published var newestFirst = true
+    @Published var sort: ShelfSort = .recent
     @Published var archiveStatus = ""
     let rootURL: URL
     var repository: LibraryRepository?
@@ -68,6 +88,8 @@ final class LibraryViewModel: ObservableObject {
         let args = ProcessInfo.processInfo.arguments
         if let rootOverride {
             rootURL = rootOverride
+        } else if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil || NSClassFromString("XCTestCase") != nil {
+            rootURL = FileManager.default.temporaryDirectory.appendingPathComponent("PlateShelf-TestHost-\(ProcessInfo.processInfo.processIdentifier)")
         } else if let index = args.firstIndex(of: "--library-root"), args.indices.contains(index + 1) {
             rootURL = URL(fileURLWithPath: args[index + 1], isDirectory: true)
         } else {
@@ -105,7 +127,7 @@ final class LibraryViewModel: ObservableObject {
             }
             let text = [item.title, item.filename, item.designer ?? "", item.profileTitle ?? "", item.note, item.tags.joined(separator: " "), item.materials.joined(separator: " ")].joined(separator: " ")
             return matches && (search.isEmpty || text.localizedStandardContains(search))
-        }.sorted { newestFirst ? $0.importedAt > $1.importedAt : $0.title.localizedStandardCompare($1.title) == .orderedAscending }
+        }.sorted(by: sort.precedes)
     }
     func start() async {
         guard !started else { return }; started = true
@@ -129,8 +151,10 @@ final class LibraryViewModel: ObservableObject {
     }
     func reload() async {
         guard let repository else { return }
+        do { try await repository.backfillFileAddedDates() }
+        catch { errorMessage = error.localizedDescription }
         items = await repository.items()
-        if selectionID == nil { selectionID = items.sorted { $0.importedAt > $1.importedAt }.first?.id }
+        if selectionID == nil { selectionID = visibleItems.first?.id }
     }
     func fileURL(_ item: ShelfItem) -> URL { rootURL.appendingPathComponent(item.filePath) }
     func imageURL(_ item: ShelfItem, plate: PlateRecord? = nil) -> URL? {

@@ -44,6 +44,8 @@ public struct LibraryItem: Codable, Sendable, Identifiable, Hashable {
     public var plates: [PlateRecord]
     public var hasGCode: Bool
     public var importedAt: Date
+    /// Local source-file creation time, retained separately from a bulk library import's time.
+    public var fileAddedAt: Date?
     public var tags: [String]
     public var favorite: Bool
     public var note: String
@@ -57,7 +59,7 @@ public struct LibraryItem: Codable, Sendable, Identifiable, Hashable {
                 materials: [String] = [], printerModel: String? = nil, plates: [PlateRecord] = [],
                 hasGCode: Bool = false, importedAt: Date = Date(), tags: [String] = [],
                 favorite: Bool = false, note: String = "", printRuns: [PrintRun] = [],
-                makerWorldSource: MakerWorldSource? = nil) {
+                makerWorldSource: MakerWorldSource? = nil, fileAddedAt: Date? = nil) {
         self.id = id; self.title = title; self.filename = filename; self.filePath = filePath
         self.thumbnailPath = thumbnailPath; self.sourcePaths = sourcePaths; self.designer = designer
         self.modelID = modelID; self.profileID = profileID; self.profileTitle = profileTitle
@@ -65,6 +67,7 @@ public struct LibraryItem: Codable, Sendable, Identifiable, Hashable {
         self.hasGCode = hasGCode; self.importedAt = importedAt; self.tags = tags
         self.favorite = favorite; self.note = note; self.printRuns = printRuns
         self.makerWorldSource = makerWorldSource
+        self.fileAddedAt = fileAddedAt
     }
 
     /// A total is only available when every known plate has an estimate.
