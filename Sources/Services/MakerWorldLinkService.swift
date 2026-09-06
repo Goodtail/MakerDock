@@ -101,10 +101,15 @@ enum MakerWorldLinkPolicy {
                 }
             }
         } else if scheme == "bambustudio" || scheme == "plateshelf" {
-            guard let parts = URLComponents(url: incoming, resolvingAgainstBaseURL: false),
+            guard var parts = URLComponents(url: incoming, resolvingAgainstBaseURL: false),
                   parts.host?.lowercased() == "open", parts.path.isEmpty || parts.path == "/",
                   parts.user == nil, parts.password == nil, parts.port == nil, parts.fragment == nil,
                   validPercentEscapes(incoming.absoluteString) else { throw MakerWorldLinkError.invalidLink }
+            if scheme == "plateshelf" {
+                // Chrome URLSearchParams uses form encoding: + is a space, %2B is a literal +.
+                // Normalize before percent decoding so nested URLs/signatures retain their bytes.
+                parts.percentEncodedQuery = parts.percentEncodedQuery?.replacingOccurrences(of: "+", with: "%20")
+            }
             let key = scheme == "bambustudio" ? "file" : "url"
             let values = (parts.queryItems ?? []).filter { $0.name == key }
             let names = (parts.queryItems ?? []).filter { $0.name == "name" }
