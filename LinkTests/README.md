@@ -1,0 +1,11 @@
+# MakerWorld link service tests
+
+Run `zsh LinkTests/run.sh` from the desktop project directory. The standalone Swift runner uses in-process mock responses and `URLProtocol`; it never downloads a real model or contacts a remote server.
+
+The tests cover the three supported handoff schemes, strict remote/redirect host policy, filename and percent-encoding errors, strong ETag validation, corrupt/changed cache content, weak/missing validators, explicit refresh, signed URL privacy, preservation of content/version query fields, invalid server responses, cleanup, and streaming transfer limits.
+
+`MakerWorldLinkService(cacheDirectory:)` performs no I/O or downloads until `resolve(_:forceDownload:)` is called. Invoke it only from an explicit open/paste/drop action. Import its returned local file into the library; open a working copy in Studio. Cache names are content hashes, so use the returned `displayName` for presentation. A returned `reused` value of `true` means the local bytes were hashed and a conditional GET returned 304 against a previously stored strong ETag. Offline or expired links do not silently fall back to potentially stale content; existing library items remain available through the normal local library flow.
+
+The service verifies the ZIP header and transfer size; PlateShelfCore must perform the deeper 3MF archive validation before accepting a model. The synthetic service fixtures intentionally isolate those responsibilities.
+
+The extension wrapper also accepts `source` (the real MakerWorld model page), `profile` (same page with an explicit profile selector), `snapshot` (bounded JSON), and `action=import|open`. `ResolvedModel.source` returns validated `CapturedMakerWorldSource` with `pageURL`, `profileURL`, `capturedAt`, `title`, `profileTitle`, `estimatedSeconds`, `plateCount`, and optional `plates`. `estimatedSeconds`/`plateCount` are profile totals. Map these fields to Core's `MakerWorldSource` and call `updateSource`; none of the public source fields contain the signed download URL. `ResolvedModel.openStudio` is false for `action=import` and true by default. Per-plate snapshots are optional and never synthesized from profile totals.
