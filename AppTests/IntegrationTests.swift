@@ -112,4 +112,32 @@ final class IntegrationTests: XCTestCase {
         XCTAssertEqual(vm.items.count, 1)
         XCTAssertEqual(vm.items.first?.makerWorldSource?.estimatedSeconds, 42_120)
     }
+    @MainActor func testLegacyBulkImportRecoversOriginalFileChronology() async throws {
+        let root = temp.appendingPathComponent("Library")
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        let oldDate = Date(timeIntervalSince1970: 1_700_000_000), recentDate = oldDate.addingTimeInterval(86_400)
+        let oldFile = temp.appendingPathComponent("Old.3mf"), recentFile = temp.appendingPathComponent("Recent.3mf")
+        for (file, date) in [(oldFile, oldDate), (recentFile, recentDate)] {
+            try Data("date fixture".utf8).write(to: file)
+            try FileManager.default.setAttributes([.creationDate: date], ofItemAtPath: file.path)
+        }
+        let oldID = String(repeating: "a", count: 64), recentID = String(repeating: "b", count: 64)
+        // Bulk enumeration imported the old file last; that must not make it the newest download.
+        let old = ShelfItem(id: oldID, title: "A old", filename: "Old.3mf", filePath: "Files/\(oldID).3mf", sourcePaths: [oldFile.path], importedAt: recentDate.addingTimeInterval(200), tags: ["keep"], favorite: true, note: "unchanged")
+        let recent = ShelfItem(id: recentID, title: "Z recent", filename: "Recent.3mf", filePath: "Files/\(recentID).3mf", sourcePaths: [recentFile.path], importedAt: recentDate.addingTimeInterval(100))
+        struct LegacyIndex: Encodable { let schemaVersion = 1; let items: [ShelfItem] }
+        let encoder = JSONEncoder(); encoder.dateEncodingStrategy = .iso8601
+        try encoder.encode(LegacyIndex(items: [old, recent])).write(to: root.appendingPathComponent("index.json"))
+        let vm = LibraryViewModel(rootOverride: root); await vm.reload()
+        XCTAssertNil(vm.errorMessage)
+        XCTAssertEqual(vm.visibleItems.map(\.id), [recentID, oldID])
+        vm.sort = .oldest; XCTAssertEqual(vm.visibleItems.map(\.id), [oldID, recentID])
+        vm.sort = .name; XCTAssertEqual(vm.visibleItems.map(\.id), [oldID, recentID])
+        let reopened = LibraryViewModel(rootOverride: root); await reopened.reload()
+        XCTAssertEqual(reopened.visibleItems.map(\.id), [recentID, oldID])
+        let preserved = try XCTUnwrap(reopened.items.first { $0.id == oldID })
+        XCTAssertEqual(preserved.importedAt, old.importedAt)
+        XCTAssertEqual(preserved.fileAddedAt, oldDate)
+        XCTAssertTrue(preserved.favorite); XCTAssertEqual(preserved.tags, ["keep"]); XCTAssertEqual(preserved.note, "unchanged")
+    }
 }

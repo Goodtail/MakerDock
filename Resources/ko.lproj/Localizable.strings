@@ -28,6 +28,7 @@
 "empty.description" = "3MF가 있는 폴더를 추가하거나 파일을 끌어다 놓으세요.\n미리보기와 출력 정보를 읽어 정리합니다.";
 "sort" = "정렬";
 "sort.recent" = "최근 추가순";
+"sort.oldest" = "오래된 순";
 "sort.name" = "이름순";
 "view.mode" = "보기 방식";
 "detail.title" = "모델 상세";

@@ -39,6 +39,21 @@ public actor LibraryRepository {
         records.sorted { lhs, rhs in lhs.importedAt == rhs.importedAt ? lhs.id < rhs.id : lhs.importedAt > rhs.importedAt }
     }
 
+    /// Recover the original chronology for libraries created before source dates were recorded.
+    public func backfillFileAddedDates() throws {
+        var candidate = records
+        var changed = false
+        for index in candidate.indices where candidate[index].fileAddedAt == nil {
+            let dates = candidate[index].sourcePaths.compactMap { path -> Date? in
+                guard let values = try? URL(fileURLWithPath: path).resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey, .creationDateKey]),
+                      values.isRegularFile == true, values.isSymbolicLink != true else { return nil }
+                return values.creationDate
+            }
+            if let date = dates.max() { candidate[index].fileAddedAt = date; changed = true }
+        }
+        if changed { try commit(candidate) }
+    }
+
     public func importFile(at source: URL, expectedSHA256: String? = nil) throws -> ImportResult {
         let expectedHash = expectedSHA256?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         if let expectedHash {
@@ -49,7 +64,7 @@ public actor LibraryRepository {
         }
         var source = source.standardizedFileURL
         guard source.isFileURL, source.pathExtension.lowercased() == "3mf" else { throw LibraryError.unsupportedFile }
-        let keys: Set<URLResourceKey> = [.isRegularFileKey, .isSymbolicLinkKey, .fileSizeKey, .contentModificationDateKey]
+        let keys: Set<URLResourceKey> = [.isRegularFileKey, .isSymbolicLinkKey, .fileSizeKey, .contentModificationDateKey, .creationDateKey]
         let before = try source.resourceValues(forKeys: keys)
         guard before.isRegularFile == true, before.isSymbolicLink != true else { throw LibraryError.unsupportedFile }
         guard UInt64(before.fileSize ?? 0) <= ArchiveLimits.archiveBytes else { throw LibraryError.limitExceeded("원본 파일 크기") }
@@ -77,6 +92,7 @@ public actor LibraryRepository {
         if let duplicate {
             item = candidate[duplicate]
             if !item.sourcePaths.contains(source.path) { item.sourcePaths.append(source.path) }
+            if let date = before.creationDate, item.fileAddedAt == nil || date > item.fileAddedAt! { item.fileAddedAt = date }
             candidate[duplicate] = item
         } else {
             let parsed = try ThreeMFReader(url: stagedArchive).parse()
@@ -89,7 +105,8 @@ public actor LibraryRepository {
                                modelID: (meta["designmodelid"] ?? meta["bambustudio:designmodelid"])?.nonEmpty,
                                profileID: (meta["designprofileid"] ?? meta["profileid"] ?? meta["bambustudio:designprofileid"])?.nonEmpty,
                                profileTitle: meta["profiletitle"]?.nonEmpty, materials: parsed.materials,
-                               printerModel: parsed.printerModel, plates: parsed.plates, hasGCode: parsed.hasGCode)
+                               printerModel: parsed.printerModel, plates: parsed.plates, hasGCode: parsed.hasGCode,
+                               fileAddedAt: before.creationDate)
             candidate.append(item)
         }
 
