@@ -15,7 +15,10 @@ struct ShelfPreferences: Codable {
     var folderBookmarks: [String: Data] = [:]
     var completedMoveMode = "source"
     var completedFolder = ""
-    enum CodingKeys: String, CodingKey { case folders, studioPath, archivePath, automaticScan, folderBookmarks, completedMoveMode, completedFolder }
+    var printerPreset = ""
+    var printerProcess = ""
+    var printerSetupInitialized = false
+    enum CodingKeys: String, CodingKey { case folders, studioPath, archivePath, automaticScan, folderBookmarks, completedMoveMode, completedFolder, printerPreset, printerProcess, printerSetupInitialized }
     init() {}
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -26,6 +29,9 @@ struct ShelfPreferences: Codable {
         folderBookmarks = try c.decodeIfPresent([String: Data].self, forKey: .folderBookmarks) ?? [:]
         completedMoveMode = try c.decodeIfPresent(String.self, forKey: .completedMoveMode) ?? "source"
         completedFolder = try c.decodeIfPresent(String.self, forKey: .completedFolder) ?? ""
+        printerPreset = try c.decodeIfPresent(String.self, forKey: .printerPreset) ?? ""
+        printerProcess = try c.decodeIfPresent(String.self, forKey: .printerProcess) ?? ""
+        printerSetupInitialized = try c.decodeIfPresent(Bool.self, forKey: .printerSetupInitialized) ?? false
     }
 }
 enum ShelfFilter: Hashable {
@@ -88,6 +94,13 @@ final class LibraryViewModel: ObservableObject {
     @Published var archiveStatus = ""
     @Published var browserRequest: BrowserLocation?
     @Published var browserReloadRequest = 0
+    @Published var printerCatalog: StudioPresetCatalog?
+    @Published var estimateConfiguration: StudioEstimateConfiguration?
+    @Published var calculatedEstimates: [StudioEstimateRecord] = []
+    @Published var calculatingItemID: String?
+    var estimateTask: Task<Void, Never>?
+    let estimateService = StudioEstimateService()
+    private var terminationObserver: AnyCancellable?
     let rootURL: URL
     var repository: LibraryRepository?
     private var linkService: MakerWorldLinkService
@@ -130,7 +143,13 @@ final class LibraryViewModel: ObservableObject {
                 if let fork = candidates.first(where: { Bundle(url: $0)?.bundleIdentifier == studioIdentifier }) { preferences.studioPath = fork.path }
             }
             if preferences.archivePath.isEmpty { preferences.archivePath = rootURL.appendingPathComponent("StudioInbox").path }
+            if let data = try? Data(contentsOf: rootURL.appendingPathComponent("estimates.json")), data.count <= 32 * 1_024 * 1_024 {
+                calculatedEstimates = (try? JSONDecoder().decode([StudioEstimateRecord].self, from: data)) ?? []
+            }
         } catch { errorMessage = error.localizedDescription }
+        terminationObserver = NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification).sink { [weak self] _ in
+            self?.estimateTask?.cancel(); self?.estimateService.stop()
+        }
     }
     var selected: ShelfItem? { visibleItems.first { $0.id == selectionID } }
     var filterTitle: String {
@@ -162,6 +181,11 @@ final class LibraryViewModel: ObservableObject {
     }
     func start() async {
         guard !started, repository != nil else { return }; started = true
+        if identityUpgradeEnabled, !preferences.printerSetupInitialized {
+            preferences.printerSetupInitialized = true
+            configurePrinter(importFromStudio: true)
+        } else if !preferences.printerPreset.isEmpty { configurePrinter() }
+        do { try await repository?.recoverSavedGCodeTimes() } catch { errorMessage = error.localizedDescription }
         if identityUpgradeEnabled, let error = await AppIdentity.migrateLegacyLinks() { errorMessage = error }
         for data in preferences.folderBookmarks.values {
             var stale = false

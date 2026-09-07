@@ -135,8 +135,10 @@ struct ThreeMFReader {
             let config = plateSettings[id] ?? [:]
             let sliced = plateSlices[id] ?? [:]
             let thumbnail = try preview(config["thumbnail_file"] ?? "Metadata/plate_\(id).png")
+            let gcodePath = sliced["gcode_file"] ?? config["gcode_file"] ?? "Metadata/plate_\(id).gcode"
+            let seconds = try positive(sliced["prediction"]) ?? gcodeTime(gcodePath)
             plates.append(PlateRecord(id: id, name: config["plater_name"]?.nonEmpty ?? config["name"]?.nonEmpty ?? "플레이트 \(id)",
-                                      thumbnailPath: thumbnail, estimatedSeconds: positive(sliced["prediction"]),
+                                      thumbnailPath: thumbnail, estimatedSeconds: seconds,
                                       weightGrams: positive(sliced["weight"])))
         }
         let meta = model?.metadata ?? [:]
@@ -153,6 +155,41 @@ struct ThreeMFReader {
     private func xml(_ path: String, limit: Int = ArchiveLimits.settingsBytes, root: String) throws -> XMLMetadata? {
         guard let bytes = try read(path, limit: limit) else { return nil }
         return try XMLMetadata.read(bytes, path: path, root: root)
+    }
+
+    private func gcodeTime(_ path: String) throws -> Double? {
+        try Self.validateEntryPath(path)
+        guard let entry = entries[path.lowercased()], entry.type == .file,
+              path.lowercased().hasSuffix(".gcode"), entry.uncompressedSize <= 512 * 1_024 * 1_024 else { return nil }
+        // Retain only the header; still consume the stream to verify its CRC.
+        var header = Data(), consumed: UInt64 = 0
+        let checksum = try archive.extract(entry, bufferSize: 64 * 1_024) { chunk in
+            consumed += UInt64(chunk.count)
+            guard consumed <= entry.uncompressedSize else { throw LibraryError.limitExceeded(path) }
+            if header.count < 64 * 1_024 { header.append(chunk.prefix(64 * 1_024 - header.count)) }
+        }
+        guard consumed == entry.uncompressedSize, checksum == entry.checksum else { throw LibraryError.invalidArchive("G-code 무결성 검사 실패") }
+        return Self.gcodeHeaderTime(String(decoding: header, as: UTF8.self))
+    }
+
+    static func gcodeHeaderTime(_ header: String) -> Double? {
+        for line in header.split(separator: "\n").prefix(100) {
+            guard line.hasPrefix(";") else { continue }
+            let markers = ["total estimated time:", "estimated printing time (normal mode) ="]
+            guard let range = markers.compactMap({ line.range(of: $0) }).first else { continue }
+            let duration = String(line[range.upperBound...]).trimmingCharacters(in: .whitespacesAndNewlines)
+            guard duration.range(of: #"^(?:\d+(?:\.\d+)?[dhms]\s*)+$"#, options: .regularExpression) != nil else { continue }
+            let regex = try! NSRegularExpression(pattern: #"(\d+(?:\.\d+)?)([dhms])"#)
+            let ns = duration as NSString
+            var seconds = 0.0
+            for match in regex.matches(in: duration, range: NSRange(location: 0, length: ns.length)) {
+                let value = Double(ns.substring(with: match.range(at: 1))) ?? 0
+                let unit = ns.substring(with: match.range(at: 2))
+                seconds += value * (["d": 86400.0, "h": 3600, "m": 60, "s": 1][unit] ?? 0)
+            }
+            if seconds.isFinite, seconds > 0 { return seconds }
+        }
+        return nil
     }
 
     private func normalizeID(_ value: String) -> String {

@@ -8,6 +8,20 @@ struct SettingsView: View {
             HStack { Text(L("settings")).font(Design.title); Spacer(); Button(L("done")) { dismiss() }.keyboardShortcut(.cancelAction) }
             ScrollView {
                 VStack(alignment: .leading, spacing: Design.large) {
+                    section("내 프린터 · 예상 시간") {
+                        Picker("프린터 / 노즐", selection: $model.preferences.printerPreset) {
+                            Text("선택 안 함").tag("")
+                            ForEach(model.printerCatalog?.machines ?? []) { Text($0.name).tag($0.name) }
+                        }.onChange(of: model.preferences.printerPreset) { _ in model.configurePrinter() }
+                        Picker("출력 품질", selection: $model.preferences.printerProcess) {
+                            Text("출력 품질 선택").tag("")
+                            ForEach(model.compatiblePrinterProcesses) { Text($0.name).tag($0.name) }
+                        }.onChange(of: model.preferences.printerProcess) { _ in model.configurePrinter() }
+                        Button("Studio에서 선택한 프린터 가져오기") { model.configurePrinter(importFromStudio: true) }
+                        Text("상세 화면에서 선택한 프린터와 출력 품질로 시간을 계산합니다. 재료·플레이트 배치·개별 오브젝트 설정은 파일에 저장된 값을 사용합니다.")
+                            .font(Design.caption).foregroundStyle(Design.secondary)
+                    }
+                    Divider()
                     section(L("settings.folders")) {
                         Text(L("settings.foldersDescription")).foregroundStyle(Design.secondary)
                         ForEach(model.preferences.folders, id: \.self) { path in
@@ -57,6 +71,7 @@ struct SettingsView: View {
                 }
             }
         }.font(Design.body).padding(Design.xlarge).frame(width: Design.inspector * 2, height: Design.windowMinHeight)
+            .onAppear { model.configurePrinter() }
     }
     private func section<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: Design.medium) { Text(title).font(Design.heading); content() }
