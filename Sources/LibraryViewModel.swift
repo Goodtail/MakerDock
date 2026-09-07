@@ -44,9 +44,9 @@ enum ShelfFilter: Hashable {
         case .printed: return L("filter.printed")
         case .unprinted: return L("filter.unprinted")
         case .duplicates: return L("filter.duplicates")
-        case .uncategorized: return "미분류"
-        case .trash: return "휴지통"
-        case .category: return "분류"
+        case .uncategorized: return L("미분류")
+        case .trash: return L("휴지통")
+        case .category: return L("분류")
         case .tag(let tag): return tag
         }
     }
@@ -79,11 +79,14 @@ final class LibraryViewModel: ObservableObject {
     @Published var categoryEditor: CategoryEditRequest?
     @Published var lastTrashedID: String?
     @Published var selectionID: String?
+    @Published var selectionMode = false
+    @Published var selectedIDs: Set<String> = []
+    @Published var isBatchWorking = false
     @Published var filter: ShelfFilter = .all
     @Published var search = ""
     @Published var isBusy = false
     @Published var isScanning = false
-    var isWorking: Bool { isBusy || isScanning }
+    var isWorking: Bool { isBusy || isScanning || isBatchWorking }
     private var grantedURLs: [URL] = []
     @Published var errorMessage: String?
     @Published var statusMessage = ""
@@ -153,10 +156,10 @@ final class LibraryViewModel: ObservableObject {
     }
     var selected: ShelfItem? { visibleItems.first { $0.id == selectionID } }
     var filterTitle: String {
-        if case .category(let id) = filter { return categories.first { $0.id == id }?.name ?? "분류" }
+        if case .category(let id) = filter { return categories.first { $0.id == id }?.name ?? L("분류") }
         return filter.title
     }
-    func categoryName(_ item: ShelfItem) -> String { categories.first { $0.id == item.categoryID }?.name ?? "미분류" }
+    func categoryName(_ item: ShelfItem) -> String { categories.first { $0.id == item.categoryID }?.name ?? L("미분류") }
     var allTags: [String] { Array(Set(items.flatMap(\.tags))).sorted() }
     func copyCount(_ item: ShelfItem) -> Int { item.sourcePaths.filter { !$0.hasPrefix(rootURL.path + "/") }.count }
     var duplicateCount: Int { items.reduce(0) { $0 + max(0, copyCount($1) - 1) } }
@@ -185,7 +188,7 @@ final class LibraryViewModel: ObservableObject {
             preferences.printerSetupInitialized = true
             configurePrinter(importFromStudio: true)
         } else if !preferences.printerPreset.isEmpty { configurePrinter() }
-        do { try await repository?.recoverSavedGCodeTimes() } catch { errorMessage = error.localizedDescription }
+        do { try await repository?.recoverSavedGCodeTimes(); try await repository?.recoverFilaments() } catch { errorMessage = error.localizedDescription }
         if identityUpgradeEnabled, let error = await AppIdentity.migrateLegacyLinks() { errorMessage = error }
         for data in preferences.folderBookmarks.values {
             var stale = false
@@ -217,6 +220,7 @@ final class LibraryViewModel: ObservableObject {
         if let lastTrashedID, !trashedItems.contains(where: { $0.id == lastTrashedID }) { self.lastTrashedID = nil }
     }
     func syncSelection() {
+        pruneSelection()
         guard filter != .makerWorld else { return }
         if !visibleItems.contains(where: { $0.id == selectionID }) { selectionID = visibleItems.first?.id }
     }
@@ -244,11 +248,11 @@ final class LibraryViewModel: ObservableObject {
         await acquireWork(); defer { releaseWork() }
         _ = await importFilesUnlocked(urls, quiet: quiet)
     }
-    private func acquireWork() async {
+    func acquireWork() async {
         if isBusy { await withCheckedContinuation { workWaiters.append($0) } }
         isBusy = true
     }
-    private func releaseWork() {
+    func releaseWork() {
         if workWaiters.isEmpty { isBusy = false }
         else { workWaiters.removeFirst().resume() }
     }
@@ -307,7 +311,7 @@ final class LibraryViewModel: ObservableObject {
             try await repository.trash(itemID: item.id)
             lastTrashedID = item.id
             await reload()
-            statusMessage = "휴지통으로 이동했습니다. 외부 원본 파일은 유지됩니다."
+            statusMessage = L("휴지통으로 이동했습니다. 외부 원본 파일은 유지됩니다.")
             return true
         } catch { errorMessage = error.localizedDescription; return false }
     }
@@ -317,7 +321,7 @@ final class LibraryViewModel: ObservableObject {
         do {
             try await repository.restore(itemID: itemID)
             await reload()
-            statusMessage = "모델과 분류·메모·출력 기록을 복원했습니다."
+            statusMessage = L("모델과 분류·메모·출력 기록을 복원했습니다.")
             return true
         } catch { errorMessage = error.localizedDescription; return false }
     }
@@ -325,7 +329,7 @@ final class LibraryViewModel: ObservableObject {
         guard let repository else { return false }
         do {
             try await repository.assignCategory(itemID: item.id, categoryID: categoryID)
-            await reload(); statusMessage = "분류를 변경했습니다."
+            await reload(); statusMessage = L("분류를 변경했습니다.")
             return true
         } catch { errorMessage = error.localizedDescription; return false }
     }
@@ -334,13 +338,13 @@ final class LibraryViewModel: ObservableObject {
         let category = try await repository.saveCategory(id: request.categoryID, name: name, assigningTo: request.itemID)
         await reload()
         if request.itemID == nil { filter = .category(category.id); selectionID = visibleItems.first?.id }
-        statusMessage = "분류를 저장했습니다."
+        statusMessage = L("분류를 저장했습니다.")
     }
     func deleteCategory(_ category: LibraryCategory) async {
         guard let repository else { return }
         do {
             try await repository.deleteCategory(id: category.id)
-            await reload(); statusMessage = "분류를 삭제했습니다. 모델은 미분류에 남아 있습니다."
+            await reload(); statusMessage = L("분류를 삭제했습니다. 모델은 미분류에 남아 있습니다.")
         } catch { errorMessage = error.localizedDescription }
     }
     func toggleFavorite(_ item: ShelfItem) {
@@ -350,17 +354,17 @@ final class LibraryViewModel: ObservableObject {
         }
     }
     @discardableResult func recordPrint(_ item: ShelfItem, status: String, note: String, moveFiles: Bool = false,
-                                       sourceURL: URL? = nil, directoryURL: URL? = nil) async -> Bool {
+                                       sourceURL: URL? = nil, directoryURL: URL? = nil, durationSeconds: Double? = nil, durationSource: String? = nil, filaments: [FilamentRecord]? = nil) async -> Bool {
         await acquireWork(); defer { releaseWork() }
         guard let repository else { errorMessage = L("library.unavailable"); return false }
         do {
             if status == "completed", moveFiles {
-                _ = try await repository.completePrint(itemID: item.id, note: note, sourceURL: sourceURL, directoryURL: directoryURL)
+                _ = try await repository.completePrint(itemID: item.id, note: note, sourceURL: sourceURL, directoryURL: directoryURL, durationSeconds: durationSeconds, durationSource: durationSource, filaments: filaments)
             } else {
-                try await repository.appendRun(itemID: item.id, run: PrintRun(status: status, source: "manual", note: note))
+                try await repository.appendRun(itemID: item.id, run: PrintRun(status: status, source: "manual", note: note, durationSeconds: durationSeconds, durationSource: durationSource, filaments: filaments))
             }
             await reload()
-            statusMessage = status == "completed" && moveFiles ? "출력 완료로 표시하고 파일을 이동했습니다." : L("history.saved")
+            statusMessage = status == "completed" && moveFiles ? L("출력 완료로 표시하고 파일을 이동했습니다.") : L("history.saved")
             return true
         }
         catch { errorMessage = error.localizedDescription; return false }
@@ -384,7 +388,7 @@ final class LibraryViewModel: ObservableObject {
     }
     @discardableResult func selectCompletedFolder() -> URL? {
         let panel = NSOpenPanel(); panel.canChooseFiles = false; panel.canChooseDirectories = true; panel.canCreateDirectories = true
-        panel.title = "출력 완료 파일을 모을 폴더"; panel.prompt = "이 폴더로 이동"
+        panel.title = L("출력 완료 파일을 모을 폴더"); panel.prompt = L("이 폴더로 이동")
         guard panel.runModal() == .OK, let url = panel.url else { return nil }
         if url.startAccessingSecurityScopedResource() { grantedURLs.append(url) }
         preferences.folderBookmarks[url.path] = try? url.bookmarkData(options: [.withSecurityScope], includingResourceValuesForKeys: nil, relativeTo: nil)

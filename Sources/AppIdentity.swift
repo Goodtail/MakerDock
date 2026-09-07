@@ -20,7 +20,7 @@ enum AppIdentity {
         guard let legacy = legacyIdentifier(for: identifier) else { return }
         guard !UserDefaults.standard.bool(forKey: "makerdock.legacyPreferencesImported") else { return }
         guard NSRunningApplication.runningApplications(withBundleIdentifier: legacy).isEmpty else {
-            throw ShelfError.message("기존 PlateShelf 앱을 종료한 뒤 MakerDock을 다시 열어 주세요. 보관함을 안전하게 이어서 가져옵니다.")
+            throw ShelfError.message(L("기존 PlateShelf 앱을 종료한 뒤 MakerDock을 다시 열어 주세요. 보관함을 안전하게 이어서 가져옵니다."))
         }
         try LibraryMigration.copyIfNeeded(from: root.deletingLastPathComponent().appendingPathComponent(legacy), to: root)
         let library = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask)[0]
@@ -59,7 +59,7 @@ enum AppIdentity {
                     continuation.resume(returning: $0)
                 }
             }
-            if let error { return "MakerDock 링크 연결을 옮기지 못했습니다: " + error.localizedDescription }
+            if let error { return L("MakerDock 링크 연결을 옮기지 못했습니다: ") + error.localizedDescription }
         }
         return nil
     }
@@ -71,7 +71,7 @@ enum LibraryMigration {
         let fm = FileManager.default
         guard !fm.fileExists(atPath: destination.path), fm.fileExists(atPath: source.path) else { return }
         for journal in [".archive-move.json", ".print-move.json"] where fm.fileExists(atPath: source.appendingPathComponent(journal).path) {
-            throw ShelfError.message("기존 PlateShelf의 파일 이동 복구가 필요합니다. 기존 앱을 한 번 열고 종료한 뒤 다시 시도해 주세요.")
+            throw ShelfError.message(L("기존 PlateShelf의 파일 이동 복구가 필요합니다. 기존 앱을 한 번 열고 종료한 뒤 다시 시도해 주세요."))
         }
         let index = source.appendingPathComponent("index.json")
         let originalIndex = try fm.fileExists(atPath: index.path) ? Data(contentsOf: index) : nil

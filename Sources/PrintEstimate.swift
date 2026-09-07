@@ -5,9 +5,9 @@ struct PrintEstimate: Equatable {
     enum Source { case makerWorld, file, myPrinter }
     let seconds: Double
     let source: Source
-    var sourceLabel: String { source == .makerWorld ? "MakerWorld" : source == .file ? "3MF" : "내 프린터" }
+    var sourceLabel: String { source == .makerWorld ? "MakerWorld" : source == .file ? "3MF" : L("내 프린터") }
     var explanation: String {
-        source == .makerWorld ? "보관 당시 MakerWorld 출력 프로필의 예상 시간" : source == .file ? "3MF에 저장된 슬라이싱 예상 시간" : "선택한 프린터로 공식 Studio에서 계산한 예상 시간"
+        source == .makerWorld ? L("보관 당시 MakerWorld 출력 프로필의 예상 시간") : source == .file ? L("3MF에 저장된 슬라이싱 예상 시간") : L("선택한 프린터로 공식 Studio에서 계산한 예상 시간")
     }
     static func valid(_ seconds: Double?) -> Double? {
         guard let seconds, seconds.isFinite, seconds > 0 else { return nil }
@@ -42,7 +42,7 @@ extension ShelfItem {
 
 struct EstimateLabel: View {
     let estimate: PrintEstimate?
-    var missing = "예상 시간 없음"
+    var missing = L("예상 시간 없음")
     var body: some View {
         HStack(spacing: Design.tiny) {
             Image(systemName: "clock")
@@ -50,6 +50,6 @@ struct EstimateLabel: View {
                 .fontWeight(estimate == nil ? .regular : .medium).monospacedDigit()
             if let estimate { Text("· " + estimate.sourceLabel).foregroundStyle(Design.secondary) }
         }.font(Design.caption).foregroundStyle(estimate == nil ? Design.secondary : Design.ink)
-            .help(estimate?.explanation ?? "MakerWorld와 3MF에 저장된 예상 시간이 없습니다.")
+            .help(estimate?.explanation ?? L("MakerWorld와 3MF에 저장된 예상 시간이 없습니다."))
     }
 }

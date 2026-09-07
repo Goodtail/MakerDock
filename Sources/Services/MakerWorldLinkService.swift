@@ -42,16 +42,16 @@ enum MakerWorldLinkError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .invalidLink: return "올바른 MakerWorld 열기 링크가 아닙니다."
-        case .untrustedHost: return "MakerWorld에서 사용하는 HTTPS 다운로드 주소만 열 수 있습니다."
-        case .invalidName: return "링크에 포함된 파일 이름이 올바르지 않습니다."
-        case .tooLarge: return "500 MB를 넘는 파일은 직접 다운로드한 뒤 보관함에 추가해 주세요."
-        case .invalidResponse: return "다운로드 서버의 응답을 확인할 수 없습니다."
-        case .httpStatus(let code): return "파일을 받지 못했습니다. 서버 응답: \(code). MakerWorld에서 새 열기 링크를 받아 주세요."
-        case .invalidArchive: return "다운로드한 파일이 3MF 압축 파일 형식이 아닙니다."
-        case .cannotWriteCache: return "다운로드 보관함에 파일을 저장하지 못했습니다."
-        case .tooManyRedirects: return "다운로드 주소의 이동 횟수가 너무 많습니다."
-        case .networkUnavailable: return "파일을 받는 중 연결이 끊겼습니다. 네트워크를 확인하고 다시 시도해 주세요."
+        case .invalidLink: return linkText("올바른 MakerWorld 열기 링크가 아닙니다.")
+        case .untrustedHost: return linkText("MakerWorld에서 사용하는 HTTPS 다운로드 주소만 열 수 있습니다.")
+        case .invalidName: return linkText("링크에 포함된 파일 이름이 올바르지 않습니다.")
+        case .tooLarge: return linkText("500 MB를 넘는 파일은 직접 다운로드한 뒤 보관함에 추가해 주세요.")
+        case .invalidResponse: return linkText("다운로드 서버의 응답을 확인할 수 없습니다.")
+        case .httpStatus(let code): return String(format: linkText("파일을 받지 못했습니다. 서버 응답: %@. MakerWorld에서 새 열기 링크를 받아 주세요."), String(code))
+        case .invalidArchive: return linkText("다운로드한 파일이 3MF 압축 파일 형식이 아닙니다.")
+        case .cannotWriteCache: return linkText("다운로드 보관함에 파일을 저장하지 못했습니다.")
+        case .tooManyRedirects: return linkText("다운로드 주소의 이동 횟수가 너무 많습니다.")
+        case .networkUnavailable: return linkText("파일을 받는 중 연결이 끊겼습니다. 네트워크를 확인하고 다시 시도해 주세요.")
         }
     }
 }
@@ -652,4 +652,12 @@ private final class MakerWorldStreamingTransfer: NSObject, URLSessionDataDelegat
             continuation?.resume(throwing: error)
         }
     }
+}
+
+private func linkText(_ key: String) -> String {
+    if let code = UserDefaults.standard.string(forKey: "MakerDockLanguage"), ["ko", "en", "ja", "zh-Hans"].contains(code),
+       let path = Bundle.main.path(forResource: code, ofType: "lproj"), let bundle = Bundle(path: path) {
+        return bundle.localizedString(forKey: key, value: nil, table: nil)
+    }
+    return NSLocalizedString(key, comment: "")
 }

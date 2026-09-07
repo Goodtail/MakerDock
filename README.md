@@ -39,3 +39,11 @@ The library uses a white canvas and cobalt blue (`#2563EB`) actions/selection, w
 ## Print estimates and distribution review
 
 MakerWorld estimates take precedence when available. The inspector also supports per-printer estimates from the installed official Studio CLI using flattened machine/process presets, isolated temporary preferences and file copies. Calculation results are cached separately by file identity and configuration fingerprint. Original archives remain unchanged. See [the current policy and validation report](Docs/app-store-review-2026-09-08.md).
+
+## Print records, batch editing, and localization (1.5.0)
+
+PrintRun now stores optional durationSeconds, durationSource, and filament snapshots. Old records still decode without these fields. 3MF filament slots preserve profile names, material, color, grams, and meters; startup backfill adds metadata without replacing user annotations. Unknown per-plate usage is never treated as a complete model total. Manual records store user-confirmed values separately from source estimates.
+
+Selection mode works in grid and list layouts. Category, favorite, trash, restore, and completion operations report per-item failures. Completion retains the existing recoverable file-move transaction; successful entries are removed before retry. Batch completion only moves managed archives.
+
+App and Core resources include ko/en/ja/zh-Hans catalogs (367 matching keys). Settings provides a persisted language override and system default. User-authored names and notes remain intact. Tests cover legacy decoding, prefill/edit validation, slot mapping, idempotent backfill, batch persistence and partial retries, selection scoping, and localization key/format parity. Official source field reference: https://github.com/bambulab/BambuStudio/blob/master/src/libslic3r/Format/bbs_3mf.cpp (filament type, color, used_g, used_m).

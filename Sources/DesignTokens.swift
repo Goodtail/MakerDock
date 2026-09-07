@@ -1,6 +1,12 @@
 import SwiftUI
+import PlateShelfCore
 
-func L(_ key: String) -> String { NSLocalizedString(key, comment: "") }
+func L(_ key: String) -> String { ShelfLocalization.text(key, bundle: .main) }
+func dateText(_ date: Date) -> String { date.formatted(Date.FormatStyle(date: .abbreviated, time: .shortened, locale: ShelfLocalization.locale)) }
+func plateTitle(_ plate: PlateRecord) -> String {
+    if plate.name.isEmpty || plate.name == "플레이트 \(plate.id)" || plate.name == "Plate \(plate.id)" { return String(format: L("plate.number"), plate.id) }
+    return plate.name
+}
 enum Design {
     static let accent = Color("ShelfAccent"), canvas = Color("ShelfCanvas"), surface = Color("ShelfSurface"), preview = Color("ShelfPreview"), ink = Color("ShelfInk"), secondary = Color("ShelfSecondary"), divider = Color("ShelfDivider"), warning = Color("ShelfWarning")
     static let sidebarSurface = Color("ShelfSidebar"), selection = Color("ShelfSelection")
@@ -18,5 +24,5 @@ func timeText(_ seconds: Double?) -> String {
 }
 func weightText(_ grams: Double?) -> String {
     guard let grams, grams > 0 else { return "—" }
-    return String(format: "%.1f g", grams)
+    return grams.formatted(.number.locale(ShelfLocalization.locale).precision(.fractionLength(1))) + " g"
 }

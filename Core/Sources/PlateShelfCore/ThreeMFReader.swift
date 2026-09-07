@@ -22,6 +22,7 @@ struct ParsedArchive {
     var previews: [String: Data]
     var thumbnailPath: String?
     var materials: [String]
+    var filaments: [FilamentRecord]
     var printerModel: String?
     var hasGCode: Bool
 }
@@ -37,22 +38,22 @@ struct ThreeMFReader {
         var count = 0
         for entry in archive {
             count += 1
-            guard count <= ArchiveLimits.entryCount else { throw LibraryError.limitExceeded("압축 항목 수") }
+            guard count <= ArchiveLimits.entryCount else { throw LibraryError.limitExceeded(CL("압축 항목 수")) }
             try Self.validateEntryPath(entry.path)
             guard entry.type != .symlink else { throw LibraryError.unsafePath(entry.path) }
             guard entry.uncompressedSize <= ArchiveLimits.expandedBytes - total else {
-                throw LibraryError.limitExceeded("압축 해제 크기")
+                throw LibraryError.limitExceeded(CL("압축 해제 크기"))
             }
             total += entry.uncompressedSize
             let key = entry.path.lowercased()
-            guard entries[key] == nil else { throw LibraryError.invalidArchive("중복된 내부 경로") }
+            guard entries[key] == nil else { throw LibraryError.invalidArchive(CL("중복된 내부 경로")) }
             entries[key] = entry
         }
         let hasModel = entries["3d/3dmodel.model"]?.type == .file
         let hasGCode = entries.values.contains { $0.type == .file && $0.path.lowercased().hasSuffix(".gcode") }
         guard entries["[content_types].xml"]?.type == .file,
               hasModel || (hasGCode && entries["metadata/slice_info.config"] != nil) else {
-            throw LibraryError.invalidArchive("3MF 모델 또는 출력 데이터가 없습니다")
+            throw LibraryError.invalidArchive(CL("3MF 모델 또는 출력 데이터가 없습니다"))
         }
     }
 
@@ -74,7 +75,7 @@ struct ThreeMFReader {
             bytes.append(chunk)
         }
         guard bytes.count == Int(entry.uncompressedSize), checksum == entry.checksum else {
-            throw LibraryError.invalidArchive("\(path) 무결성 검사 실패")
+            throw LibraryError.invalidArchive(String(format: CL("%@ 무결성 검사 실패"), String(path)))
         }
         return bytes
     }
@@ -88,12 +89,20 @@ struct ThreeMFReader {
         let slices = try xml("Metadata/slice_info.config", root: "config")
         var materials: [String] = slices?.materials ?? []
         var printer: String?
+        var filaments: [FilamentRecord] = []
         if let bytes = try read("Metadata/project_settings.config", limit: ArchiveLimits.settingsBytes) {
             guard let json = (try? JSONSerialization.jsonObject(with: bytes)) as? [String: Any] else {
                 throw LibraryError.invalidSettings
             }
             if let types = json["filament_type"] as? [String] { materials = types + materials }
             else if let type = json["filament_type"] as? String { materials.insert(type, at: 0) }
+            let types = json["filament_type"] as? [String] ?? []
+            let names = json["filament_settings_id"] as? [String] ?? []
+            let colors = json["filament_colour"] as? [String] ?? []
+            for i in 0..<min(256, max(types.count, names.count)) {
+                filaments.append(FilamentRecord(id: String(i + 1), name: names.indices.contains(i) ? names[i] : "",
+                    material: types.indices.contains(i) ? types[i] : "", color: colors.indices.contains(i) ? colors[i] : nil))
+            }
             printer = (json["printer_model"] as? String)?.nonEmpty
         }
 
@@ -101,16 +110,16 @@ struct ThreeMFReader {
         var plateSettings: [String: [String: String]] = [:]
         for (offset, plate) in (settings?.plates ?? []).enumerated() {
             let id = normalizeID(plate["plater_id"] ?? plate["plate_id"] ?? plate["index"] ?? String(offset + 1))
-            guard plateSettings[id] == nil else { throw LibraryError.invalidArchive("중복 플레이트 번호") }
+            guard plateSettings[id] == nil else { throw LibraryError.invalidArchive(CL("중복 플레이트 번호")) }
             plateSettings[id] = plate; plateIDs.append(id)
         }
         var plateSlices: [String: [String: String]] = [:]
         for plate in slices?.plates ?? [] {
             guard let raw = plate["index"] ?? plate["plater_id"] ?? plate["plate_id"], raw.nonEmpty != nil else {
-                throw LibraryError.invalidXML("slice_info.config 플레이트 번호")
+                throw LibraryError.invalidXML(CL("slice_info.config 플레이트 번호"))
             }
             let id = normalizeID(raw)
-            guard plateSlices[id] == nil else { throw LibraryError.invalidArchive("중복 출력 플레이트 번호") }
+            guard plateSlices[id] == nil else { throw LibraryError.invalidArchive(CL("중복 출력 플레이트 번호")) }
             plateSlices[id] = plate
             if !plateIDs.contains(id) { plateIDs.append(id) }
             if printer == nil { printer = plate["printer_model_id"]?.nonEmpty }
@@ -137,9 +146,14 @@ struct ThreeMFReader {
             let thumbnail = try preview(config["thumbnail_file"] ?? "Metadata/plate_\(id).png")
             let gcodePath = sliced["gcode_file"] ?? config["gcode_file"] ?? "Metadata/plate_\(id).gcode"
             let seconds = try positive(sliced["prediction"]) ?? gcodeTime(gcodePath)
-            plates.append(PlateRecord(id: id, name: config["plater_name"]?.nonEmpty ?? config["name"]?.nonEmpty ?? "플레이트 \(id)",
+            plates.append(PlateRecord(id: id, name: config["plater_name"]?.nonEmpty ?? config["name"]?.nonEmpty ?? "Plate \(id)",
                                       thumbnailPath: thumbnail, estimatedSeconds: seconds,
-                                      weightGrams: positive(sliced["weight"])))
+                                      weightGrams: positive(sliced["weight"]), filaments: slices?.plateFilaments[id]?.map { attributes in
+                                          let slot = attributes["id"] ?? UUID().uuidString
+                                          return FilamentRecord(id: slot, name: filaments.first(where: { $0.id == slot })?.name ?? "",
+                                              material: attributes["type"] ?? "", color: attributes["color"],
+                                              grams: positive(attributes["used_g"]), meters: positive(attributes["used_m"]))
+                                      }))
         }
         let meta = model?.metadata ?? [:]
         var thumbnail = try preview("Auxiliaries/.thumbnails/thumbnail_3mf.png")
@@ -148,7 +162,7 @@ struct ThreeMFReader {
         if thumbnail == nil { thumbnail = try preview("Metadata/plate_1.png") }
         if thumbnail == nil { thumbnail = try preview("Metadata/thumbnail.png") }
         return ParsedArchive(metadata: meta, plates: plates, previews: previews, thumbnailPath: thumbnail,
-                             materials: Array(Set(materials.compactMap(\.nonEmpty))).sorted(), printerModel: printer,
+                             materials: Array(Set(materials.compactMap(\.nonEmpty))).sorted(), filaments: filaments, printerModel: printer,
                              hasGCode: entries.values.contains { $0.type == .file && $0.path.lowercased().hasSuffix(".gcode") })
     }
 
@@ -168,7 +182,7 @@ struct ThreeMFReader {
             guard consumed <= entry.uncompressedSize else { throw LibraryError.limitExceeded(path) }
             if header.count < 64 * 1_024 { header.append(chunk.prefix(64 * 1_024 - header.count)) }
         }
-        guard consumed == entry.uncompressedSize, checksum == entry.checksum else { throw LibraryError.invalidArchive("G-code 무결성 검사 실패") }
+        guard consumed == entry.uncompressedSize, checksum == entry.checksum else { throw LibraryError.invalidArchive(CL("G-code 무결성 검사 실패")) }
         return Self.gcodeHeaderTime(String(decoding: header, as: UTF8.self))
     }
 
@@ -241,6 +255,8 @@ private final class XMLMetadata: NSObject, XMLParserDelegate {
     var metadata: [String: String] = [:]
     var plates: [[String: String]] = []
     var materials: [String] = []
+    var plateFilaments: [String: [[String: String]]] = [:]
+    var currentFilaments: [[String: String]] = []
     var elementStack: [String] = []
     var plate: [String: String]?
     var plateDepth: Int?
@@ -276,7 +292,7 @@ private final class XMLMetadata: NSObject, XMLParserDelegate {
         let parent = elementStack.last
         elementStack.append(elementName)
         if elementName == "plate", parent == "config" {
-            plate = attributeDict; plateDepth = elementStack.count
+            plate = attributeDict; plateDepth = elementStack.count; currentFilaments = []
         }
         if elementName == "metadata", parent == "model", let name = attributeDict["name"] {
             currentName = name.lowercased(); text = ""
@@ -284,6 +300,7 @@ private final class XMLMetadata: NSObject, XMLParserDelegate {
             plate?[key.lowercased()] = value
         } else if elementName == "filament", parent == "plate", let material = attributeDict["type"] {
             materials.append(material)
+            if currentFilaments.count < 256 { currentFilaments.append(attributeDict) }
         }
     }
 
@@ -301,7 +318,12 @@ private final class XMLMetadata: NSObject, XMLParserDelegate {
     func parser(_ parser: XMLParser, didEndElement elementName: String, namespaceURI: String?, qualifiedName qName: String?) {
         if elementName == "metadata", let name = currentName { metadata[name] = text; currentName = nil; text = "" }
         if elementName == "plate", elementStack.count == plateDepth {
-            if let plate { plates.append(plate) }; plate = nil; plateDepth = nil
+            if let plate {
+                plates.append(plate)
+                if let raw = plate["index"] ?? plate["plater_id"] ?? plate["plate_id"] {
+                    plateFilaments[Int(raw).map(String.init) ?? raw] = currentFilaments
+                }
+            }; plate = nil; plateDepth = nil
         }
         if !elementStack.isEmpty { elementStack.removeLast() }
     }
