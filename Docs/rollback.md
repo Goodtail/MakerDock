@@ -1,4 +1,4 @@
-# Local rollback checkpoints
+# Rollback checkpoints
 
 MakerDock 1.5.0 (9) implementation is preserved in commit `60caff4`.
 The annotated tag `checkpoint/makerdock-1.5.0` marks the same implementation plus these workflow instructions.
@@ -31,7 +31,11 @@ Verify the history copy with:
 git bundle verify .git/checkpoints/makerdock-1.5.0/history.bundle
 ```
 
-A Git bundle can also be cloned into a new, unused directory if a separate source checkout is needed. These are local copies, not an off-device backup. No remote repository or publication is configured.
+A Git bundle can also be cloned into a new, unused directory if a separate source checkout is needed. These are local copies, not an off-device backup. Public source history and releases are available at [Goodtail/MakerDock](https://github.com/Goodtail/MakerDock). Keep the local installer and bundle when updating.
+
+## Public release 1.6.0
+
+`checkpoint/makerdock-1.6.0` and `v1.6.0` preserve the first public release, including the neutral dark theme. Its installer, final digest, and history bundle are also kept under `.git/checkpoints/makerdock-1.6.0/` locally. Existing 1.5.0 refs and copies remain unchanged.
 
 ## Scope
 

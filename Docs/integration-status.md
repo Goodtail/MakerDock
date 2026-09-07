@@ -1,6 +1,6 @@
 # MakerWorld integration status
 
-Status for public release 1.5.1, reviewed September 8, 2026.
+Status for public release 1.6.0, reviewed September 8, 2026.
 
 ## Available in the public DMG
 

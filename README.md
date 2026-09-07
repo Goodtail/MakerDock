@@ -1,7 +1,7 @@
 <p align="center"><img src="assets/brand/icon-master.png" width="96" alt="MakerDock app icon"></p>
 
 <h1 align="center">MakerDock</h1>
-<p align="center"><strong>Your 3D prints, remembered.</strong><br>A native macOS companion for your 3MF collection and Bambu Studio.</p>
+<p align="center">A macOS library for your 3MF files and print history.<br>Works with the official Bambu Studio.</p>
 <p align="center">English · <a href="README.ko.md">한국어</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ja.md">日本語</a></p>
 <p align="center"><a href="https://github.com/Goodtail/MakerDock/releases">Downloads</a> · <a href="#why-makerdock">Why MakerDock?</a> · <a href="#coming-next">Roadmap</a> · <a href="Docs/development.md">Build from source</a></p>
 <p align="center">macOS 13+ · Apple Silicon & Intel · Free and open source · MIT</p>
@@ -12,46 +12,27 @@
 
 You find a great model, download its 3MF, and open it in Studio. A week later, you download it again because you cannot remember where you saved it. Your Downloads folder keeps growing. Finder cannot tell you which plate is inside, how long the print might take, or whether you already printed it.
 
-**MakerDock gives your downloaded models a home, and your finished prints a history.** Browse previews instead of filenames, reopen the file you already have, and keep the result alongside the model. It works beside the official Bambu Studio; no custom slicer is required.
-
-## From a folder full of files to a useful library
-
-| The everyday frustration | What MakerDock does |
-| --- | --- |
-| “Where did I save that model?” | A visual grid and compact list, with search, categories, tags, and favorites. |
-| “Did I download this already?” | Consolidates byte-identical imports using file hashes, while keeping track of their source locations. Different profiles remain separate. |
-| “What is on all these plates?” | Shows every available plate preview in a list. Click one to enlarge it. |
-| “How long will it take?” | Reads stored 3MF estimates. Existing saved MakerWorld estimates take priority; optional local calculations use your selected printer in installed Bambu Studio. |
-| “Have I actually printed this?” | Completed and not-yet-completed views, with time, filament, and notes for each recorded print. |
-| “How do I clean up fifty files?” | Select multiple models in grid or list view to categorize, favorite, mark complete, move to Trash, or restore. |
+MakerDock keeps those files in a searchable library with categories, tags, and favorites. Identical imports are merged, while different profiles stay separate. Reopen a stored model in the official Bambu Studio, then record the print when it finishes. Studio edits a working copy, preserving the archived original.
 
 ### See every plate
 
-Inspect the plates together instead of switching a dropdown one by one. Enlarge saved previews to check the contents before opening the project in Studio.
+Browse all saved plate previews together and click one to enlarge it. Cards show stored 3MF times, with saved MakerWorld estimates taking priority when available. You can attach the original model and profile links too.
 
 ![Enlarged plate preview](Docs/screenshots/en/plates.png)
 
-### Record a print without filling everything out again
+### Record completed prints
 
-Mark a model complete, check the suggested duration, and save. The time is prefilled from the available estimate and remains editable. Record filament type, color, and grams when available, then add a note for next time. Completed archives move into a dedicated folder; the dialog lets you review the applicable file move.
+Mark a model complete and save the prefilled duration, or adjust it. Add filament type, color, grams, and a note. The completion dialog also shows where the archived file will move. Each print has its own record.
 
 ![Print completion with separate duration, filament, and notes](Docs/screenshots/en/print-record.png)
 
 ### Organize a whole batch
 
-Enter selection mode and pick several cards. File a batch into a category, mark it complete, or move it to recoverable Trash. Bulk completion keeps each model's own duration and filament suggestions, with an optional shared note.
+Select several models in grid or list view to categorize, favorite, mark complete, or move to Trash. Restore them with their notes and records intact. Bulk completion keeps each model's own time and filament suggestions; you can add a shared note.
 
 ![Multiple models selected for batch organization](Docs/screenshots/en/selection.png)
 
-## Also included
-
-- **Folder watching and drag and drop.** Import 3MF files individually or scan the folders you choose.
-- **Protected archived copies.** Studio opens a separate working copy, so editing does not overwrite MakerDock's stored original.
-- **Source links beside the file.** Attach MakerWorld model and print-profile pages; open them in your browser. Previously saved web metadata stays with the library.
-- **Your printer settings.** Select a printer, nozzle, and print quality, or import the current selection from official Bambu Studio. Compatible local calculations are cached.
-- **Recoverable organization.** Trash preserves categories, notes, and print records for restoration. Deleting a library entry does not delete an external original.
-- **Four interface languages.** English, Korean, Japanese, and Simplified Chinese, selectable in Settings.
-- **Local storage.** No MakerDock account, analytics, or cloud upload is required for the library.
+Your library stays on your Mac, with no MakerDock account or analytics. The app supports English, Korean, Japanese, and Simplified Chinese, plus system, light, and dark appearance.
 
 ## Get started
 
@@ -64,20 +45,19 @@ Bambu Studio is optional for library browsing and manual records. It is required
 
 ## What an estimate means
 
-An unsliced 3MF may contain geometry and settings without a saved print time. Choosing a printer alone cannot produce an accurate duration: slicing is required. MakerDock can ask a compatible installed Bambu Studio to calculate it, using copies and isolated temporary settings. Review the final setup in Studio before printing.
+An unsliced 3MF may have no saved time. MakerDock can request a calculation from a compatible installed Bambu Studio using your chosen printer, nozzle, and quality. You can also import the current printer selection from Studio. Slicing is still required; selecting a printer alone does not produce an estimate.
 
 Completion is **recorded by you**. MakerDock does not automatically detect a finished printer job, read live AMS spool inventory, or measure actual filament consumption. Prefilled estimates and filament values should be adjusted if your result differs.
 
 ## Coming next
 
-- **Chrome companion extension — coming soon.** A planned browser-to-library handoff for model/profile context and reuse of previously stored downloads.
-- **Embedded MakerWorld capture — experimental, not enabled in the public DMG.** The development source includes work on browsing, download capture, and profile reuse. Public distribution of that integration awaits clarification of the service's permitted use.
+A **Chrome companion extension is coming soon**, to connect model and profile information with files already in your library.
 
-The current public release focuses on local files. It does not intercept MakerWorld downloads or register itself as Bambu Studio's URL handler. Open-source licensing does not grant rights to third-party services or models. See [integration status](Docs/integration-status.md).
+Embedded MakerWorld browsing and download capture are experimental and disabled in the public DMG while the service's permitted use is clarified. This release manages local files and opens source links in your browser. See [integration status](Docs/integration-status.md).
 
 ## Development and license
 
-Built with **SwiftUI, AppKit, and a small Swift 3MF library**. ZIPFoundation handles ZIP archives. Production and development builds have separate identities and storage; development builds show a DEV icon badge.
+Built with SwiftUI and AppKit. ZIPFoundation handles 3MF archives.
 
 See [development and tests](Docs/development.md), [privacy](PRIVACY.md), [contributing](CONTRIBUTING.md), and [third-party notices](THIRD_PARTY_NOTICES.md).
 
