@@ -37,7 +37,7 @@ extension LibraryViewModel {
                     return hasher.finalize().map { String(format: "%02x", $0) }.joined()
                 }.value
                 guard actualHash == expectedHash.lowercased() else { throw ShelfError.message(L("inbox.hashMismatch")) }
-                let result = try await repository.importFile(at: url, expectedSHA256: expectedHash)
+                let result = try await repository.importFile(at: url, expectedSHA256: expectedHash, restoreTrashed: false)
                 let formatter = ISO8601DateFormatter()
                 let date = formatter.date(from: event.created_at) ?? result.item.importedAt
                 try await repository.appendRun(itemID: result.item.id, run: PrintRun(id: event.event_id, date: date, status: event.submission_state, source: "bambu_studio_patch", note: event.project_name))

@@ -17,8 +17,10 @@ struct ContentView: View {
                 HSplitView {
                     library.frame(minWidth: Design.cardMin * 2)
                     if let item = model.selected {
-                        ItemInspector(model: model, item: item).id(item.id)
-                            .frame(minWidth: Design.inspector, idealWidth: Design.inspector, maxWidth: Design.inspector + Design.hero)
+                        Group {
+                            if item.isTrashed { TrashInspector(model: model, item: item) }
+                            else { ItemInspector(model: model, item: item).id(item.id) }
+                        }.frame(minWidth: Design.inspector, idealWidth: Design.inspector, maxWidth: Design.inspector + Design.hero)
                     }
                 }
             }
@@ -29,12 +31,22 @@ struct ContentView: View {
                 if model.filter != .makerWorld {
                     Button { model.chooseFolder() } label: { Label(L("import.folder"), systemImage: "folder.badge.plus") }.disabled(model.isWorking)
                     Button { model.chooseFiles() } label: { Label(L("import.files"), systemImage: "plus") }.disabled(model.isWorking)
+                    if let item = model.selected {
+                        if item.isTrashed {
+                            Button { Task { await model.restore(item.id) } } label: { Label("복원", systemImage: "arrow.uturn.backward") }.disabled(model.isWorking)
+                        } else {
+                            CategoryMenu(model: model, item: item)
+                            Button(role: .destructive) { Task { await model.trash(item) } } label: { Label("휴지통으로 이동", systemImage: "trash") }.disabled(model.isWorking)
+                        }
+                    }
                     Button { Task { await model.refresh() } } label: { Label(L("refresh"), systemImage: "arrow.clockwise") }.disabled(model.isWorking)
                 }
                 Button { model.showSettings = true } label: { Label(L("settings"), systemImage: "gearshape") }
             }
         }
         .sheet(isPresented: $model.showSettings) { SettingsView(model: model) }
+        .sheet(item: $model.categoryEditor) { request in CategoryEditorSheet(model: model, request: request) }
+        .onChange(of: model.filter) { _ in model.syncSelection() }
         .sheet(item: $recordItem) { item in PrintRecordSheet(model: model, item: item) }
         .onChange(of: model.browserRequest) { request in
             if let request { browser.start(model: model, location: request) }
@@ -77,6 +89,23 @@ struct ContentView: View {
                     sideRow(.unprinted, icon: "tray", count: model.items.count - model.printedCount)
                     sideRow(.duplicates, icon: "square.on.square", count: model.items.filter { model.copyCount($0) > 1 }.count)
                 }
+                Section {
+                    sideRow(.uncategorized, icon: "tray", count: model.items.filter { $0.categoryID == nil }.count)
+                    ForEach(model.categories) { category in
+                        HStack {
+                            Label(category.name, systemImage: "folder")
+                            Spacer()
+                            Text("\(model.items.filter { $0.categoryID == category.id }.count)").font(Design.caption).foregroundStyle(Design.secondary)
+                        }.tag(ShelfFilter.category(category.id)).padding(.vertical, Design.tiny)
+                            .contextMenu {
+                                Button("이름 변경…") { model.categoryEditor = CategoryEditRequest(category: category) }
+                                Button("분류 삭제 · 모델 유지", role: .destructive) { Task { await model.deleteCategory(category) } }
+                            }
+                    }
+                    Button { model.categoryEditor = CategoryEditRequest() } label: { Label("새 분류", systemImage: "folder.badge.plus") }
+                        .buttonStyle(.plain).foregroundStyle(Design.accent)
+                } header: { Text("분류") }
+                Section { sideRow(.trash, icon: "trash", count: model.trashedItems.count) }
                 Section(L("tags")) {
                     if model.allTags.isEmpty { Text(L("tags.empty")).font(Design.caption).foregroundStyle(Design.secondary) }
                     ForEach(model.allTags, id: \.self) { tag in sideRow(.tag(tag), icon: "tag", count: model.items.filter { $0.tags.contains(tag) }.count) }
@@ -101,7 +130,7 @@ struct ContentView: View {
             VStack(alignment: .leading, spacing: Design.regular) {
                 HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: Design.small) {
-                        Text(model.filter.title).font(Design.title)
+                        Text(model.filterTitle).font(Design.title)
                         Text(String(format: L("library.count"), model.visibleItems.count)).font(Design.body).foregroundStyle(Design.secondary)
                     }
                     Spacer()
@@ -115,6 +144,10 @@ struct ContentView: View {
                         Image(systemName: "list.bullet").tag(true)
                     }.pickerStyle(.segmented).labelsHidden().frame(width: Design.hero + Design.large)
                 }
+                if model.filter == .trash {
+                    Text("PlateShelf 보관 파일을 휴지통에 보관합니다. 복원하면 분류·메모·출력 기록도 돌아옵니다. 외부 원본은 유지됩니다.")
+                        .font(Design.caption).foregroundStyle(Design.secondary)
+                }
                 HStack(spacing: Design.small) {
                     Image(systemName: "magnifyingglass").foregroundStyle(Design.secondary)
                     TextField(L("search.placeholder"), text: $model.search).textFieldStyle(.plain)
@@ -125,10 +158,10 @@ struct ContentView: View {
             if model.visibleItems.isEmpty {
                 Spacer()
                 VStack(spacing: Design.regular) {
-                    Image(systemName: model.items.isEmpty ? "shippingbox" : "magnifyingglass").font(.system(size: Design.jumbo)).foregroundStyle(Design.secondary)
-                    Text(model.items.isEmpty ? L("empty.title") : L("search.empty")).font(Design.heading)
-                    Text(model.items.isEmpty ? L("empty.description") : L("search.retry")).multilineTextAlignment(.center).foregroundStyle(Design.secondary)
-                    if model.items.isEmpty { Button(L("import.folder")) { model.chooseFolder() }.buttonStyle(.borderedProminent).disabled(model.isWorking) }
+                    Image(systemName: model.filter == .trash ? "trash" : model.items.isEmpty ? "shippingbox" : "magnifyingglass").font(.system(size: Design.jumbo)).foregroundStyle(Design.secondary)
+                    Text(model.filter == .trash && model.search.isEmpty ? "휴지통이 비어 있습니다" : model.items.isEmpty ? L("empty.title") : L("search.empty")).font(Design.heading)
+                    Text(model.filter == .trash && model.search.isEmpty ? "삭제한 모델을 여기에서 복원할 수 있습니다." : model.items.isEmpty ? L("empty.description") : L("search.retry")).multilineTextAlignment(.center).foregroundStyle(Design.secondary)
+                    if model.items.isEmpty && model.filter != .trash { Button(L("import.folder")) { model.chooseFolder() }.buttonStyle(.borderedProminent).disabled(model.isWorking) }
                     else { Button(L("filter.reset")) { model.search = ""; model.filter = .all } }
                 }.padding(Design.xlarge)
                 Spacer()
@@ -151,6 +184,9 @@ struct ContentView: View {
                 if model.isWorking { ProgressView().controlSize(.small) }
                 else { Image(systemName: "checkmark.circle").foregroundStyle(Design.accent) }
                 Text(model.statusMessage.isEmpty ? L("status.ready") : model.statusMessage).lineLimit(1)
+                if let id = model.lastTrashedID {
+                    Button("삭제 취소") { Task { await model.restore(id) } }.buttonStyle(.link).disabled(model.isWorking)
+                }
                 Spacer()
                 if model.duplicateCount > 0 { Text(String(format: L("duplicates.merged"), model.duplicateCount)).lineLimit(1) }
             }.font(Design.caption).foregroundStyle(Design.secondary).padding(Design.medium)
@@ -172,10 +208,19 @@ struct ContentView: View {
         }.buttonStyle(.plain).contextMenu { itemMenu(item) }
     }
     @ViewBuilder private func itemMenu(_ item: ShelfItem) -> some View {
+        if item.isTrashed {
+            Button("복원") { Task { await model.restore(item.id) } }.disabled(model.isWorking)
+            Button(L("finder.reveal")) { model.reveal(item) }
+        } else {
+        CategoryMenu(model: model, item: item)
+        Divider()
         Button(L("studio.open")) { model.openInStudio(item) }
         Button(model.isPrinted(item) ? "출력 기록 추가…" : "출력 완료로 표시…") { recordItem = item }.disabled(model.isWorking)
         Button(item.favorite ? L("favorite.remove") : L("favorite.add")) { model.toggleFavorite(item) }
         Button(L("finder.reveal")) { model.reveal(item) }
+        Divider()
+        Button("휴지통으로 이동", role: .destructive) { Task { await model.trash(item) } }.disabled(model.isWorking)
+        }
     }
 }
 

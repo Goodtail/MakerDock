@@ -29,7 +29,7 @@ struct ShelfPreferences: Codable {
     }
 }
 enum ShelfFilter: Hashable {
-    case makerWorld, all, favorites, printed, unprinted, duplicates, tag(String)
+    case makerWorld, all, favorites, printed, unprinted, duplicates, uncategorized, trash, category(String), tag(String)
     var title: String {
         switch self {
         case .makerWorld: return "MakerWorld"
@@ -38,6 +38,9 @@ enum ShelfFilter: Hashable {
         case .printed: return L("filter.printed")
         case .unprinted: return L("filter.unprinted")
         case .duplicates: return L("filter.duplicates")
+        case .uncategorized: return "미분류"
+        case .trash: return "휴지통"
+        case .category: return "분류"
         case .tag(let tag): return tag
         }
     }
@@ -65,6 +68,10 @@ enum ShelfSort: CaseIterable {
 @MainActor
 final class LibraryViewModel: ObservableObject {
     @Published var items: [ShelfItem] = []
+    @Published var trashedItems: [ShelfItem] = []
+    @Published var categories: [LibraryCategory] = []
+    @Published var categoryEditor: CategoryEditRequest?
+    @Published var lastTrashedID: String?
     @Published var selectionID: String?
     @Published var filter: ShelfFilter = .all
     @Published var search = ""
@@ -118,24 +125,31 @@ final class LibraryViewModel: ObservableObject {
             if preferences.archivePath.isEmpty { preferences.archivePath = rootURL.appendingPathComponent("StudioInbox").path }
         } catch { errorMessage = error.localizedDescription }
     }
-    var selected: ShelfItem? { items.first { $0.id == selectionID } }
+    var selected: ShelfItem? { visibleItems.first { $0.id == selectionID } }
+    var filterTitle: String {
+        if case .category(let id) = filter { return categories.first { $0.id == id }?.name ?? "분류" }
+        return filter.title
+    }
+    func categoryName(_ item: ShelfItem) -> String { categories.first { $0.id == item.categoryID }?.name ?? "미분류" }
     var allTags: [String] { Array(Set(items.flatMap(\.tags))).sorted() }
     func copyCount(_ item: ShelfItem) -> Int { item.sourcePaths.filter { !$0.hasPrefix(rootURL.path + "/") }.count }
     var duplicateCount: Int { items.reduce(0) { $0 + max(0, copyCount($1) - 1) } }
     var printedCount: Int { items.filter(isPrinted).count }
     func isPrinted(_ item: ShelfItem) -> Bool { item.printRuns.contains { $0.status == "completed" } }
     var visibleItems: [ShelfItem] {
-        items.filter { item in
+        (filter == .trash ? trashedItems : items).filter { item in
             let matches: Bool
             switch filter {
-            case .all, .makerWorld: matches = true
+            case .all, .makerWorld, .trash: matches = true
+            case .uncategorized: matches = item.categoryID == nil
+            case .category(let id): matches = item.categoryID == id
             case .favorites: matches = item.favorite
             case .printed: matches = isPrinted(item)
             case .unprinted: matches = !isPrinted(item)
             case .duplicates: matches = copyCount(item) > 1
             case .tag(let tag): matches = item.tags.contains(tag)
             }
-            let text = [item.title, item.filename, item.designer ?? "", item.profileTitle ?? "", item.note, item.tags.joined(separator: " "), item.materials.joined(separator: " ")].joined(separator: " ")
+            let text = [item.title, item.filename, item.designer ?? "", item.profileTitle ?? "", item.note, categoryName(item), item.tags.joined(separator: " "), item.materials.joined(separator: " ")].joined(separator: " ")
             return matches && (search.isEmpty || text.localizedStandardContains(search))
         }.sorted(by: sort.precedes)
     }
@@ -163,8 +177,16 @@ final class LibraryViewModel: ObservableObject {
         guard let repository else { return }
         do { try await repository.backfillFileAddedDates() }
         catch { errorMessage = error.localizedDescription }
-        items = await repository.items()
-        if selectionID == nil { selectionID = visibleItems.first?.id }
+        let all = await repository.items(includeTrashed: true)
+        items = all.filter { !$0.isTrashed }; trashedItems = all.filter(\.isTrashed)
+        categories = await repository.categories()
+        if case .category(let id) = filter, !categories.contains(where: { $0.id == id }) { filter = .uncategorized }
+        syncSelection()
+        if let lastTrashedID, !trashedItems.contains(where: { $0.id == lastTrashedID }) { self.lastTrashedID = nil }
+    }
+    func syncSelection() {
+        guard filter != .makerWorld else { return }
+        if !visibleItems.contains(where: { $0.id == selectionID }) { selectionID = visibleItems.first?.id }
     }
     func fileURL(_ item: ShelfItem) -> URL { rootURL.appendingPathComponent(item.filePath) }
     func imageURL(_ item: ShelfItem, plate: PlateRecord? = nil) -> URL? {
@@ -204,7 +226,8 @@ final class LibraryViewModel: ObservableObject {
         for url in urls {
             statusMessage = String(format: L("import.progress"), url.lastPathComponent)
             do {
-                let result = try await repository.importFile(at: url)
+                let result = try await repository.importFile(at: url, restoreTrashed: !isScanning)
+                if result.item.isTrashed { continue }
                 if result.isDuplicate { reused += 1 } else { added += 1 }
                 if urls.count == 1 && !quiet && !isScanning { selectionID = result.item.id }
             } catch { errors.append(url.lastPathComponent + ": " + error.localizedDescription) }
@@ -244,6 +267,49 @@ final class LibraryViewModel: ObservableObject {
         let parsed = Array(Set(tags.split(separator: ",").map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty })).sorted()
         do { try await repository.updateTagsAndNote(id: item.id, tags: parsed, note: note); await reload(); statusMessage = L("saved") }
         catch { errorMessage = error.localizedDescription }
+    }
+    @discardableResult func trash(_ item: ShelfItem) async -> Bool {
+        guard let repository else { return false }
+        await acquireWork(); defer { releaseWork() }
+        do {
+            try await repository.trash(itemID: item.id)
+            lastTrashedID = item.id
+            await reload()
+            statusMessage = "휴지통으로 이동했습니다. 외부 원본 파일은 유지됩니다."
+            return true
+        } catch { errorMessage = error.localizedDescription; return false }
+    }
+    @discardableResult func restore(_ itemID: String) async -> Bool {
+        guard let repository else { return false }
+        await acquireWork(); defer { releaseWork() }
+        do {
+            try await repository.restore(itemID: itemID)
+            await reload()
+            statusMessage = "모델과 분류·메모·출력 기록을 복원했습니다."
+            return true
+        } catch { errorMessage = error.localizedDescription; return false }
+    }
+    @discardableResult func assignCategory(_ item: ShelfItem, categoryID: String?) async -> Bool {
+        guard let repository else { return false }
+        do {
+            try await repository.assignCategory(itemID: item.id, categoryID: categoryID)
+            await reload(); statusMessage = "분류를 변경했습니다."
+            return true
+        } catch { errorMessage = error.localizedDescription; return false }
+    }
+    func saveCategory(_ request: CategoryEditRequest, name: String) async throws {
+        guard let repository else { throw LibraryError.itemNotFound }
+        let category = try await repository.saveCategory(id: request.categoryID, name: name, assigningTo: request.itemID)
+        await reload()
+        if request.itemID == nil { filter = .category(category.id); selectionID = visibleItems.first?.id }
+        statusMessage = "분류를 저장했습니다."
+    }
+    func deleteCategory(_ category: LibraryCategory) async {
+        guard let repository else { return }
+        do {
+            try await repository.deleteCategory(id: category.id)
+            await reload(); statusMessage = "분류를 삭제했습니다. 모델은 미분류에 남아 있습니다."
+        } catch { errorMessage = error.localizedDescription }
     }
     func toggleFavorite(_ item: ShelfItem) {
         Task {

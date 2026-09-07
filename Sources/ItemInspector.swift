@@ -33,6 +33,12 @@ struct ItemInspector: View {
                             .frame(maxWidth: .infinity).padding(.vertical, Design.tiny)
                     }.disabled(model.isWorking)
                 }
+                HStack {
+                    CategoryMenu(model: model, item: item)
+                    Spacer()
+                    Button(role: .destructive) { Task { await model.trash(item) } } label: { Label("삭제", systemImage: "trash") }
+                        .disabled(model.isWorking).help("PlateShelf 휴지통으로 이동 · 외부 원본 유지")
+                }
                 sourceSection
                 Divider()
                 VStack(alignment: .leading, spacing: Design.medium) {
