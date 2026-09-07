@@ -141,6 +141,26 @@ final class LibraryRepositoryTests: XCTestCase {
         XCTAssertNil(second.weightGrams)
     }
 
+    func testGCodeHeaderRecoversMissingTimeWithoutOverridingSliceMetadata() async throws {
+        let file = try fixture(changes: [
+            "Metadata/slice_info.config": Data("<config><header/></config>".utf8),
+            "Metadata/plate_1.gcode": Data("; model printing time: 19m 33s; total estimated time: 26m 54s\nG28\n".utf8),
+            "Metadata/plate_2.gcode": Data("; estimated printing time (normal mode) = 1h 2m 3s\nG28\n".utf8)
+        ])
+        let summary = try ArchivePrintSummary.read(at: file)
+        XCTAssertEqual(summary.plates.map(\.estimatedSeconds), [3723, 1614])
+        let withSlice = try fixture("WithSlice.3mf", changes: ["Metadata/plate_1.gcode": Data("; model printing time: 1m; total estimated time: 2m\n".utf8)])
+        XCTAssertEqual(try ArchivePrintSummary.read(at: withSlice).plates.first { $0.id == "1" }?.estimatedSeconds, 3600)
+    }
+
+    func testGCodeTimeDoesNotInventDurationFromCommandsOrInvalidText() {
+        XCTAssertNil(ThreeMFReader.gcodeHeaderTime("M73 P0 R120\n; model printing time: 15m\n"))
+        XCTAssertNil(ThreeMFReader.gcodeHeaderTime("; total estimated time: -12m"))
+        XCTAssertNil(ThreeMFReader.gcodeHeaderTime("; total estimated time: 0s"))
+        XCTAssertNil(ThreeMFReader.gcodeHeaderTime("; total estimated time: 12m fake"))
+        XCTAssertEqual(ThreeMFReader.gcodeHeaderTime("; total estimated time: 1d 2h 3m 4s"), 93784)
+    }
+
     func testRejectsUnsafeArchiveAndMetadataPathsWithoutWriting() async throws {
         for (number, path) in ["../escape", "/absolute", "Metadata/../../escape", "C:\\escape"].enumerated() {
             let repo = try repository("Library\(number)")

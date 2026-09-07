@@ -35,3 +35,7 @@ All 3MF sources are copied before processing. Core validates ZIP paths, XML, met
 ## Appearance
 
 The library uses a white canvas and cobalt blue (`#2563EB`) actions/selection, with a cool sidebar (`#F7F9FD`) and preview surface (`#F2F5FA`). Light appearance is explicitly applied to the main window and Settings so a system dark appearance does not turn the requested white interface dark. Native typography, layout and actions are unchanged. Named color assets remain the source of truth.
+
+## Print estimates and distribution review
+
+MakerWorld estimates take precedence when available. The inspector also supports per-printer estimates from the installed official Studio CLI using flattened machine/process presets, isolated temporary preferences and file copies. Calculation results are cached separately by file identity and configuration fingerprint. Original archives remain unchanged. See [the current policy and validation report](Docs/app-store-review-2026-09-08.md).

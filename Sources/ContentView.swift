@@ -179,7 +179,7 @@ struct ContentView: View {
                     } else {
                         LazyVGrid(columns: [GridItem(.adaptive(minimum: Design.cardMin, maximum: Design.cardMax), spacing: Design.regular)], spacing: Design.regular) {
                             ForEach(model.visibleItems) { item in
-                                ModelCard(item: item, imageURL: model.imageURL(item), selected: model.selectionID == item.id, printed: model.isPrinted(item)) { model.selectionID = item.id }
+                                ModelCard(item: item, imageURL: model.imageURL(item), selected: model.selectionID == item.id, printed: model.isPrinted(item), estimate: model.displayedEstimate(item)) { model.selectionID = item.id }
                                     .contextMenu { itemMenu(item) }
                             }
                         }.padding(.horizontal, Design.large).padding(.bottom, Design.large)
@@ -208,7 +208,7 @@ struct ContentView: View {
                     Text(item.profileTitle ?? item.filename).font(Design.caption).foregroundStyle(Design.secondary).lineLimit(1)
                 }
                 Spacer()
-                Text(timeText(item.estimatedSeconds)).font(Design.caption)
+                EstimateLabel(estimate: model.displayedEstimate(item))
                 if model.isPrinted(item) { Label("출력 완료", systemImage: "checkmark.circle.fill").foregroundStyle(Design.accent).font(Design.caption) }
                 if item.favorite { Image(systemName: "star.fill").foregroundStyle(Design.accent) }
             }.padding(Design.medium).background(model.selectionID == item.id ? Design.selection : Design.surface, in: RoundedRectangle(cornerRadius: Design.imageRadius))
@@ -258,6 +258,7 @@ struct ModelCard: View {
     let imageURL: URL?
     let selected: Bool
     let printed: Bool
+    let estimate: PrintEstimate?
     let action: () -> Void
     @State private var hover = false
     var body: some View {
@@ -276,7 +277,7 @@ struct ModelCard: View {
                         Spacer(minLength: 0)
                         if printed { Label("출력 완료", systemImage: "checkmark.circle.fill").foregroundStyle(Design.accent).fixedSize() }
                     }.font(Design.caption).foregroundStyle(Design.secondary)
-                    Label(timeText(item.estimatedSeconds), systemImage: "clock").font(Design.caption).foregroundStyle(Design.secondary)
+                    EstimateLabel(estimate: estimate)
                 }.padding(Design.medium)
             }
             .background(selected || hover ? Design.selection : Design.surface)

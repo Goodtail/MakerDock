@@ -23,8 +23,7 @@ struct PlateZoomView: View {
             HStack(spacing: Design.large) {
                 Button { index -= 1 } label: { Label(L("plate.previous"), systemImage: "chevron.left") }.disabled(index == 0).keyboardShortcut(.leftArrow, modifiers: [])
                 Spacer()
-                Text(L("plate.fileEstimate")).foregroundStyle(Design.secondary)
-                Text(timeText(plate?.estimatedSeconds)).monospacedDigit()
+                EstimateLabel(estimate: plate.flatMap { model.displayedEstimate(item, plate: $0) }, missing: "개별 시간 미제공")
                 if let grams = plate?.weightGrams { Text(weightText(grams)).monospacedDigit() }
                 Spacer()
                 Button { index += 1 } label: { Label(L("plate.next"), systemImage: "chevron.right") }.disabled(index + 1 >= item.plates.count).keyboardShortcut(.rightArrow, modifiers: [])

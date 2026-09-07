@@ -50,6 +50,20 @@ public actor LibraryRepository {
         records.filter { includeTrashed || !$0.isTrashed }.sorted { lhs, rhs in lhs.importedAt == rhs.importedAt ? lhs.id < rhs.id : lhs.importedAt > rhs.importedAt }
     }
 
+    public func recoverSavedGCodeTimes() throws {
+        var candidate = records
+        var changed = false
+        for index in candidate.indices where candidate[index].hasGCode && candidate[index].plates.contains(where: { $0.estimatedSeconds == nil }) {
+            guard let parsed = try? ThreeMFReader(url: rootURL.appendingPathComponent(candidate[index].filePath)).parse() else { continue }
+            for p in candidate[index].plates.indices where candidate[index].plates[p].estimatedSeconds == nil {
+                if let value = parsed.plates.first(where: { $0.id == candidate[index].plates[p].id })?.estimatedSeconds {
+                    candidate[index].plates[p].estimatedSeconds = value; changed = true
+                }
+            }
+        }
+        if changed { try commit(candidate) }
+    }
+
     /// Recover the original chronology for libraries created before source dates were recorded.
     public func backfillFileAddedDates() throws {
         var candidate = records
