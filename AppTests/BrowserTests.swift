@@ -51,6 +51,10 @@ final class BrowserTests: XCTestCase {
         await model.importFiles([fixture])
         let item = try XCTUnwrap(model.items.first)
         try await model.saveSource(item, page: "https://makerworld.com/ko/models/123-rack", profile: "https://makerworld.com/ko/models/123-rack#profileId-456")
+        let marked = await model.recordPrint(item, status: "completed", note: "stored reuse after file relocation", moveFiles: true)
+        XCTAssertTrue(marked)
+        let movedItem = try XCTUnwrap(model.items.first)
+        XCTAssertEqual(movedItem.filePath, "Files/Printed/\(item.id).3mf")
         var parts = URLComponents(string: "plateshelf://open")!
         parts.queryItems = [
             .init(name: "url", value: "https://public-cdn.bblmw.com/never-requested.3mf"),
@@ -65,7 +69,7 @@ final class BrowserTests: XCTestCase {
         XCTAssertEqual(model.items.count, 1)
         do { _ = try await model.receiveBrowserDownload(incoming, preferStored: true, forceDownload: true); XCTFail("Explicit latest must reach transport") }
         catch is BrowserTestTransport.NoNetwork {}
-        try FileManager.default.removeItem(at: model.fileURL(item))
+        try FileManager.default.removeItem(at: model.fileURL(movedItem))
         do { _ = try await model.receiveBrowserDownload(incoming, preferStored: true); XCTFail("Missing original must not be reused") }
         catch is BrowserTestTransport.NoNetwork {}
         let after = await transport.requests; XCTAssertEqual(after, 2)

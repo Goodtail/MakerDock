@@ -17,6 +17,21 @@ struct SettingsView: View {
                         Toggle(L("settings.autoScan"), isOn: $model.preferences.automaticScan).onChange(of: model.preferences.automaticScan) { _ in model.savePreferences() }
                     }
                     Divider()
+                    section("출력 완료 파일 정리") {
+                        Picker("기본 이동 위치", selection: $model.preferences.completedMoveMode) {
+                            Text("원본 폴더 안의 출력 완료 폴더").tag("source")
+                            Text("지정한 한 폴더로 모으기").tag("custom")
+                            Text("앱 보관함 안에서만 이동").tag("library")
+                        }.onChange(of: model.preferences.completedMoveMode) { _ in model.savePreferences() }
+                        if model.preferences.completedMoveMode == "custom" {
+                            HStack {
+                                Text(model.preferences.completedFolder.isEmpty ? "완료 폴더를 선택해 주세요" : model.preferences.completedFolder).font(Design.caption).lineLimit(2).textSelection(.enabled)
+                                Spacer(); Button("폴더 선택…") { model.selectCompletedFolder() }
+                            }
+                        }
+                        Text("완료 기록을 저장하기 전에 실제 이동 경로를 확인하고 바꿀 수 있습니다.").font(Design.caption).foregroundStyle(Design.secondary)
+                    }
+                    Divider()
                     section(L("settings.studio")) {
                         HStack { Text(model.preferences.studioPath).lineLimit(1).truncationMode(.middle); Spacer(); Button(L("select")) { model.selectStudio() } }
                         Text(L("settings.workingCopy")).font(Design.caption).foregroundStyle(Design.secondary)

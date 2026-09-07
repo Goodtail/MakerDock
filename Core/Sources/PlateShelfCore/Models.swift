@@ -20,10 +20,13 @@ public struct PrintRun: Codable, Sendable, Identifiable, Hashable {
     public var status: String
     public var source: String
     public var note: String
+    public var movedFrom: String?
+    public var movedTo: String?
 
     public init(id: String = UUID().uuidString, date: Date = Date(), status: String,
-                source: String, note: String = "") {
+                source: String, note: String = "", movedFrom: String? = nil, movedTo: String? = nil) {
         self.id = id; self.date = date; self.status = status; self.source = source; self.note = note
+        self.movedFrom = movedFrom; self.movedTo = movedTo
     }
 }
 
@@ -99,6 +102,7 @@ public enum LibraryError: Error, LocalizedError {
     case sourceChanged
     case libraryChanged
     case invalidSource
+    case fileMove(String)
 
     public var errorDescription: String? {
         switch self {
@@ -113,6 +117,7 @@ public enum LibraryError: Error, LocalizedError {
         case .sourceChanged: return "가져오는 동안 파일이 변경되었습니다. 저장을 완료한 뒤 다시 가져와 주세요."
         case .libraryChanged: return "다른 작업에서 보관함 목록이 변경되었습니다. 기존 목록을 보존했습니다. 앱을 다시 열어 주세요."
         case .invalidSource: return "MakerWorld 모델·프로필 페이지 주소 또는 웹 정보가 올바르지 않습니다. 다운로드 주소는 원본 페이지로 저장할 수 없습니다."
+        case .fileMove(let detail): return detail
         }
     }
 }
