@@ -5,3 +5,11 @@ DerivedData/
 .build/
 .swiftpm/
 *.xcresult
+*.p8
+*.p12
+*.mobileprovision
+*.provisionprofile
+.env
+.env.*
+.notary-*.json
+__pycache__/
