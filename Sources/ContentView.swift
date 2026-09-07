@@ -14,7 +14,7 @@ struct ContentView: View {
             sidebar
                 .navigationSplitViewColumnWidth(min: Design.sidebar, ideal: Design.sidebar)
         } detail: {
-            if model.filter == .makerWorld {
+            if model.filter == .makerWorld && AppIdentity.makerWorldIntegrationEnabled {
                 MakerWorldView(model: model, browser: browser)
             } else {
                 HSplitView {
@@ -87,8 +87,8 @@ struct ContentView: View {
                 }
             }.padding(Design.large)
             List(selection: Binding<ShelfFilter?>(get: { model.filter }, set: { if let value = $0 { model.filter = value } })) {
-                Section(L("탐색")) {
-                    sideRow(.makerWorld, icon: "globe")
+                if AppIdentity.makerWorldIntegrationEnabled {
+                    Section(L("탐색")) { sideRow(.makerWorld, icon: "globe") }
                 }
                 Section(L("sidebar.library")) {
                     sideRow(.all, icon: "square.grid.2x2", count: model.items.count)
@@ -287,7 +287,7 @@ struct ModelCard: View {
                     HStack(spacing: Design.tiny) {
                         Text(item.materials.first ?? L("material.unknown"))
                         Text("·")
-                        Text(String(format: L("plates.count"), item.plates.count))
+                        Text(item.plates.count == 1 ? L("plates.single") : String(format: L("plates.count"), item.plates.count))
                         Spacer(minLength: 0)
                         if printed { Label(L("출력 완료"), systemImage: "checkmark.circle.fill").foregroundStyle(Design.accent).fixedSize() }
                     }.font(Design.caption).foregroundStyle(Design.secondary)

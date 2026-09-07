@@ -21,21 +21,25 @@ trap cleanup EXIT
 mkdir -p "$makerdock_work/stage" "$makerdock_mount"
 ditto "$makerdock_app" "$makerdock_work/stage/MakerDock.app"
 ln -s /Applications "$makerdock_work/stage/Applications"
-cat > "$makerdock_output/설치 안내.txt" <<'EOF'
-MakerDock — 받은 모델부터 출력 기록까지
+cat > "$makerdock_work/stage/Install.txt" <<'EOF'
+MakerDock — Your 3D prints, remembered.
 
-MakerDock.app을 Applications 폴더로 옮겨 실행하세요.
-macOS 13 이상 · Apple Silicon / Intel 공용
+Drag MakerDock.app into Applications, then open it.
+Requires macOS 13 or later. Universal app for Apple Silicon and Intel.
 
-PlateShelf에서 이름이 바뀌었습니다. 기존 앱을 종료한 뒤 MakerDock을 실행하면
-같은 환경의 보관함·분류·메모·출력 기록·휴지통과 웹 세션을 이어받습니다.
-기존 데이터는 백업으로 유지되며 이미 만든 MakerDock 보관함은 덮어쓰지 않습니다.
-이전 plateshelf 링크도 계속 지원합니다. 개발용은 MakerDock-dev입니다.
+Import your 3MF files or choose folders to watch. Open stored models in the
+separately installed official Bambu Studio. Track completed prints, time,
+filament, and notes. English, Korean, Japanese, and Simplified Chinese included.
 
-개인 Developer ID: CHANWOO KOO (D523TSBMWR)
-이 파일은 서명된 로컬 운영 빌드입니다. Apple 공증·공개 배포는 아직 진행하지 않았습니다.
+This public release manages local files. MakerWorld web automation and the
+Chrome companion extension are not included. Original links open in your browser.
+
+Source, updates, documentation, and license:
+https://github.com/Goodtail/MakerDock
+
+Developer ID: CHANWOO KOO (D523TSBMWR)
 EOF
-cp "$makerdock_output/설치 안내.txt" "$makerdock_work/stage/설치 안내.txt"
+cp "$makerdock_repo/LICENSE" "$makerdock_work/stage/LICENSE.txt"
 makerdock_dmg="$makerdock_output/MakerDock-$makerdock_version-universal.dmg"
 hdiutil create -volname "MakerDock $makerdock_version" -srcfolder "$makerdock_work/stage" -ov -format UDZO -fs HFS+ "$makerdock_dmg"
 codesign --force --sign "$makerdock_identity" --timestamp "$makerdock_dmg"

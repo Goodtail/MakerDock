@@ -40,8 +40,10 @@ final class MakerWorldBrowser: NSObject, ObservableObject, WKNavigationDelegate,
         configuration.websiteDataStore = .default()
         configuration.applicationNameForUserAgent = "MakerDock/" + (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.4.0")
         let content = configuration.userContentController
-        content.add(WeakBrowserMessageHandler(self), name: "plateShelf")
-        for name in ["BrowserShared", "BrowserBridge"] {
+        if AppIdentity.makerWorldIntegrationEnabled {
+            content.add(WeakBrowserMessageHandler(self), name: "plateShelf")
+        }
+        for name in AppIdentity.makerWorldIntegrationEnabled ? ["BrowserShared", "BrowserBridge"] : [] {
             if let url = Bundle.main.url(forResource: name, withExtension: "js"),
                let source = try? String(contentsOf: url, encoding: .utf8) {
                 content.addUserScript(WKUserScript(source: source, injectionTime: .atDocumentStart, forMainFrameOnly: true))
@@ -69,6 +71,7 @@ final class MakerWorldBrowser: NSObject, ObservableObject, WKNavigationDelegate,
         return view
     }
     func start(model: LibraryViewModel, location: BrowserLocation? = nil) {
+        guard AppIdentity.makerWorldIntegrationEnabled else { return }
         self.model = model
         if let location, location.id != lastLocationID {
             lastLocationID = location.id
@@ -82,7 +85,7 @@ final class MakerWorldBrowser: NSObject, ObservableObject, WKNavigationDelegate,
         load(MakerWorldBrowserPolicy.isMakerWorld(restored) ? restored! : MakerWorldBrowserPolicy.home)
     }
     func load(_ url: URL) {
-        guard MakerWorldBrowserPolicy.isMakerWorld(url) else { return }
+        guard AppIdentity.makerWorldIntegrationEnabled, MakerWorldBrowserPolicy.isMakerWorld(url) else { return }
         pageError = nil
         webView.load(URLRequest(url: url))
     }

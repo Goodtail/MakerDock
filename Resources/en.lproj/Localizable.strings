@@ -365,3 +365,6 @@
 "휴지통으로 이동" = "Move to Trash";
 "휴지통으로 이동했습니다. 외부 원본 파일은 유지됩니다." = "Moved to Trash. External originals are kept.";
 "휴지통이 비어 있습니다" = "Trash Is Empty";
+
+"integration.unavailable" = "Web download integration is not included in this release. Download the 3MF in your browser, then import it into MakerDock.";
+"plates.single" = "1 plate";

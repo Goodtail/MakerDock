@@ -17,6 +17,8 @@ settings:
     # 하므로 여기 리터럴을 박으면 phase 분기가 깨진다(번들 ID 규칙 [고정]).
     PRODUCT_BUNDLE_IDENTIFIER: $(APP_BUNDLE_ID)
   configs:
+    Debug:
+      SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) DEBUG MAKERWORLD_INTEGRATION"
     Release:
       ENABLE_HARDENED_RUNTIME: YES
       ONLY_ACTIVE_ARCH: NO
@@ -33,6 +35,8 @@ targets:
       - Resources
       - path: licenses
         type: folder
+        buildPhase: resources
+      - path: LICENSE
         buildPhase: resources
       - path: THIRD_PARTY_NOTICES.md
         buildPhase: resources
@@ -60,7 +64,7 @@ targets:
         LSApplicationCategoryType: public.app-category.utilities
         CFBundleURLTypes:
           - CFBundleURLName: MakerDock model links
-            CFBundleURLSchemes: [makerdock, plateshelf, bambustudioopen, bambustudio]
+            CFBundleURLSchemes: [makerdock, plateshelf]
         CFBundleDocumentTypes:
           - CFBundleTypeName: 3MF project
             CFBundleTypeRole: Viewer
