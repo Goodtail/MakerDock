@@ -105,8 +105,11 @@ final class LibraryViewModel: ObservableObject {
             let prefs = rootURL.appendingPathComponent("preferences.json")
             if FileManager.default.fileExists(atPath: prefs.path) { preferences = try JSONDecoder().decode(ShelfPreferences.self, from: Data(contentsOf: prefs)) }
             else if rootOverride == nil {
-                let candidates = [Bundle.main.bundleURL.deletingLastPathComponent().appendingPathComponent("PlateShelfStudio-dev.app"), URL(fileURLWithPath: "/Applications/PlateShelfStudio-dev.app")]
-                if let fork = candidates.first(where: { Bundle(url: $0)?.bundleIdentifier == "com.ninepiece.app.mac.plateshelfstudio.dev" }) { preferences.studioPath = fork.path }
+                let isDevelopment = Bundle.main.bundleIdentifier?.hasSuffix(".dev") == true
+                let studioName = isDevelopment ? "PlateShelfStudio-dev.app" : "PlateShelfStudio.app"
+                let studioIdentifier = "com.ninepiece.app.mac.plateshelfstudio" + (isDevelopment ? ".dev" : "")
+                let candidates = [Bundle.main.bundleURL.deletingLastPathComponent().appendingPathComponent(studioName), URL(fileURLWithPath: "/Applications/" + studioName)]
+                if let fork = candidates.first(where: { Bundle(url: $0)?.bundleIdentifier == studioIdentifier }) { preferences.studioPath = fork.path }
             }
             if preferences.archivePath.isEmpty { preferences.archivePath = rootURL.appendingPathComponent("StudioInbox").path }
         } catch { errorMessage = error.localizedDescription }

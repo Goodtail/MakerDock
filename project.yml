@@ -16,6 +16,10 @@ settings:
     # 번들 ID 는 xcconfig 의 APP_BUNDLE_ID 가 정한다 — dev 는 .dev 접미사가 붙어야
     # 하므로 여기 리터럴을 박으면 phase 분기가 깨진다(번들 ID 규칙 [고정]).
     PRODUCT_BUNDLE_IDENTIFIER: $(APP_BUNDLE_ID)
+  configs:
+    Release:
+      ENABLE_HARDENED_RUNTIME: YES
+      ONLY_ACTIVE_ARCH: NO
 configs:
   Debug: debug
   Release: release
@@ -23,7 +27,15 @@ targets:
   plateshelf-desktop:
     type: application
     platform: macOS
-    sources: [Sources, Assets.xcassets, Resources]
+    sources:
+      - Sources
+      - Assets.xcassets
+      - Resources
+      - path: licenses
+        type: folder
+        buildPhase: resources
+      - path: THIRD_PARTY_NOTICES.md
+        buildPhase: resources
     dependencies:
       - package: PlateShelfCore
     settings:
@@ -45,6 +57,7 @@ targets:
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         LSMinimumSystemVersion: "13.0"
+        LSApplicationCategoryType: public.app-category.utilities
         CFBundleURLTypes:
           - CFBundleURLName: PlateShelf model links
             CFBundleURLSchemes: [plateshelf, bambustudioopen, bambustudio]
