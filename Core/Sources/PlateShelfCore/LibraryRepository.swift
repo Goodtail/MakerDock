@@ -4,6 +4,7 @@ import CryptoKit
 public actor LibraryRepository {
     public nonisolated let rootURL: URL
     private var records: [LibraryItem]
+    private var categoryRecords: [LibraryCategory]
     private var lastIndexData: Data?
     private let fileManager = FileManager.default
     private var indexURL: URL { rootURL.appendingPathComponent("index.json") }
@@ -11,6 +12,7 @@ public actor LibraryRepository {
     private struct Index: Codable {
         var schemaVersion: Int = 1
         var items: [LibraryItem]
+        var categories: [LibraryCategory]?
     }
 
     public init(rootURL: URL) throws {
@@ -22,9 +24,9 @@ public actor LibraryRepository {
                   (values.fileSize ?? Int.max) <= 64 * 1_024 * 1_024 else { throw LibraryError.corruptIndex }
             let data = try Data(contentsOf: indexURL)
             guard let index = try? Self.decoder().decode(Index.self, from: data), index.schemaVersion == 1,
-                  Self.valid(index.items) else { throw LibraryError.corruptIndex }
-            self.records = index.items; self.lastIndexData = data
-        } else { self.records = []; self.lastIndexData = nil }
+                  Self.valid(index.items), Self.validCategories(index.categories ?? [], items: index.items) else { throw LibraryError.corruptIndex }
+            self.records = index.items; self.categoryRecords = index.categories ?? []; self.lastIndexData = data
+        } else { self.records = []; self.categoryRecords = []; self.lastIndexData = nil }
         try FileManager.default.createDirectory(at: self.rootURL, withIntermediateDirectories: true)
         for directory in ["Files", "Previews", ".staging"] {
             let url = self.rootURL.appendingPathComponent(directory, isDirectory: true)
@@ -33,16 +35,19 @@ public actor LibraryRepository {
                 guard values.isDirectory == true, values.isSymbolicLink != true else { throw LibraryError.unsafePath(directory) }
             } else { try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true) }
         }
-        let printed = self.rootURL.appendingPathComponent("Files/Printed")
-        if FileManager.default.fileExists(atPath: printed.path) {
-            let values = try printed.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey])
-            guard values.isDirectory == true, values.isSymbolicLink != true else { throw LibraryError.unsafePath("Files/Printed") }
+        for directory in ["Files/Printed", "Files/Trash"] {
+            let url = self.rootURL.appendingPathComponent(directory)
+            if FileManager.default.fileExists(atPath: url.path) {
+                let values = try url.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey])
+                guard values.isDirectory == true, values.isSymbolicLink != true else { throw LibraryError.unsafePath(directory) }
+            }
         }
+        try Self.recoverArchiveMove(root: self.rootURL, records: self.records)
         try Self.recoverPrintMove(root: self.rootURL, records: self.records)
     }
 
-    public func items() -> [LibraryItem] {
-        records.sorted { lhs, rhs in lhs.importedAt == rhs.importedAt ? lhs.id < rhs.id : lhs.importedAt > rhs.importedAt }
+    public func items(includeTrashed: Bool = false) -> [LibraryItem] {
+        records.filter { includeTrashed || !$0.isTrashed }.sorted { lhs, rhs in lhs.importedAt == rhs.importedAt ? lhs.id < rhs.id : lhs.importedAt > rhs.importedAt }
     }
 
     /// Recover the original chronology for libraries created before source dates were recorded.
@@ -60,7 +65,7 @@ public actor LibraryRepository {
         if changed { try commit(candidate) }
     }
 
-    public func importFile(at source: URL, expectedSHA256: String? = nil) throws -> ImportResult {
+    public func importFile(at source: URL, expectedSHA256: String? = nil, restoreTrashed: Bool = true) throws -> ImportResult {
         let expectedHash = expectedSHA256?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         if let expectedHash {
             guard expectedHash.utf8.count == 64,
@@ -88,6 +93,11 @@ public actor LibraryRepository {
         // Verify the independent staged copy before dedup metadata, files, or the index can change.
         if let expectedHash, id != expectedHash {
             throw LibraryError.invalidArchive("파일 확인값이 기록과 일치하지 않습니다")
+        }
+        if let deleted = records.first(where: { $0.id == id && $0.isTrashed }) {
+            // Background scans must never resurrect a deliberately removed model.
+            guard restoreTrashed else { return ImportResult(item: deleted, isDuplicate: true) }
+            try restore(itemID: id)
         }
         let archiveRelative = records.first(where: { $0.id == id })?.filePath ?? "Files/\(id).3mf"
         let finalArchive = rootURL.appendingPathComponent(archiveRelative)
@@ -191,6 +201,128 @@ public actor LibraryRepository {
         try commit(candidate)
     }
 
+    public func categories() -> [LibraryCategory] {
+        categoryRecords.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+    }
+
+    @discardableResult public func saveCategory(id: String? = nil, name: String, assigningTo itemID: String? = nil) throws -> LibraryCategory {
+        let name = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty, name.count <= 80, !name.contains("\n"), !name.contains("\0") else {
+            throw LibraryError.fileMove("분류 이름은 1~80자로 입력해 주세요.")
+        }
+        guard !categoryRecords.contains(where: { $0.id != id && $0.name.compare(name, options: [.caseInsensitive, .diacriticInsensitive]) == .orderedSame }) else {
+            throw LibraryError.fileMove("같은 이름의 분류가 이미 있습니다.")
+        }
+        var categories = categoryRecords
+        let category: LibraryCategory
+        if let id {
+            guard let index = categories.firstIndex(where: { $0.id == id }) else { throw LibraryError.itemNotFound }
+            categories[index].name = name; category = categories[index]
+        } else {
+            category = LibraryCategory(name: name); categories.append(category)
+        }
+        var candidate = records
+        if let itemID {
+            guard let index = candidate.firstIndex(where: { $0.id == itemID && !$0.isTrashed }) else { throw LibraryError.itemNotFound }
+            candidate[index].categoryID = category.id
+        }
+        try commit(candidate, categories: categories)
+        return category
+    }
+
+    public func assignCategory(itemID: String, categoryID: String?) throws {
+        guard let offset = records.firstIndex(where: { $0.id == itemID && !$0.isTrashed }),
+              categoryID == nil || categoryRecords.contains(where: { $0.id == categoryID }) else { throw LibraryError.itemNotFound }
+        var candidate = records; candidate[offset].categoryID = categoryID
+        try commit(candidate)
+    }
+
+    public func deleteCategory(id: String) throws {
+        guard categoryRecords.contains(where: { $0.id == id }) else { throw LibraryError.itemNotFound }
+        var candidate = records
+        for index in candidate.indices where candidate[index].categoryID == id { candidate[index].categoryID = nil }
+        try commit(candidate, categories: categoryRecords.filter { $0.id != id })
+    }
+
+    /// Recoverable app trash: only our immutable archive moves. External sources stay untouched.
+    public func trash(itemID: String) throws {
+        try Self.recoverPrintMove(root: rootURL, records: records)
+        try Self.recoverArchiveMove(root: rootURL, records: records)
+        guard let index = records.firstIndex(where: { $0.id == itemID }) else { throw LibraryError.itemNotFound }
+        guard !records[index].isTrashed else { return }
+        var candidate = records
+        candidate[index].trashedFromPath = records[index].filePath
+        candidate[index].filePath = "Files/Trash/\(itemID).3mf"
+        candidate[index].deletedAt = Date()
+        try moveArchive(index: index, candidate: candidate)
+    }
+
+    public func restore(itemID: String) throws {
+        try Self.recoverArchiveMove(root: rootURL, records: records)
+        guard let index = records.firstIndex(where: { $0.id == itemID }) else { throw LibraryError.itemNotFound }
+        guard records[index].isTrashed, let previous = records[index].trashedFromPath else { return }
+        var candidate = records
+        candidate[index].filePath = previous
+        candidate[index].deletedAt = nil; candidate[index].trashedFromPath = nil
+        try moveArchive(index: index, candidate: candidate)
+    }
+
+    private struct ArchiveMoveJournal: Codable {
+        let itemID: String
+        let from: String
+        let to: String
+    }
+    private func moveArchive(index: Int, candidate: [LibraryItem]) throws {
+        let before = records[index], after = candidate[index]
+        let from = rootURL.appendingPathComponent(before.filePath), to = rootURL.appendingPathComponent(after.filePath)
+        try Self.verifyMoveFile(from, id: before.id)
+        try fileManager.createDirectory(at: to.deletingLastPathComponent(), withIntermediateDirectories: true)
+        let values = try to.deletingLastPathComponent().resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey])
+        guard values.isDirectory == true, values.isSymbolicLink != true else { throw LibraryError.unsafePath(after.filePath) }
+        guard !fileManager.fileExists(atPath: to.path) else { throw LibraryError.fileMove("이동 위치에 파일이 이미 있습니다. 기존 파일을 보존했습니다.") }
+        let journal = ArchiveMoveJournal(itemID: before.id, from: before.filePath, to: after.filePath)
+        let journalURL = rootURL.appendingPathComponent(".archive-move.json")
+        try JSONEncoder().encode(journal).write(to: journalURL, options: .atomic)
+        do {
+            try fileManager.moveItem(at: from, to: to)
+            try commit(candidate)
+        } catch {
+            try Self.recoverArchiveMove(root: rootURL, records: records)
+            throw error
+        }
+        try? fileManager.removeItem(at: journalURL)
+    }
+    private static func recoverArchiveMove(root: URL, records: [LibraryItem]) throws {
+        let manager = FileManager.default, journalURL = root.appendingPathComponent(".archive-move.json")
+        guard manager.fileExists(atPath: journalURL.path) else { return }
+        let values = try journalURL.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey, .fileSizeKey])
+        guard values.isRegularFile == true, values.isSymbolicLink != true, (values.fileSize ?? .max) <= 65_536,
+              let journal = try? JSONDecoder().decode(ArchiveMoveJournal.self, from: Data(contentsOf: journalURL)),
+              let item = records.first(where: { $0.id == journal.itemID }) else { throw LibraryError.corruptIndex }
+        let active = ["Files/\(item.id).3mf", "Files/Printed/\(item.id).3mf"], trash = "Files/Trash/\(item.id).3mf"
+        guard (active.contains(journal.from) && journal.to == trash) || (journal.from == trash && active.contains(journal.to)),
+              item.filePath == journal.from || item.filePath == journal.to else { throw LibraryError.corruptIndex }
+        for path in [journal.from, journal.to] {
+            let directory = root.appendingPathComponent(path).deletingLastPathComponent()
+            let v = try directory.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey])
+            guard v.isDirectory == true, v.isSymbolicLink != true else { throw LibraryError.unsafePath(path) }
+        }
+        if item.filePath == journal.from {
+            let from = root.appendingPathComponent(journal.from), to = root.appendingPathComponent(journal.to)
+            if !manager.fileExists(atPath: from.path) {
+                try verifyMoveFile(to, id: item.id)
+                try manager.moveItem(at: to, to: from)
+            }
+        }
+        try manager.removeItem(at: journalURL)
+    }
+    private static func validCategories(_ categories: [LibraryCategory], items: [LibraryItem]) -> Bool {
+        let ids = Set(categories.map(\.id))
+        return ids.count == categories.count && categories.allSatisfy {
+            UUID(uuidString: $0.id) != nil && !$0.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && $0.name.count <= 80
+        } && items.allSatisfy { $0.categoryID == nil || ids.contains($0.categoryID!) }
+    }
+
     private struct PrintMove: Codable {
         let from: String
         let to: String
@@ -205,7 +337,7 @@ public actor LibraryRepository {
     /// The journal rolls incomplete moves back after interruption, before the library is used again.
     public func completePrint(itemID: String, note: String, sourceURL: URL? = nil, directoryURL: URL? = nil) throws -> PrintRun {
         try Self.recoverPrintMove(root: rootURL, records: records)
-        guard let offset = records.firstIndex(where: { $0.id == itemID }) else { throw LibraryError.itemNotFound }
+        guard let offset = records.firstIndex(where: { $0.id == itemID && !$0.isTrashed }) else { throw LibraryError.itemNotFound }
         let item = records[offset]
         let archived = rootURL.appendingPathComponent(item.filePath)
         let completedRelative = "Files/Printed/\(item.id).3mf"
@@ -312,7 +444,7 @@ public actor LibraryRepository {
         try manager.removeItem(at: journalURL)
     }
 
-    private func commit(_ candidate: [LibraryItem]) throws {
+    private func commit(_ candidate: [LibraryItem], categories: [LibraryCategory]? = nil) throws {
         // Preserve edits or corruption introduced after this repository opened.
         let existing: Data?
         if fileManager.fileExists(atPath: indexURL.path) {
@@ -325,9 +457,9 @@ public actor LibraryRepository {
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
-        let data = try encoder.encode(Index(items: candidate))
+        let data = try encoder.encode(Index(items: candidate, categories: categories ?? categoryRecords))
         try data.write(to: indexURL, options: .atomic)
-        records = candidate; lastIndexData = data
+        records = candidate; categoryRecords = categories ?? categoryRecords; lastIndexData = data
     }
 
     static func hashFile(_ url: URL) throws -> String {
@@ -352,7 +484,12 @@ public actor LibraryRepository {
         return items.allSatisfy { item in
             guard item.id.count == 64, item.id.allSatisfy({ $0.isASCII && ("0"..."9").contains($0) || ("a"..."f").contains($0) }),
                   seen.insert(item.id).inserted,
-                  ["Files/\(item.id).3mf", "Files/Printed/\(item.id).3mf"].contains(item.filePath) else { return false }
+                  ["Files/\(item.id).3mf", "Files/Printed/\(item.id).3mf", "Files/Trash/\(item.id).3mf"].contains(item.filePath),
+                  item.isTrashed == (item.filePath == "Files/Trash/\(item.id).3mf") else { return false }
+            if item.isTrashed {
+                guard let previous = item.trashedFromPath,
+                      ["Files/\(item.id).3mf", "Files/Printed/\(item.id).3mf"].contains(previous) else { return false }
+            } else if item.trashedFromPath != nil { return false }
             if let source = item.makerWorldSource, (try? source.validated()) != source { return false }
             return ([item.thumbnailPath] + item.plates.map(\.thumbnailPath)).compactMap { $0 }.allSatisfy { path in
                 path.hasPrefix("Previews/") && !path.dropFirst("Previews/".count).contains("/") &&

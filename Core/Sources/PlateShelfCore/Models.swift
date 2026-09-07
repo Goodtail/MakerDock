@@ -30,6 +30,12 @@ public struct PrintRun: Codable, Sendable, Identifiable, Hashable {
     }
 }
 
+public struct LibraryCategory: Codable, Sendable, Identifiable, Hashable {
+    public var id: String
+    public var name: String
+    public init(id: String = UUID().uuidString, name: String) { self.id = id; self.name = name }
+}
+
 public struct LibraryItem: Codable, Sendable, Identifiable, Hashable {
     public var id: String
     public var title: String
@@ -55,6 +61,10 @@ public struct LibraryItem: Codable, Sendable, Identifiable, Hashable {
     public var printRuns: [PrintRun]
     /// Explicit browser provenance. Local archive estimates remain in `plates`.
     public var makerWorldSource: MakerWorldSource?
+    public var categoryID: String?
+    public var deletedAt: Date?
+    public var trashedFromPath: String?
+    public var isTrashed: Bool { deletedAt != nil }
 
     public init(id: String, title: String, filename: String, filePath: String,
                 thumbnailPath: String? = nil, sourcePaths: [String] = [], designer: String? = nil,
