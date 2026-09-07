@@ -101,7 +101,9 @@ struct ItemInspector: View {
             HStack { Text(L("source.title")).font(Design.heading); Spacer(); Button { showSourceEditor = true } label: { Image(systemName: "link.badge.plus") }.buttonStyle(.borderless).help(L("source.edit")) }
             if let source = item.makerWorldSource {
                 Button { model.openSource(item) } label: { Label(L("source.open"), systemImage: "arrow.up.right") }.buttonStyle(.link)
-                if let profile = source.profileURL, let url = URL(string: profile) { Link(L("source.profile"), destination: url) }
+                if let profile = source.profileURL, let url = URL(string: profile) {
+                    Button(L("source.profile")) { model.showMakerWorld(url) }.buttonStyle(.link)
+                }
                 if let title = source.profileTitle, !title.isEmpty { Text(title).font(Design.caption).foregroundStyle(Design.secondary).lineLimit(2) }
                 if source.estimatedSeconds != nil || source.plateCount != nil {
                     HStack {

@@ -183,7 +183,7 @@ enum MakerWorldLinkPolicy {
         let plates: [CapturedWebPlateRecord]?
     }
 
-    private static func parseProvenance(_ items: [URLQueryItem]) throws -> CapturedMakerWorldSource? {
+    static func parseProvenance(_ items: [URLQueryItem]) throws -> CapturedMakerWorldSource? {
         func value(_ name: String) throws -> String? {
             let matches = items.filter { $0.name == name }
             guard matches.count <= 1 else { throw MakerWorldLinkError.invalidLink }

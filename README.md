@@ -1,6 +1,6 @@
 # PlateShelf desktop source
 
-SwiftUI, macOS 13+, local 3MF library. Main usage guide: `../README.md`.
+SwiftUI + embedded WebKit, macOS 13+, MakerWorld browser and local 3MF library. Main usage guide: `../README.md`. Browser contracts and live verification: `../docs/embedded-browser.md`.
 
 ## Build
 
@@ -22,11 +22,12 @@ The app is ad-hoc signed for local execution; Apple portal resources are not req
 ```sh
 (cd Core && swift test)
 zsh LinkTests/run.sh
+node BrowserTests/bridge.cjs
 xcodebuild -scheme plateshelf-desktop -configuration Debug \
   -destination 'platform=macOS' -derivedDataPath /tmp/PlateShelfBuild \
   CODE_SIGN_IDENTITY=- test
 ```
 
-The temporary build location keeps XCTest runtime loads outside protected Documents folders. Tests use their own temporary libraries and never print. App integration tests cover independent working copies, persistent metadata/source links, queued imports, profile-total provenance and submission/actual-completion distinction.
+The temporary build location keeps XCTest runtime loads outside protected Documents folders. Tests use their own temporary libraries and never print. App tests cover independent working copies, persistent metadata/source links, queued imports, profile-total provenance, submission/actual-completion distinction, browser URL/context validation and stored-profile reuse with zero transport requests. The bridge harness exercises the bundled page script, including request-time profile changes and the native WebKit message boundary.
 
 All 3MF sources are copied before processing. Core validates ZIP paths, XML, metadata limits and content hashes. The macOS app maintains user-selected folder bookmarks. Printer credentials are not required or collected by PlateShelf.
