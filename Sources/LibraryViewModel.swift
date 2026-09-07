@@ -445,6 +445,7 @@ final class LibraryViewModel: ObservableObject {
     }
     func showMakerWorld(_ url: URL) {
         guard MakerWorldBrowserPolicy.isMakerWorld(url) else { return }
+        guard AppIdentity.makerWorldIntegrationEnabled else { NSWorkspace.shared.open(url); return }
         browserRequest = BrowserLocation(url: url)
         filter = .makerWorld
     }
@@ -455,6 +456,7 @@ final class LibraryViewModel: ObservableObject {
             .sorted { ($0.makerWorldSource?.capturedAt ?? $0.importedAt) > ($1.makerWorldSource?.capturedAt ?? $1.importedAt) }.first
     }
     func receiveBrowserDownload(_ url: URL, preferStored: Bool, forceDownload: Bool = false) async throws -> BrowserImportResult {
+        guard AppIdentity.makerWorldIntegrationEnabled else { throw ShelfError.message(L("integration.unavailable")) }
         await acquireWork(); defer { releaseWork() }
         let parsed = try MakerWorldLinkPolicy.parse(url)
         if preferStored, !forceDownload, let stored = savedProfile(parsed.provenance?.profileURL) {
@@ -486,6 +488,7 @@ final class LibraryViewModel: ObservableObject {
     }
     func handle(_ url: URL) async {
         if url.isFileURL { await importFiles([url]); return }
+        guard AppIdentity.makerWorldIntegrationEnabled else { errorMessage = L("integration.unavailable"); return }
         await acquireWork(); defer { releaseWork() }
         statusMessage = L("link.resolving")
         do {
@@ -516,6 +519,7 @@ final class LibraryViewModel: ObservableObject {
         if panel.runModal() == .OK, let url = panel.url { preferences.archivePath = url.path; archiveSignatures = [:]; savePreferences(); Task { await scanStudioInbox() } }
     }
     func registerLinks() {
+        guard AppIdentity.makerWorldIntegrationEnabled else { return }
         NSWorkspace.shared.setDefaultApplication(at: Bundle.main.bundleURL, toOpenURLsWithScheme: "bambustudioopen") { [weak self] error in
             Task { @MainActor in if let error { self?.errorMessage = error.localizedDescription } else { self?.statusMessage = L("link.registered") } }
         }

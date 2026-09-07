@@ -63,11 +63,12 @@ struct SettingsView: View {
                         Text(L("settings.workingCopy")).font(Design.caption).foregroundStyle(Design.secondary)
                     }
                     Divider()
-                    section(L("settings.links")) {
+                    if AppIdentity.makerWorldIntegrationEnabled { section(L("settings.links")) {
                         Text(L("settings.linksDescription")).foregroundStyle(Design.secondary)
                         HStack { Button(L("link.register")) { model.registerLinks() }; Button(L("link.restore")) { model.restoreStudioLinks() } }
                     }
                     Divider()
+                    }
                     section(L("settings.storage")) {
                         Text(model.rootURL.path).font(Design.caption).textSelection(.enabled)
                         Button(L("storage.open")) { NSWorkspace.shared.open(model.rootURL) }

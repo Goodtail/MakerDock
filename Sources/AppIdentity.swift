@@ -3,6 +3,14 @@ import PlateShelfCore
 
 enum AppIdentity {
     static let name = "MakerDock"
+    /// Public releases manage local files. Web automation awaits service authorization.
+    static var makerWorldIntegrationEnabled: Bool {
+        #if MAKERWORLD_INTEGRATION
+        true
+        #else
+        false
+        #endif
+    }
     static var isDevelopment: Bool { Bundle.main.bundleIdentifier?.hasSuffix(".dev") == true }
     static var logo: String { isDevelopment ? "BrandIconDev" : "BrandIcon" }
     static var displayName: String { isDevelopment ? "MakerDock-dev" : name }
