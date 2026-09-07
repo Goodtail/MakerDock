@@ -18,7 +18,10 @@ struct PlateShelfApp: App {
                 Button(L("import.folder")) { model.chooseFolder() }.keyboardShortcut("o", modifiers: [.command, .shift])
             }
             CommandGroup(after: .toolbar) {
-                Button(L("refresh")) { Task { await model.refresh() } }.keyboardShortcut("r")
+                Button(L("refresh")) {
+                    if model.filter == .makerWorld { model.browserReloadRequest += 1 }
+                    else { Task { await model.refresh() } }
+                }.keyboardShortcut("r")
             }
         }
         Settings { SettingsView(model: model).tint(Design.accent) }

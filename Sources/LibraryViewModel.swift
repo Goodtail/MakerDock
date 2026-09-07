@@ -25,9 +25,10 @@ struct ShelfPreferences: Codable {
     }
 }
 enum ShelfFilter: Hashable {
-    case all, favorites, printed, unprinted, duplicates, tag(String)
+    case makerWorld, all, favorites, printed, unprinted, duplicates, tag(String)
     var title: String {
         switch self {
+        case .makerWorld: return "MakerWorld"
         case .all: return L("library.title")
         case .favorites: return L("filter.favorites")
         case .printed: return L("filter.printed")
@@ -74,6 +75,8 @@ final class LibraryViewModel: ObservableObject {
     @Published var listMode = false
     @Published var sort: ShelfSort = .recent
     @Published var archiveStatus = ""
+    @Published var browserRequest: BrowserLocation?
+    @Published var browserReloadRequest = 0
     let rootURL: URL
     var repository: LibraryRepository?
     private var linkService: MakerWorldLinkService
@@ -84,7 +87,7 @@ final class LibraryViewModel: ObservableObject {
     var isReadingInbox = false
     private var workWaiters: [CheckedContinuation<Void, Never>] = []
 
-    init(rootOverride: URL? = nil) {
+    init(rootOverride: URL? = nil, linkServiceOverride: MakerWorldLinkService? = nil) {
         let args = ProcessInfo.processInfo.arguments
         if let rootOverride {
             rootURL = rootOverride
@@ -96,7 +99,7 @@ final class LibraryViewModel: ObservableObject {
             rootURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
                 .appendingPathComponent(Bundle.main.bundleIdentifier ?? "com.ninepiece.app.mac.plateshelf.dev")
         }
-        linkService = MakerWorldLinkService(cacheDirectory: rootURL.appendingPathComponent("Downloads"))
+        linkService = linkServiceOverride ?? MakerWorldLinkService(cacheDirectory: rootURL.appendingPathComponent("Downloads"))
         do {
             repository = try LibraryRepository(rootURL: rootURL)
             let prefs = rootURL.appendingPathComponent("preferences.json")
@@ -118,7 +121,7 @@ final class LibraryViewModel: ObservableObject {
         items.filter { item in
             let matches: Bool
             switch filter {
-            case .all: matches = true
+            case .all, .makerWorld: matches = true
             case .favorites: matches = item.favorite
             case .printed: matches = isPrinted(item)
             case .unprinted: matches = !isPrinted(item)
@@ -288,11 +291,45 @@ final class LibraryViewModel: ObservableObject {
     }
     func reveal(_ item: ShelfItem) { NSWorkspace.shared.activateFileViewerSelecting([fileURL(item)]) }
     func openSource(_ item: ShelfItem) {
-        if let source = item.makerWorldSource, let url = URL(string: source.pageURL) { NSWorkspace.shared.open(url); return }
+        if let source = item.makerWorldSource, let url = URL(string: source.pageURL) { showMakerWorld(url); return }
         // Internal model IDs are not public page IDs. Search avoids fabricating a page URL.
         var parts = URLComponents(string: "https://makerworld.com/en/search/models")!
         parts.queryItems = [URLQueryItem(name: "keyword", value: item.title)]
-        if let url = parts.url { NSWorkspace.shared.open(url) }
+        if let url = parts.url { showMakerWorld(url) }
+    }
+    func showMakerWorld(_ url: URL) {
+        guard MakerWorldBrowserPolicy.isMakerWorld(url) else { return }
+        browserRequest = BrowserLocation(url: url)
+        filter = .makerWorld
+    }
+    func showLibraryItem(_ id: String) { filter = .all; search = ""; selectionID = id }
+    func savedProfile(_ profileURL: String?) -> ShelfItem? {
+        guard let key = MakerWorldBrowserPolicy.profileKey(profileURL) else { return nil }
+        return items.filter { MakerWorldBrowserPolicy.profileKey($0.makerWorldSource?.profileURL) == key }
+            .sorted { ($0.makerWorldSource?.capturedAt ?? $0.importedAt) > ($1.makerWorldSource?.capturedAt ?? $1.importedAt) }.first
+    }
+    func receiveBrowserDownload(_ url: URL, preferStored: Bool, forceDownload: Bool = false) async throws -> BrowserImportResult {
+        await acquireWork(); defer { releaseWork() }
+        let parsed = try MakerWorldLinkPolicy.parse(url)
+        if preferStored, !forceDownload, let stored = savedProfile(parsed.provenance?.profileURL) {
+            let original = fileURL(stored)
+            // Reuse only an intact archived file, never a same-name or different-profile guess.
+            let actual = await Task.detached { try? MakerWorldLinkPolicy.fileSHA256(original).hash }.value
+            if actual == stored.id {
+                selectionID = stored.id
+                if parsed.openStudio { openInStudio(stored) }
+                return BrowserImportResult(itemID: stored.id, name: stored.title, usedLibrary: true, openedStudio: parsed.openStudio)
+            }
+        }
+        statusMessage = L("link.resolving")
+        let result = try await linkService.resolve(url, forceDownload: forceDownload)
+        guard let repository else { throw ShelfError.message(L("library.unavailable")) }
+        let imported = try await repository.importFile(at: result.fileURL)
+        if let source = result.source { try await applyCapturedSource(source, itemID: imported.item.id) }
+        await reload(); selectionID = imported.item.id
+        statusMessage = result.reused ? L("link.reused") : L("link.downloaded")
+        if result.openStudio { openInStudio(imported.item) }
+        return BrowserImportResult(itemID: imported.item.id, name: imported.item.title, usedLibrary: false, openedStudio: result.openStudio)
     }
     func saveSource(_ item: ShelfItem, page: String, profile: String) async throws {
         guard let repository else { throw ShelfError.message(L("library.unavailable")) }
@@ -347,4 +384,8 @@ final class LibraryViewModel: ObservableObject {
 enum ShelfError: LocalizedError {
     case message(String)
     var errorDescription: String? { switch self { case .message(let message): return message } }
+}
+struct BrowserLocation: Identifiable, Equatable {
+    let id = UUID()
+    let url: URL
 }

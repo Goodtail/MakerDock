@@ -4,29 +4,40 @@ import UniformTypeIdentifiers
 
 struct ContentView: View {
     @ObservedObject var model: LibraryViewModel
+    @StateObject private var browser = MakerWorldBrowser()
     var body: some View {
         NavigationSplitView {
             sidebar
                 .navigationSplitViewColumnWidth(min: Design.sidebar, ideal: Design.sidebar)
         } detail: {
-            HSplitView {
-                library.frame(minWidth: Design.cardMin * 2)
-                if let item = model.selected {
-                    ItemInspector(model: model, item: item).id(item.id)
-                        .frame(minWidth: Design.inspector, idealWidth: Design.inspector, maxWidth: Design.inspector + Design.hero)
+            if model.filter == .makerWorld {
+                MakerWorldView(model: model, browser: browser)
+            } else {
+                HSplitView {
+                    library.frame(minWidth: Design.cardMin * 2)
+                    if let item = model.selected {
+                        ItemInspector(model: model, item: item).id(item.id)
+                            .frame(minWidth: Design.inspector, idealWidth: Design.inspector, maxWidth: Design.inspector + Design.hero)
+                    }
                 }
             }
         }
         .font(Design.body).foregroundStyle(Design.ink)
         .toolbar {
             ToolbarItemGroup {
-                Button { model.chooseFolder() } label: { Label(L("import.folder"), systemImage: "folder.badge.plus") }.disabled(model.isWorking)
-                Button { model.chooseFiles() } label: { Label(L("import.files"), systemImage: "plus") }.disabled(model.isWorking)
-                Button { Task { await model.refresh() } } label: { Label(L("refresh"), systemImage: "arrow.clockwise") }.disabled(model.isWorking)
+                if model.filter != .makerWorld {
+                    Button { model.chooseFolder() } label: { Label(L("import.folder"), systemImage: "folder.badge.plus") }.disabled(model.isWorking)
+                    Button { model.chooseFiles() } label: { Label(L("import.files"), systemImage: "plus") }.disabled(model.isWorking)
+                    Button { Task { await model.refresh() } } label: { Label(L("refresh"), systemImage: "arrow.clockwise") }.disabled(model.isWorking)
+                }
                 Button { model.showSettings = true } label: { Label(L("settings"), systemImage: "gearshape") }
             }
         }
         .sheet(isPresented: $model.showSettings) { SettingsView(model: model) }
+        .onChange(of: model.browserRequest) { request in
+            if let request { browser.start(model: model, location: request) }
+        }
+        .onChange(of: model.browserReloadRequest) { _ in browser.reload() }
         .alert(L("error.title"), isPresented: Binding(get: { model.errorMessage != nil }, set: { if !$0 { model.errorMessage = nil } })) {
             Button(L("ok"), role: .cancel) { model.errorMessage = nil }
         } message: { Text(model.errorMessage ?? "") }
@@ -54,6 +65,9 @@ struct ContentView: View {
                 }
             }.padding(Design.large)
             List(selection: Binding<ShelfFilter?>(get: { model.filter }, set: { if let value = $0 { model.filter = value } })) {
+                Section("탐색") {
+                    Label("MakerWorld", systemImage: "globe").tag(ShelfFilter.makerWorld).padding(.vertical, Design.tiny)
+                }
                 Section(L("sidebar.library")) {
                     sideRow(.all, icon: "square.grid.2x2", count: model.items.count)
                     sideRow(.favorites, icon: "star", count: model.items.filter(\.favorite).count)
