@@ -3,6 +3,7 @@ import SwiftUI
 func L(_ key: String) -> String { NSLocalizedString(key, comment: "") }
 enum Design {
     static let accent = Color("ShelfAccent"), canvas = Color("ShelfCanvas"), surface = Color("ShelfSurface"), preview = Color("ShelfPreview"), ink = Color("ShelfInk"), secondary = Color("ShelfSecondary"), divider = Color("ShelfDivider"), warning = Color("ShelfWarning")
+    static let sidebarSurface = Color("ShelfSidebar"), selection = Color("ShelfSelection")
     static let title = Font.system(size: 24, weight: .semibold), detailTitle = Font.system(size: 20, weight: .semibold), heading = Font.system(size: 15, weight: .semibold), body = Font.system(size: 13), value = Font.system(size: 13, weight: .medium), caption = Font.system(size: 11)
     static let tiny: CGFloat = 4, small: CGFloat = 8, medium: CGFloat = 12, regular: CGFloat = 16, large: CGFloat = 24, xlarge: CGFloat = 32, jumbo: CGFloat = 48, hero: CGFloat = 64
     static let cardRadius: CGFloat = 12, imageRadius: CGFloat = 8, controlRadius: CGFloat = 6

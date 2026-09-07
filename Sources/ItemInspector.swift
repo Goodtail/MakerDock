@@ -55,7 +55,7 @@ struct ItemInspector: View {
                                 }
                                 Spacer(minLength: 0)
                                 Image(systemName: "arrow.up.left.and.arrow.down.right").font(Design.caption).foregroundStyle(Design.secondary)
-                            }.padding(Design.small).background(Design.canvas, in: RoundedRectangle(cornerRadius: Design.imageRadius))
+                            }.padding(Design.small).background(Design.sidebarSurface, in: RoundedRectangle(cornerRadius: Design.imageRadius))
                         }.buttonStyle(.plain).help(L("plate.zoom"))
                             .accessibilityLabel("\(index + 1). \(plate.name), \(timeText(plate.estimatedSeconds)), \(L("plate.zoom"))")
                     }
