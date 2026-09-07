@@ -56,7 +56,7 @@
   // User-clicked real links are supported too; MakerWorld currently uses programmatic anchor.click().
   document.addEventListener('click', event => {
     const anchor = event.composedPath().find(el => el instanceof HTMLAnchorElement);
-    if (!anchor || anchor.href.startsWith('plateshelf:')) return;
+    if (!anchor || /^(makerdock|plateshelf):/.test(anchor.href)) return;
     const replacement = inspected(anchor);
     if (!replacement) return;
     event.preventDefault();

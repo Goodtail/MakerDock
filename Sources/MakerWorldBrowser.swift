@@ -38,7 +38,7 @@ final class MakerWorldBrowser: NSObject, ObservableObject, WKNavigationDelegate,
     private func makeWebView() -> WKWebView {
         let configuration = WKWebViewConfiguration()
         configuration.websiteDataStore = .default()
-        configuration.applicationNameForUserAgent = "PlateShelf/1.1"
+        configuration.applicationNameForUserAgent = "MakerDock/" + (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.4.0")
         let content = configuration.userContentController
         content.add(WeakBrowserMessageHandler(self), name: "plateShelf")
         for name in ["BrowserShared", "BrowserBridge"] {
@@ -124,7 +124,7 @@ final class MakerWorldBrowser: NSObject, ObservableObject, WKNavigationDelegate,
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
         guard trusted(message.frameInfo), let body = message.body as? [String: Any] else { return }
         if body["kind"] as? String == "handoff", let raw = body["url"] as? String, raw.utf8.count <= 65_536,
-           let url = URL(string: raw), url.scheme == "plateshelf" {
+           let url = URL(string: raw), ["makerdock", "plateshelf"].contains(url.scheme ?? "") {
             receive(url)
         } else if body["kind"] as? String == "context", message.webView === webView {
             if let json = body["json"] as? String {
@@ -165,7 +165,7 @@ final class MakerWorldBrowser: NSObject, ObservableObject, WKNavigationDelegate,
     func webView(_ webView: WKWebView, decidePolicyFor action: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
         guard let url = action.request.url else { decisionHandler(.cancel); return }
         let scheme = url.scheme?.lowercased() ?? ""
-        if ["plateshelf", "bambustudioopen", "bambustudio"].contains(scheme) {
+        if ["makerdock", "plateshelf", "bambustudioopen", "bambustudio"].contains(scheme) {
             decisionHandler(.cancel)
             if trusted(action.sourceFrame) { receive(url) }
             return

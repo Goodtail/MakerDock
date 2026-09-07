@@ -43,7 +43,7 @@ enum MakerWorldBrowserPolicy {
         return try MakerWorldLinkPolicy.parseProvenance(items)
     }
     static func handoff(remote: URL, name: String, page: URL?) throws -> URL {
-        var parts = URLComponents(string: "plateshelf://open")!
+        var parts = URLComponents(string: "makerdock://open")!
         parts.queryItems = [URLQueryItem(name: "url", value: remote.absoluteString),
                             URLQueryItem(name: "name", value: name), URLQueryItem(name: "action", value: "import")]
         // A fallback navigation has no request-time profile evidence; keep only the observed page.

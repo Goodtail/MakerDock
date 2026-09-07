@@ -100,12 +100,12 @@ enum MakerWorldLinkPolicy {
                     requestedName = nil
                 }
             }
-        } else if scheme == "bambustudio" || scheme == "plateshelf" {
+        } else if scheme == "bambustudio" || ["makerdock", "plateshelf"].contains(scheme) {
             guard var parts = URLComponents(url: incoming, resolvingAgainstBaseURL: false),
                   parts.host?.lowercased() == "open", parts.path.isEmpty || parts.path == "/",
                   parts.user == nil, parts.password == nil, parts.port == nil, parts.fragment == nil,
                   validPercentEscapes(incoming.absoluteString) else { throw MakerWorldLinkError.invalidLink }
-            if scheme == "plateshelf" {
+            if ["makerdock", "plateshelf"].contains(scheme) {
                 // Chrome URLSearchParams uses form encoding: + is a space, %2B is a literal +.
                 // Normalize before percent decoding so nested URLs/signatures retain their bytes.
                 parts.percentEncodedQuery = parts.percentEncodedQuery?.replacingOccurrences(of: "+", with: "%20")
@@ -122,7 +122,7 @@ enum MakerWorldLinkPolicy {
                 remoteString = value
                 requestedName = names.first?.value
             }
-            if scheme == "plateshelf" {
+            if ["makerdock", "plateshelf"].contains(scheme) {
                 provenance = try parseProvenance(parts.queryItems ?? [])
                 let actions = (parts.queryItems ?? []).filter { $0.name == "action" }
                 guard actions.count <= 1, actions.isEmpty || ["open", "import"].contains(actions.first?.value ?? "") else { throw MakerWorldLinkError.invalidLink }

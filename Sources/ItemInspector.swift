@@ -37,7 +37,7 @@ struct ItemInspector: View {
                     CategoryMenu(model: model, item: item)
                     Spacer()
                     Button(role: .destructive) { Task { await model.trash(item) } } label: { Label("삭제", systemImage: "trash") }
-                        .disabled(model.isWorking).help("PlateShelf 휴지통으로 이동 · 외부 원본 유지")
+                        .disabled(model.isWorking).help("MakerDock 휴지통으로 이동 · 외부 원본 유지")
                 }
                 sourceSection
                 Divider()

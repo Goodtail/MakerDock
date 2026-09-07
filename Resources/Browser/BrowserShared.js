@@ -1,4 +1,4 @@
-/* Shared pure policy. Native PlateShelf independently validates every field again. */
+/* Shared pure policy. Native MakerDock independently validates every field again. */
 (function (root) {
   "use strict";
   const exactHosts = new Set(["makerworld.com", "www.makerworld.com", "makerworld.com.cn", "www.makerworld.com.cn", "public-cdn.bblmw.com", "public-cdn.bblmw.cn", "makerworld.bblmw.com", "makerworld.bblmw.cn"]);
@@ -99,7 +99,7 @@
     const checked = parseDownload(download.url, download.name);
     const context = pageContext(source?.pageURL);
     if (!checked || !context) return null;
-    const u = new URL("plateshelf://open");
+    const u = new URL("makerdock://open");
     u.searchParams.set("action", download.action === 'open' ? 'open' : 'import');
     u.searchParams.set("url", checked.url); u.searchParams.set("name", checked.name); u.searchParams.set("source", context.pageURL);
     if (source.profileURL) {
