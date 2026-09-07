@@ -44,6 +44,7 @@ struct SettingsView: View {
                             }
                         }
                         Text("완료 기록을 저장하기 전에 실제 이동 경로를 확인하고 바꿀 수 있습니다.").font(Design.caption).foregroundStyle(Design.secondary)
+                        Text("실제 출력이 끝나면 상세 화면에서 완료로 표시해 주세요.").font(Design.caption).foregroundStyle(Design.secondary)
                     }
                     Divider()
                     section(L("settings.studio")) {
@@ -54,13 +55,6 @@ struct SettingsView: View {
                     section(L("settings.links")) {
                         Text(L("settings.linksDescription")).foregroundStyle(Design.secondary)
                         HStack { Button(L("link.register")) { model.registerLinks() }; Button(L("link.restore")) { model.restoreStudioLinks() } }
-                    }
-                    Divider()
-                    section(L("settings.inbox")) {
-                        Text(L("settings.inboxDescription")).foregroundStyle(Design.secondary)
-                        HStack { Text(model.preferences.archivePath).font(Design.caption).lineLimit(2).textSelection(.enabled); Spacer(); Button(L("select")) { model.selectInbox() } }
-                        Text(model.archiveStatus.isEmpty ? L("inbox.waiting") : model.archiveStatus).font(Design.caption).foregroundStyle(Design.secondary)
-                        Text(L("settings.printerPending")).font(Design.caption).foregroundStyle(Design.warning)
                     }
                     Divider()
                     section(L("settings.storage")) {
