@@ -26,6 +26,13 @@ struct ItemInspector: View {
                 }
                 Button { model.openInStudio(item) } label: { Label(L("studio.open"), systemImage: "arrow.up.forward.app").frame(maxWidth: .infinity).padding(.vertical, Design.tiny) }
                     .buttonStyle(.borderedProminent)
+                HStack {
+                    if model.isPrinted(item) { Label("출력 완료", systemImage: "checkmark.circle.fill").foregroundStyle(Design.accent).font(Design.value) }
+                    Button { showRecord = true } label: {
+                        Label(model.isPrinted(item) ? "출력 기록 추가" : "출력 완료로 표시", systemImage: model.isPrinted(item) ? "plus" : "checkmark.circle")
+                            .frame(maxWidth: .infinity).padding(.vertical, Design.tiny)
+                    }.disabled(model.isWorking)
+                }
                 sourceSection
                 Divider()
                 VStack(alignment: .leading, spacing: Design.medium) {
@@ -76,6 +83,11 @@ struct ItemInspector: View {
                             Text(run.date.formatted(date: .abbreviated, time: .shortened)).font(Design.caption).foregroundStyle(Design.secondary)
                             Text(run.source == "manual" ? L("history.manual") : L("history.studio")).font(Design.caption).foregroundStyle(Design.secondary)
                             if !run.note.isEmpty { Text(run.note).font(Design.caption).lineLimit(3) }
+                            if let path = run.movedTo {
+                                Button { NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: path)]) } label: {
+                                    Label("이동한 파일 보기", systemImage: "folder")
+                                }.buttonStyle(.link).font(Design.caption).help(path)
+                            }
                         }.padding(.vertical, Design.tiny)
                     }
                     Text(L("history.distinction")).font(Design.caption).foregroundStyle(Design.secondary)
@@ -155,15 +167,64 @@ struct PrintRecordSheet: View {
     @State private var status = "completed"
     @State private var note = ""
     @State private var isSaving = false
+    @State private var moveFiles = true
+    @State private var sourcePath = ""
+    @State private var directory: URL?
+    private var sources: [URL] { model.printSources(item) }
+    private var source: URL? { sourcePath.isEmpty ? nil : URL(fileURLWithPath: sourcePath) }
     var body: some View {
         VStack(alignment: .leading, spacing: Design.large) {
-            Text(L("history.add")).font(Design.detailTitle)
+            Text("출력 결과 기록").font(Design.detailTitle)
             Text(item.title).foregroundStyle(Design.secondary).lineLimit(2)
             Picker(L("history.result"), selection: $status) { Text(L("run.completed")).tag("completed"); Text(L("run.failed")).tag("failed") }.pickerStyle(.segmented)
-            TextField(L("history.notePlaceholder"), text: $note).textFieldStyle(.roundedBorder)
+            Text("출력 메모").font(Design.value)
+            TextEditor(text: $note).font(Design.body).frame(height: 76)
+                .overlay(RoundedRectangle(cornerRadius: Design.controlRadius).stroke(Design.divider))
+                .accessibilityLabel("출력 메모")
+            if status == "completed" {
+                Toggle("완료 폴더로 파일 이동", isOn: $moveFiles)
+                if moveFiles {
+                    VStack(alignment: .leading, spacing: Design.small) {
+                        if !sources.isEmpty {
+                            Picker("이동할 파일", selection: $sourcePath) {
+                                Text("앱 보관 파일만 이동").tag("")
+                                ForEach(sources, id: \.path) { source in Text(source.path).tag(source.path) }
+                            }.onChange(of: sourcePath) { _ in directory = model.printDestination(for: source) }
+                            if sources.count > 1 { Text("선택한 원본 1개를 이동합니다. 다른 위치의 복제본은 유지됩니다.").font(Design.caption).foregroundStyle(Design.secondary) }
+                        }
+                        HStack {
+                            Label("이동 위치", systemImage: "folder").font(Design.value)
+                            Spacer()
+                            if source != nil {
+                                Button("폴더 변경…") { if let chosen = model.selectCompletedFolder() { directory = chosen } }
+                            }
+                        }
+                        Text((directory ?? model.printDestination(for: source)).path).font(Design.caption).foregroundStyle(Design.secondary)
+                            .textSelection(.enabled).fixedSize(horizontal: false, vertical: true)
+                        Text(source == nil ? "보관된 3MF를 앱의 출력 완료 폴더로 옮깁니다." : "원본과 앱 보관 파일을 정리합니다. 같은 이름이 있으면 번호를 붙여 보존합니다.")
+                            .font(Design.caption).foregroundStyle(Design.secondary)
+                    }.padding(Design.medium).background(Design.canvas, in: RoundedRectangle(cornerRadius: Design.controlRadius))
+                }
+            }
             Text(L("history.manualExplanation")).font(Design.caption).foregroundStyle(Design.secondary)
             if let error = model.errorMessage { Text(error).font(Design.caption).foregroundStyle(Design.warning) }
-            HStack { Spacer(); Button(L("cancel")) { dismiss() }.keyboardShortcut(.cancelAction).disabled(isSaving); Button(L("save")) { isSaving = true; Task { if await model.recordPrint(item, status: status, note: note) { dismiss() }; isSaving = false } }.buttonStyle(.borderedProminent).keyboardShortcut(.defaultAction).disabled(isSaving) }
-        }.padding(Design.xlarge).frame(width: Design.inspector + Design.hero)
+            HStack {
+                if isSaving { ProgressView().controlSize(.small) }
+                Spacer()
+                Button(L("cancel")) { dismiss() }.keyboardShortcut(.cancelAction).disabled(isSaving)
+                Button(status == "completed" && moveFiles ? "완료 표시하고 이동" : "기록 저장") {
+                    isSaving = true
+                    Task {
+                        if await model.recordPrint(item, status: status, note: note, moveFiles: moveFiles,
+                                                   sourceURL: source, directoryURL: directory ?? model.printDestination(for: source)) { dismiss() }
+                        isSaving = false
+                    }
+                }.buttonStyle(.borderedProminent).keyboardShortcut(.defaultAction).disabled(isSaving || model.isWorking)
+            }
+        }.padding(Design.xlarge).frame(width: 560)
+            .onAppear {
+                sourcePath = model.preferences.completedMoveMode == "library" ? "" : sources.first?.path ?? ""
+                directory = source == nil ? model.rootURL.appendingPathComponent("Files/Printed") : model.printDestination(for: source)
+            }
     }
 }

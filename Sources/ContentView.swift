@@ -5,6 +5,7 @@ import UniformTypeIdentifiers
 struct ContentView: View {
     @ObservedObject var model: LibraryViewModel
     @StateObject private var browser = MakerWorldBrowser()
+    @State private var recordItem: ShelfItem?
     var body: some View {
         NavigationSplitView {
             sidebar
@@ -34,6 +35,7 @@ struct ContentView: View {
             }
         }
         .sheet(isPresented: $model.showSettings) { SettingsView(model: model) }
+        .sheet(item: $recordItem) { item in PrintRecordSheet(model: model, item: item) }
         .onChange(of: model.browserRequest) { request in
             if let request { browser.start(model: model, location: request) }
         }
@@ -164,12 +166,14 @@ struct ContentView: View {
                 }
                 Spacer()
                 Text(timeText(item.estimatedSeconds)).font(Design.caption)
+                if model.isPrinted(item) { Label("출력 완료", systemImage: "checkmark.circle.fill").foregroundStyle(Design.accent).font(Design.caption) }
                 if item.favorite { Image(systemName: "star.fill").foregroundStyle(Design.accent) }
             }.padding(Design.medium).background(model.selectionID == item.id ? Design.accent.opacity(0.1) : Design.surface, in: RoundedRectangle(cornerRadius: Design.imageRadius))
         }.buttonStyle(.plain).contextMenu { itemMenu(item) }
     }
     @ViewBuilder private func itemMenu(_ item: ShelfItem) -> some View {
         Button(L("studio.open")) { model.openInStudio(item) }
+        Button(model.isPrinted(item) ? "출력 기록 추가…" : "출력 완료로 표시…") { recordItem = item }.disabled(model.isWorking)
         Button(item.favorite ? L("favorite.remove") : L("favorite.add")) { model.toggleFavorite(item) }
         Button(L("finder.reveal")) { model.reveal(item) }
     }
@@ -218,7 +222,7 @@ struct ModelCard: View {
                         Text("·")
                         Text(String(format: L("plates.count"), item.plates.count))
                         Spacer(minLength: 0)
-                        if printed { Image(systemName: "checkmark.circle.fill").foregroundStyle(Design.accent) }
+                        if printed { Label("출력 완료", systemImage: "checkmark.circle.fill").foregroundStyle(Design.accent).fixedSize() }
                     }.font(Design.caption).foregroundStyle(Design.secondary)
                     Label(timeText(item.estimatedSeconds), systemImage: "clock").font(Design.caption).foregroundStyle(Design.secondary)
                 }.padding(Design.medium)

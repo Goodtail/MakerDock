@@ -13,7 +13,9 @@ struct ShelfPreferences: Codable {
     var archivePath = ""
     var automaticScan = true
     var folderBookmarks: [String: Data] = [:]
-    enum CodingKeys: String, CodingKey { case folders, studioPath, archivePath, automaticScan, folderBookmarks }
+    var completedMoveMode = "source"
+    var completedFolder = ""
+    enum CodingKeys: String, CodingKey { case folders, studioPath, archivePath, automaticScan, folderBookmarks, completedMoveMode, completedFolder }
     init() {}
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -22,6 +24,8 @@ struct ShelfPreferences: Codable {
         archivePath = try c.decodeIfPresent(String.self, forKey: .archivePath) ?? ""
         automaticScan = try c.decodeIfPresent(Bool.self, forKey: .automaticScan) ?? true
         folderBookmarks = try c.decodeIfPresent([String: Data].self, forKey: .folderBookmarks) ?? [:]
+        completedMoveMode = try c.decodeIfPresent(String.self, forKey: .completedMoveMode) ?? "source"
+        completedFolder = try c.decodeIfPresent(String.self, forKey: .completedFolder) ?? ""
     }
 }
 enum ShelfFilter: Hashable {
@@ -247,10 +251,47 @@ final class LibraryViewModel: ObservableObject {
             catch { errorMessage = error.localizedDescription }
         }
     }
-    @discardableResult func recordPrint(_ item: ShelfItem, status: String, note: String) async -> Bool {
+    @discardableResult func recordPrint(_ item: ShelfItem, status: String, note: String, moveFiles: Bool = false,
+                                       sourceURL: URL? = nil, directoryURL: URL? = nil) async -> Bool {
+        await acquireWork(); defer { releaseWork() }
         guard let repository else { errorMessage = L("library.unavailable"); return false }
-        do { try await repository.appendRun(itemID: item.id, run: PrintRun(id: UUID().uuidString, date: Date(), status: status, source: "manual", note: note)); await reload(); statusMessage = L("history.saved"); return true }
+        do {
+            if status == "completed", moveFiles {
+                _ = try await repository.completePrint(itemID: item.id, note: note, sourceURL: sourceURL, directoryURL: directoryURL)
+            } else {
+                try await repository.appendRun(itemID: item.id, run: PrintRun(status: status, source: "manual", note: note))
+            }
+            await reload()
+            statusMessage = status == "completed" && moveFiles ? "출력 완료로 표시하고 파일을 이동했습니다." : L("history.saved")
+            return true
+        }
         catch { errorMessage = error.localizedDescription; return false }
+    }
+    func printSources(_ item: ShelfItem) -> [URL] {
+        item.sourcePaths.compactMap { path in
+            guard !path.hasPrefix(rootURL.path + "/") else { return nil }
+            let url = URL(fileURLWithPath: path)
+            guard let values = try? url.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey]),
+                  values.isRegularFile == true, values.isSymbolicLink != true else { return nil }
+            return url
+        }
+    }
+    func printDestination(for source: URL?) -> URL {
+        guard let source else { return rootURL.appendingPathComponent("Files/Printed", isDirectory: true) }
+        if preferences.completedMoveMode == "custom", !preferences.completedFolder.isEmpty {
+            return URL(fileURLWithPath: preferences.completedFolder, isDirectory: true)
+        }
+        let parent = source.deletingLastPathComponent()
+        return parent.lastPathComponent == "출력 완료" ? parent : parent.appendingPathComponent("출력 완료", isDirectory: true)
+    }
+    @discardableResult func selectCompletedFolder() -> URL? {
+        let panel = NSOpenPanel(); panel.canChooseFiles = false; panel.canChooseDirectories = true; panel.canCreateDirectories = true
+        panel.title = "출력 완료 파일을 모을 폴더"; panel.prompt = "이 폴더로 이동"
+        guard panel.runModal() == .OK, let url = panel.url else { return nil }
+        if url.startAccessingSecurityScopedResource() { grantedURLs.append(url) }
+        preferences.folderBookmarks[url.path] = try? url.bookmarkData(options: [.withSecurityScope], includingResourceValuesForKeys: nil, relativeTo: nil)
+        preferences.completedFolder = url.path; preferences.completedMoveMode = "custom"; savePreferences()
+        return url
     }
     func workingCopy(for item: ShelfItem) throws -> URL {
         let folder = rootURL.appendingPathComponent("WorkingCopies").appendingPathComponent(item.id)
