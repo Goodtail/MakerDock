@@ -8,6 +8,7 @@ struct PlateShelfApp: App {
             ContentView(model: model)
                 .frame(minWidth: Design.windowMinWidth, minHeight: Design.windowMinHeight)
                 .tint(Design.accent)
+                .preferredColorScheme(.light)
                 .task { await model.start() }
                 .onOpenURL { url in Task { await model.handle(url) } }
         }
@@ -30,6 +31,6 @@ struct PlateShelfApp: App {
                 }.keyboardShortcut("r")
             }
         }
-        Settings { SettingsView(model: model).tint(Design.accent) }
+        Settings { SettingsView(model: model).tint(Design.accent).preferredColorScheme(.light) }
     }
 }

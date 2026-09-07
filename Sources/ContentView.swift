@@ -26,6 +26,8 @@ struct ContentView: View {
             }
         }
         .font(Design.body).foregroundStyle(Design.ink)
+        .toolbarBackground(Design.surface, for: .windowToolbar)
+        .toolbarBackground(.visible, for: .windowToolbar)
         .toolbar {
             ToolbarItemGroup {
                 if model.filter != .makerWorld {
@@ -110,13 +112,13 @@ struct ContentView: View {
                     if model.allTags.isEmpty { Text(L("tags.empty")).font(Design.caption).foregroundStyle(Design.secondary) }
                     ForEach(model.allTags, id: \.self) { tag in sideRow(.tag(tag), icon: "tag", count: model.items.filter { $0.tags.contains(tag) }.count) }
                 }
-            }.listStyle(.sidebar)
+            }.listStyle(.sidebar).scrollContentBackground(.hidden)
             VStack(alignment: .leading, spacing: Design.small) {
                 Label(L("local.storage"), systemImage: "internaldrive").font(Design.value)
                 Text(String(format: L("folder.count"), model.preferences.folders.count)).font(Design.caption).foregroundStyle(Design.secondary)
                 Button(L("manage.folders")) { model.showSettings = true }.buttonStyle(.link).font(Design.caption)
             }.padding(Design.large)
-        }
+        }.background(Design.sidebarSurface)
     }
     private func sideRow(_ filter: ShelfFilter, icon: String, count: Int) -> some View {
         HStack {
@@ -204,7 +206,7 @@ struct ContentView: View {
                 Text(timeText(item.estimatedSeconds)).font(Design.caption)
                 if model.isPrinted(item) { Label("출력 완료", systemImage: "checkmark.circle.fill").foregroundStyle(Design.accent).font(Design.caption) }
                 if item.favorite { Image(systemName: "star.fill").foregroundStyle(Design.accent) }
-            }.padding(Design.medium).background(model.selectionID == item.id ? Design.accent.opacity(0.1) : Design.surface, in: RoundedRectangle(cornerRadius: Design.imageRadius))
+            }.padding(Design.medium).background(model.selectionID == item.id ? Design.selection : Design.surface, in: RoundedRectangle(cornerRadius: Design.imageRadius))
         }.buttonStyle(.plain).contextMenu { itemMenu(item) }
     }
     @ViewBuilder private func itemMenu(_ item: ShelfItem) -> some View {
@@ -272,9 +274,10 @@ struct ModelCard: View {
                     Label(timeText(item.estimatedSeconds), systemImage: "clock").font(Design.caption).foregroundStyle(Design.secondary)
                 }.padding(Design.medium)
             }
-            .background(hover ? Design.accent.opacity(0.04) : Design.surface)
+            .background(selected || hover ? Design.selection : Design.surface)
             .clipShape(RoundedRectangle(cornerRadius: Design.cardRadius))
-            .overlay(RoundedRectangle(cornerRadius: Design.cardRadius).stroke(selected ? Design.accent : Design.divider, lineWidth: selected ? 2 : 1))
+            .overlay(RoundedRectangle(cornerRadius: Design.cardRadius).strokeBorder(selected ? Design.accent : Design.divider, lineWidth: selected ? 2 : 1))
+            .shadow(color: Design.ink.opacity(selected ? 0.07 : 0.025), radius: selected ? 8 : 3, y: 2)
         }.buttonStyle(.plain).onHover { hover = $0 }.help(item.title)
     }
 }
