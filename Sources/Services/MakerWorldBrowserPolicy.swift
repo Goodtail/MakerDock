@@ -1,7 +1,11 @@
 import Foundation
 
 enum MakerWorldBrowserPolicy {
-    static let home = URL(string: "https://makerworld.com/ko")!
+    static var websiteLanguage: String {
+        let code = UserDefaults.standard.string(forKey: "MakerDockLanguage").flatMap { $0.isEmpty ? nil : $0 } ?? Bundle.main.preferredLocalizations.first ?? "en"
+        return code.hasPrefix("zh") ? "zh" : code.hasPrefix("ja") ? "ja" : code.hasPrefix("ko") ? "ko" : "en"
+    }
+    static var home: URL { URL(string: "https://makerworld.com/" + websiteLanguage)! }
     static func isMakerWorld(_ url: URL?) -> Bool {
         guard let url, url.scheme == "https", url.user == nil, url.password == nil,
               url.port == nil || url.port == 443 else { return false }
@@ -16,7 +20,7 @@ enum MakerWorldBrowserPolicy {
             return url
         }
         guard !value.lowercased().hasPrefix("javascript:"), !value.lowercased().hasPrefix("file:") else { return nil }
-        var parts = URLComponents(string: "https://makerworld.com/ko/search/models")!
+        var parts = URLComponents(string: home.absoluteString + "/search/models")!
         parts.queryItems = [URLQueryItem(name: "keyword", value: value)]
         return parts.url
     }

@@ -17,26 +17,26 @@ struct MakerWorldView: View {
                         Text(source.title ?? browser.title).font(Design.value).lineLimit(1)
                         HStack(spacing: Design.small) {
                             if let profile = source.profileTitle { Text(profile).lineLimit(1) }
-                            if let count = source.plateCount { Text("\(count) 플레이트").fixedSize() }
+                            if let count = source.plateCount { Text(String(format: L("%@ 플레이트"), String(count))).fixedSize() }
                             if let seconds = source.estimatedSeconds { Text(timeText(seconds)).fixedSize() }
                         }.font(Design.caption).foregroundStyle(Design.secondary)
                         if source.profileTitle == nil, source.plateCount == nil, source.estimatedSeconds == nil,
                            let snapshot = saved?.makerWorldSource {
                             HStack(spacing: Design.small) {
-                                Text("보관 당시").fixedSize()
+                                Text(L("보관 당시")).fixedSize()
                                 if let profile = snapshot.profileTitle { Text(profile).lineLimit(1) }
-                                if let count = snapshot.plateCount { Text("\(count) 플레이트").fixedSize() }
+                                if let count = snapshot.plateCount { Text(String(format: L("%@ 플레이트"), String(count))).fixedSize() }
                                 if let seconds = snapshot.estimatedSeconds { Text(timeText(seconds)).fixedSize() }
                             }.font(Design.caption).foregroundStyle(Design.secondary)
                         }
                     }
                     Spacer(minLength: 0)
                     if let saved {
-                        Text("보관된 프로필").font(Design.caption).foregroundStyle(Design.accent)
-                        Button("보관함에서 보기") { model.showLibraryItem(saved.id) }
-                        Button("저장된 파일 열기") { model.openInStudio(saved) }.buttonStyle(.borderedProminent)
+                        Text(L("보관된 프로필")).font(Design.caption).foregroundStyle(Design.accent)
+                        Button(L("보관함에서 보기")) { model.showLibraryItem(saved.id) }
+                        Button(L("저장된 파일 열기")) { model.openInStudio(saved) }.buttonStyle(.borderedProminent)
                     } else {
-                        Text("웹에서 3MF를 받으면 자동 보관").font(Design.caption).foregroundStyle(Design.secondary)
+                        Text(L("웹에서 3MF를 받으면 자동 보관")).font(Design.caption).foregroundStyle(Design.secondary)
                     }
                 }.padding(.horizontal, Design.large).padding(.vertical, Design.medium).background(Design.surface)
             }
@@ -48,8 +48,8 @@ struct MakerWorldView: View {
                         Image(systemName: "wifi.exclamationmark").font(.system(size: 30)).foregroundStyle(Design.secondary)
                         Text(error).multilineTextAlignment(.center)
                         HStack {
-                            Button("다시 불러오기") { browser.reload() }.buttonStyle(.borderedProminent)
-                            Button("브라우저에서 열기") { browser.openInBrowser() }
+                            Button(L("다시 불러오기")) { browser.reload() }.buttonStyle(.borderedProminent)
+                            Button(L("브라우저에서 열기")) { browser.openInBrowser() }
                         }
                     }.padding(Design.xlarge).frame(maxWidth: 440)
                         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: Design.cardRadius))
@@ -67,31 +67,31 @@ struct MakerWorldView: View {
     private var navigationBar: some View {
         VStack(spacing: Design.medium) {
             HStack(spacing: Design.small) {
-                Button { browser.back() } label: { Image(systemName: "chevron.left") }.disabled(!browser.canGoBack).help("뒤로").accessibilityLabel("MakerWorld 뒤로")
-                Button { browser.forward() } label: { Image(systemName: "chevron.right") }.disabled(!browser.canGoForward).help("앞으로").accessibilityLabel("MakerWorld 앞으로")
-                Button { browser.load(MakerWorldBrowserPolicy.home) } label: { Image(systemName: "house") }.help("MakerWorld 홈")
+                Button { browser.back() } label: { Image(systemName: "chevron.left") }.disabled(!browser.canGoBack).help(L("뒤로")).accessibilityLabel(L("MakerWorld 뒤로"))
+                Button { browser.forward() } label: { Image(systemName: "chevron.right") }.disabled(!browser.canGoForward).help(L("앞으로")).accessibilityLabel(L("MakerWorld 앞으로"))
+                Button { browser.load(MakerWorldBrowserPolicy.home) } label: { Image(systemName: "house") }.help(L("MakerWorld 홈"))
                 HStack(spacing: Design.small) {
                     Image(systemName: addressFocused ? "magnifyingglass" : "globe").foregroundStyle(Design.secondary)
-                    TextField("MakerWorld 검색 또는 모델 주소", text: $address)
+                    TextField(L("MakerWorld 검색 또는 모델 주소"), text: $address)
                         .textFieldStyle(.plain).focused($addressFocused)
                         .onSubmit { browser.navigate(address); addressFocused = false }
                     Button { browser.isLoading ? browser.stop() : browser.reload() } label: {
                         Image(systemName: browser.isLoading ? "xmark" : "arrow.clockwise")
-                    }.buttonStyle(.plain).help(browser.isLoading ? "불러오기 중지" : "페이지 새로고침")
+                    }.buttonStyle(.plain).help(browser.isLoading ? L("불러오기 중지") : L("페이지 새로고침"))
                 }.padding(Design.medium).background(Design.surface, in: RoundedRectangle(cornerRadius: Design.controlRadius))
                     .overlay(RoundedRectangle(cornerRadius: Design.controlRadius).stroke(Design.divider))
                 Menu {
-                    Button("현재 주소 복사") { browser.copyAddress() }
-                    Button("브라우저에서 열기") { browser.openInBrowser() }
-                } label: { Image(systemName: "ellipsis.circle") }.menuStyle(.borderlessButton).fixedSize().help("페이지 메뉴")
+                    Button(L("현재 주소 복사")) { browser.copyAddress() }
+                    Button(L("브라우저에서 열기")) { browser.openInBrowser() }
+                } label: { Image(systemName: "ellipsis.circle") }.menuStyle(.borderlessButton).fixedSize().help(L("페이지 메뉴"))
             }.buttonStyle(.borderless)
             HStack {
                 Label("MakerWorld", systemImage: "globe").font(Design.heading)
-                Text("탐색 · 다운로드 · 내 보관함").font(Design.caption).foregroundStyle(Design.secondary)
+                Text(L("탐색 · 다운로드 · 내 보관함")).font(Design.caption).foregroundStyle(Design.secondary)
                 Spacer()
-                Label("자동 보관", systemImage: "checkmark.shield").font(Design.caption).foregroundStyle(Design.accent)
-                Toggle("보관된 파일 우선", isOn: $browser.preferStored).toggleStyle(.switch).controlSize(.small).font(Design.caption)
-                    .help("같은 출력 프로필을 이미 보관했다면 다운로드 없이 저장된 파일을 사용합니다. 최신 파일을 받으려면 끄세요.")
+                Label(L("자동 보관"), systemImage: "checkmark.shield").font(Design.caption).foregroundStyle(Design.accent)
+                Toggle(L("보관된 파일 우선"), isOn: $browser.preferStored).toggleStyle(.switch).controlSize(.small).font(Design.caption)
+                    .help(L("같은 출력 프로필을 이미 보관했다면 다운로드 없이 저장된 파일을 사용합니다. 최신 파일을 받으려면 끄세요."))
             }
         }.padding(.horizontal, Design.large).padding(.vertical, Design.medium)
     }
@@ -102,7 +102,7 @@ struct MakerWorldView: View {
                     Image(systemName: "exclamationmark.circle")
                     Text(error).fixedSize(horizontal: false, vertical: true)
                     Spacer()
-                    Button("다시 시도") { browser.retryLatest() }.disabled(!browser.canRetry)
+                    Button(L("다시 시도")) { browser.retryLatest() }.disabled(!browser.canRetry)
                     Button { browser.transferError = nil } label: { Image(systemName: "xmark") }.buttonStyle(.plain)
                 }.foregroundStyle(Design.warning)
             }
@@ -112,11 +112,11 @@ struct MakerWorldView: View {
                 Text(browser.transferMessage).lineLimit(2)
                 Spacer()
                 if let id = browser.lastItemID {
-                    Button("방금 보관한 모델") { model.showLibraryItem(id) }
+                    Button(L("방금 보관한 모델")) { model.showLibraryItem(id) }
                 }
                 if browser.canRetry {
                     Menu {
-                        Button("마지막 파일을 최신 버전으로 다시 받기") { browser.retryLatest() }
+                        Button(L("마지막 파일을 최신 버전으로 다시 받기")) { browser.retryLatest() }
                     } label: { Image(systemName: "ellipsis") }.menuStyle(.borderlessButton).fixedSize()
                 }
             }

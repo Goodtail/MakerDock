@@ -2,23 +2,34 @@ import SwiftUI
 
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
+    @AppStorage("MakerDockLanguage") private var language = ""
     @ObservedObject var model: LibraryViewModel
     var body: some View {
         VStack(alignment: .leading, spacing: Design.large) {
             HStack { Text(L("settings")).font(Design.title); Spacer(); Button(L("done")) { dismiss() }.keyboardShortcut(.cancelAction) }
             ScrollView {
                 VStack(alignment: .leading, spacing: Design.large) {
-                    section("내 프린터 · 예상 시간") {
-                        Picker("프린터 / 노즐", selection: $model.preferences.printerPreset) {
-                            Text("선택 안 함").tag("")
+                    section(L("settings.language")) {
+                        Picker(L("settings.language"), selection: $language) {
+                            Text(L("language.system")).tag("")
+                            Text("한국어").tag("ko")
+                            Text("English").tag("en")
+                            Text("日本語").tag("ja")
+                            Text("简体中文").tag("zh-Hans")
+                        }
+                    }
+                    Divider()
+                    section(L("내 프린터 · 예상 시간")) {
+                        Picker(L("프린터 / 노즐"), selection: $model.preferences.printerPreset) {
+                            Text(L("선택 안 함")).tag("")
                             ForEach(model.printerCatalog?.machines ?? []) { Text($0.name).tag($0.name) }
                         }.onChange(of: model.preferences.printerPreset) { _ in model.configurePrinter() }
-                        Picker("출력 품질", selection: $model.preferences.printerProcess) {
-                            Text("출력 품질 선택").tag("")
+                        Picker(L("출력 품질"), selection: $model.preferences.printerProcess) {
+                            Text(L("출력 품질 선택")).tag("")
                             ForEach(model.compatiblePrinterProcesses) { Text($0.name).tag($0.name) }
                         }.onChange(of: model.preferences.printerProcess) { _ in model.configurePrinter() }
-                        Button("Studio에서 선택한 프린터 가져오기") { model.configurePrinter(importFromStudio: true) }
-                        Text("상세 화면에서 선택한 프린터와 출력 품질로 시간을 계산합니다. 재료·플레이트 배치·개별 오브젝트 설정은 파일에 저장된 값을 사용합니다.")
+                        Button(L("Studio에서 선택한 프린터 가져오기")) { model.configurePrinter(importFromStudio: true) }
+                        Text(L("상세 화면에서 선택한 프린터와 출력 품질로 시간을 계산합니다. 재료·플레이트 배치·개별 오브젝트 설정은 파일에 저장된 값을 사용합니다."))
                             .font(Design.caption).foregroundStyle(Design.secondary)
                     }
                     Divider()
@@ -31,20 +42,20 @@ struct SettingsView: View {
                         Toggle(L("settings.autoScan"), isOn: $model.preferences.automaticScan).onChange(of: model.preferences.automaticScan) { _ in model.savePreferences() }
                     }
                     Divider()
-                    section("출력 완료 파일 정리") {
-                        Picker("기본 이동 위치", selection: $model.preferences.completedMoveMode) {
-                            Text("원본 폴더 안의 출력 완료 폴더").tag("source")
-                            Text("지정한 한 폴더로 모으기").tag("custom")
-                            Text("앱 보관함 안에서만 이동").tag("library")
+                    section(L("출력 완료 파일 정리")) {
+                        Picker(L("기본 이동 위치"), selection: $model.preferences.completedMoveMode) {
+                            Text(L("원본 폴더 안의 출력 완료 폴더")).tag("source")
+                            Text(L("지정한 한 폴더로 모으기")).tag("custom")
+                            Text(L("앱 보관함 안에서만 이동")).tag("library")
                         }.onChange(of: model.preferences.completedMoveMode) { _ in model.savePreferences() }
                         if model.preferences.completedMoveMode == "custom" {
                             HStack {
-                                Text(model.preferences.completedFolder.isEmpty ? "완료 폴더를 선택해 주세요" : model.preferences.completedFolder).font(Design.caption).lineLimit(2).textSelection(.enabled)
-                                Spacer(); Button("폴더 선택…") { model.selectCompletedFolder() }
+                                Text(model.preferences.completedFolder.isEmpty ? L("완료 폴더를 선택해 주세요") : model.preferences.completedFolder).font(Design.caption).lineLimit(2).textSelection(.enabled)
+                                Spacer(); Button(L("폴더 선택…")) { model.selectCompletedFolder() }
                             }
                         }
-                        Text("완료 기록을 저장하기 전에 실제 이동 경로를 확인하고 바꿀 수 있습니다.").font(Design.caption).foregroundStyle(Design.secondary)
-                        Text("실제 출력이 끝나면 상세 화면에서 완료로 표시해 주세요.").font(Design.caption).foregroundStyle(Design.secondary)
+                        Text(L("완료 기록을 저장하기 전에 실제 이동 경로를 확인하고 바꿀 수 있습니다.")).font(Design.caption).foregroundStyle(Design.secondary)
+                        Text(L("실제 출력이 끝나면 상세 화면에서 완료로 표시해 주세요.")).font(Design.caption).foregroundStyle(Design.secondary)
                     }
                     Divider()
                     section(L("settings.studio")) {

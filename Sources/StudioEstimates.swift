@@ -17,7 +17,7 @@ struct StudioPresetCatalog {
 
     init(studioURL: URL) throws {
         guard let bundle = Bundle(url: studioURL), bundle.bundleIdentifier == "com.bambulab.bambu-studio" else {
-            throw ShelfError.message("공식 Bambu Studio 앱을 설정에서 선택해 주세요.")
+            throw ShelfError.message(L("공식 Bambu Studio 앱을 설정에서 선택해 주세요."))
         }
         let presetDirectory = studioURL.appendingPathComponent("Contents/Resources/profiles/BBL")
         directory = presetDirectory
@@ -41,11 +41,11 @@ struct StudioPresetCatalog {
 
     static func resolvePreset(in directory: URL, name: String, visited: Set<String> = []) throws -> [String: Any] {
         guard !name.isEmpty, !name.contains("/"), !name.contains("\\"), !visited.contains(name), visited.count < 32 else {
-            throw ShelfError.message("Studio 프린터 설정을 읽을 수 없습니다.")
+            throw ShelfError.message(L("Studio 프린터 설정을 읽을 수 없습니다."))
         }
         let data = try Data(contentsOf: directory.appendingPathComponent(name + ".json"))
         guard data.count <= 4 * 1_024 * 1_024, let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
-            throw ShelfError.message("Studio 설정 형식이 올바르지 않습니다.")
+            throw ShelfError.message(L("Studio 설정 형식이 올바르지 않습니다."))
         }
         var full: [String: Any] = [:]
         if let parent = json["inherits"] as? String, !parent.isEmpty {
@@ -58,7 +58,7 @@ struct StudioPresetCatalog {
     func configuration(machine: String, process: String) throws -> StudioEstimateConfiguration {
         guard let preset = machines.first(where: { $0.name == machine }),
               process.isEmpty || compatibleProcesses(machine: machine).contains(where: { $0.name == process }) else {
-            throw ShelfError.message("내 프린터와 호환되는 출력 품질을 설정에서 선택해 주세요.")
+            throw ShelfError.message(L("내 프린터와 호환되는 출력 품질을 설정에서 선택해 주세요."))
         }
         let machineData = try JSONSerialization.data(withJSONObject: Self.resolvePreset(in: directory.appendingPathComponent("machine"), name: machine), options: [.sortedKeys])
         let processData = try process.isEmpty ? nil : JSONSerialization.data(withJSONObject: Self.resolvePreset(in: directory.appendingPathComponent("process"), name: process), options: [.sortedKeys])
@@ -130,7 +130,7 @@ actor StudioEstimateService {
             let process = temporary.appendingPathComponent("process.json")
             try data.write(to: process); settings += ";" + process.path
         }
-        guard Bundle(url: studioURL)?.bundleIdentifier == "com.bambulab.bambu-studio" else { throw ShelfError.message("공식 Bambu Studio가 필요합니다.") }
+        guard Bundle(url: studioURL)?.bundleIdentifier == "com.bambulab.bambu-studio" else { throw ShelfError.message(L("공식 Bambu Studio가 필요합니다.")) }
         let process = Process()
         process.executableURL = studioURL.appendingPathComponent("Contents/MacOS/BambuStudio")
         process.currentDirectoryURL = temporary
@@ -151,9 +151,9 @@ actor StudioEstimateService {
         do {
             while process.isRunning {
                 try Task.checkCancellation()
-                guard Date() < deadline else { throw ShelfError.message("계산이 5분을 넘었습니다. Studio에서 직접 슬라이싱해 주세요.") }
+                guard Date() < deadline else { throw ShelfError.message(L("계산이 5분을 넘었습니다. Studio에서 직접 슬라이싱해 주세요.")) }
                 let size = (try? logURL.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
-                guard size < 8 * 1_024 * 1_024 else { throw ShelfError.message("Studio 계산을 중단했습니다. Studio에서 파일의 설정을 확인해 주세요.") }
+                guard size < 8 * 1_024 * 1_024 else { throw ShelfError.message(L("Studio 계산을 중단했습니다. Studio에서 파일의 설정을 확인해 주세요.")) }
                 try await Task.sleep(nanoseconds: 150_000_000)
             }
         } catch {
@@ -163,14 +163,14 @@ actor StudioEstimateService {
         try Task.checkCancellation()
         let output = temporary.appendingPathComponent("sliced.3mf")
         guard process.terminationStatus == 0, fm.fileExists(atPath: output.path) else {
-            throw ShelfError.message("이 파일을 선택한 프린터로 계산하지 못했습니다. Studio에서 프린터·재료·플레이트 배치를 확인해 주세요.")
+            throw ShelfError.message(L("이 파일을 선택한 프린터로 계산하지 못했습니다. Studio에서 프린터·재료·플레이트 배치를 확인해 주세요."))
         }
         let summary = try ArchivePrintSummary.read(at: output)
         guard summary.printerModel == configuration.printerModel,
               Set(summary.plates.map(\.id)) == Set(item.plates.map(\.id)),
               summary.plates.count == item.plates.count,
               summary.plates.contains(where: { PrintEstimate.valid($0.estimatedSeconds) != nil }) else {
-            throw ShelfError.message("계산 결과의 프린터 또는 플레이트가 원본과 일치하지 않습니다. Studio에서 확인해 주세요.")
+            throw ShelfError.message(L("계산 결과의 프린터 또는 플레이트가 원본과 일치하지 않습니다. Studio에서 확인해 주세요."))
         }
         return StudioEstimateRecord(itemID: item.id, configurationKey: configuration.key, machine: configuration.machine,
                                     process: configuration.process, studioVersion: configuration.studioVersion,
@@ -186,7 +186,7 @@ actor StudioEstimateService {
             if importFromStudio {
                 let path = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Application Support/BambuStudio/BambuStudio.conf")
                 guard let selected = StudioPresetCatalog.selectedPrinter(at: path), printerCatalog?.machines.contains(where: { $0.name == selected }) == true else {
-                    throw ShelfError.message("Studio에서 선택한 프린터를 찾지 못했습니다. 목록에서 직접 선택해 주세요.")
+                    throw ShelfError.message(L("Studio에서 선택한 프린터를 찾지 못했습니다. 목록에서 직접 선택해 주세요."))
                 }
                 preferences.printerPreset = selected
                 preferences.printerProcess = ""
@@ -224,8 +224,8 @@ actor StudioEstimateService {
                 records.append(result)
                 try JSONEncoder().encode(records).write(to: rootURL.appendingPathComponent("estimates.json"), options: .atomic)
                 calculatedEstimates = records
-                statusMessage = "내 프린터 예상 시간을 저장했습니다."
-            } catch is CancellationError { statusMessage = "시간 계산을 취소했습니다." }
+                statusMessage = L("내 프린터 예상 시간을 저장했습니다.")
+            } catch is CancellationError { statusMessage = L("시간 계산을 취소했습니다.") }
             catch { errorMessage = error.localizedDescription }
         }
     }

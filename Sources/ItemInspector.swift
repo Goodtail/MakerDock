@@ -28,24 +28,24 @@ struct ItemInspector: View {
                     Button { model.openInStudio(item) } label: { Label(L("studio.open"), systemImage: "arrow.up.forward.app").frame(maxWidth: .infinity).padding(.vertical, Design.tiny) }
                     .buttonStyle(.borderedProminent)
                 HStack {
-                    if model.isPrinted(item) { Label("출력 완료", systemImage: "checkmark.circle.fill").foregroundStyle(Design.accent).font(Design.value) }
+                    if model.isPrinted(item) { Label(L("출력 완료"), systemImage: "checkmark.circle.fill").foregroundStyle(Design.accent).font(Design.value) }
                     Button { showRecord = true } label: {
-                        Label(model.isPrinted(item) ? "출력 기록 추가" : "출력 완료로 표시", systemImage: model.isPrinted(item) ? "plus" : "checkmark.circle")
+                        Label(model.isPrinted(item) ? L("출력 기록 추가") : L("출력 완료로 표시"), systemImage: model.isPrinted(item) ? "plus" : "checkmark.circle")
                             .frame(maxWidth: .infinity).padding(.vertical, Design.tiny)
                     }.disabled(model.isWorking)
                 }
                 HStack {
                     CategoryMenu(model: model, item: item)
                     Spacer()
-                    Button(role: .destructive) { Task { await model.trash(item) } } label: { Label("삭제", systemImage: "trash") }
-                        .disabled(model.isWorking).help("MakerDock 휴지통으로 이동 · 외부 원본 유지")
+                    Button(role: .destructive) { Task { await model.trash(item) } } label: { Label(L("삭제"), systemImage: "trash") }
+                        .disabled(model.isWorking).help(L("MakerDock 휴지통으로 이동 · 외부 원본 유지"))
                 }.padding(.top, Design.tiny)
                 }
                 Divider()
                 sourceSection
                 Divider()
                 HStack(alignment: .firstTextBaseline) {
-                    Text("예상 출력 시간").font(Design.value)
+                    Text(L("예상 출력 시간")).font(Design.value)
                     Spacer()
                     EstimateLabel(estimate: model.displayedEstimate(item))
                 }
@@ -58,11 +58,11 @@ struct ItemInspector: View {
                             HStack(spacing: Design.medium) {
                                 ModelImage(url: model.imageURL(item, plate: plate)).frame(width: Design.plateThumbnail, height: Design.plateThumbnail)
                                 VStack(alignment: .leading, spacing: Design.tiny) {
-                                    Text(plate.name.isEmpty ? String(format: L("plate.number"), plate.id) : plate.name).font(Design.value).lineLimit(2)
-                                    EstimateLabel(estimate: model.displayedEstimate(item, plate: plate), missing: "개별 시간 미제공")
+                                    Text(plateTitle(plate)).font(Design.value).lineLimit(2)
+                                    EstimateLabel(estimate: model.displayedEstimate(item, plate: plate), missing: L("개별 시간 미제공"))
                                     if item.preferredEstimate(for: plate) != nil,
                                        let seconds = model.savedEstimate(item)?.plates.first(where: { $0.id == plate.id })?.estimatedSeconds {
-                                        Text("내 프린터 · \(timeText(seconds))").font(Design.caption).foregroundStyle(Design.accent)
+                                        Text(String(format: L("내 프린터 · %@"), String(timeText(seconds)))).font(Design.caption).foregroundStyle(Design.accent)
                                     }
                                     if let grams = plate.weightGrams { Text(weightText(grams)).font(Design.caption).foregroundStyle(Design.secondary) }
                                 }
@@ -70,12 +70,12 @@ struct ItemInspector: View {
                                 Image(systemName: "arrow.up.left.and.arrow.down.right").font(Design.caption).foregroundStyle(Design.secondary)
                             }.padding(Design.small).background(Design.sidebarSurface, in: RoundedRectangle(cornerRadius: Design.imageRadius))
                         }.buttonStyle(.plain).help(L("plate.zoom"))
-                            .accessibilityLabel("\(index + 1). \(plate.name), \(timeText(model.displayedEstimate(item, plate: plate)?.seconds)), \(L("plate.zoom"))")
+                            .accessibilityLabel("\(index + 1). \(plateTitle(plate)), \(timeText(model.displayedEstimate(item, plate: plate)?.seconds)), \(L("plate.zoom"))")
                     }
                 }
                 VStack(spacing: Design.medium) {
                     if item.preferredEstimate?.source == .makerWorld, let fileTime = item.estimatedSeconds {
-                        info("3MF에 저장된 시간", value: timeText(fileTime))
+                        info(L("3MF에 저장된 시간"), value: timeText(fileTime))
                     }
                     info(L("weight.estimated"), value: weightText(item.weightGrams))
                     info(L("material"), value: item.materials.isEmpty ? "—" : item.materials.joined(separator: ", "))
@@ -101,12 +101,17 @@ struct ItemInspector: View {
                     ForEach(item.printRuns.sorted { $0.date > $1.date }) { run in
                         VStack(alignment: .leading, spacing: Design.tiny) {
                             HStack { Image(systemName: run.status == "completed" ? "checkmark.circle" : "clock"); Text(runTitle(run.status)).font(Design.value); Spacer() }
-                            Text(run.date.formatted(date: .abbreviated, time: .shortened)).font(Design.caption).foregroundStyle(Design.secondary)
+                            Text(dateText(run.date)).font(Design.caption).foregroundStyle(Design.secondary)
+                            if let seconds = run.durationSeconds { Label(timeText(seconds), systemImage: "clock").font(Design.value) }
+                            ForEach(run.filaments ?? []) { filament in
+                                Text([filament.name, filament.material, filament.grams.map { weightText($0) } ?? ""].filter { !$0.isEmpty }.joined(separator: " · "))
+                                    .font(Design.caption).foregroundStyle(Design.secondary)
+                            }
                             Text(run.source == "manual" ? L("history.manual") : L("history.studio")).font(Design.caption).foregroundStyle(Design.secondary)
                             if !run.note.isEmpty { Text(run.note).font(Design.caption).lineLimit(3) }
                             if let path = run.movedTo {
                                 Button { NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: path)]) } label: {
-                                    Label("이동한 파일 보기", systemImage: "folder")
+                                    Label(L("이동한 파일 보기"), systemImage: "folder")
                                 }.buttonStyle(.link).font(Design.caption).help(path)
                             }
                         }.padding(.vertical, Design.tiny)
@@ -132,13 +137,13 @@ struct ItemInspector: View {
     private var printerEstimateSection: some View {
         VStack(alignment: .leading, spacing: Design.small) {
             HStack(alignment: .firstTextBaseline) {
-                Label("내 프린터", systemImage: "printer").font(Design.value)
+                Label(L("내 프린터"), systemImage: "printer").font(Design.value)
                 Spacer()
                 if model.calculatingItemID == item.id {
                     ProgressView().controlSize(.small)
-                    Button("취소") { model.estimateTask?.cancel() }.font(Design.caption)
+                    Button(L("취소")) { model.estimateTask?.cancel() }.font(Design.caption)
                 } else {
-                    Button(model.savedEstimate(item) == nil ? "시간 계산" : "다시 계산") { model.calculateEstimate(item) }
+                    Button(model.savedEstimate(item) == nil ? L("시간 계산") : L("다시 계산")) { model.calculateEstimate(item) }
                         .disabled(model.calculatingItemID != nil || item.plates.isEmpty).font(Design.caption)
                 }
             }
@@ -146,7 +151,7 @@ struct ItemInspector: View {
                 HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: Design.tiny) {
                         Text(configuration.machine).font(Design.caption)
-                        Text(configuration.process.isEmpty ? "파일의 출력 품질 · 재료 유지" : "\(configuration.process) · 파일 재료 유지")
+                        Text(configuration.process.isEmpty ? L("파일의 출력 품질 · 재료 유지") : String(format: L("%@ · 파일 재료 유지"), String(configuration.process)))
                             .font(Design.caption).foregroundStyle(Design.secondary)
                     }
                     Spacer(minLength: Design.small)
@@ -156,13 +161,13 @@ struct ItemInspector: View {
                     }
                 }
                 HStack {
-                    Text(model.calculatingItemID == item.id ? "Studio에서 계산 중…" : "출력 전에 Studio에서 최종 설정을 확인해 주세요.")
+                    Text(model.calculatingItemID == item.id ? L("Studio에서 계산 중…") : L("출력 전에 Studio에서 최종 설정을 확인해 주세요."))
                         .font(Design.caption).foregroundStyle(Design.secondary)
                     Spacer(minLength: 0)
-                    Button("설정") { model.showSettings = true }.buttonStyle(.link).font(Design.caption)
+                    Button(L("설정")) { model.showSettings = true }.buttonStyle(.link).font(Design.caption)
                 }
             } else {
-                Button("내 프린터 선택…") { model.showSettings = true }.buttonStyle(.link).font(Design.caption)
+                Button(L("내 프린터 선택…")) { model.showSettings = true }.buttonStyle(.link).font(Design.caption)
             }
         }.padding(Design.medium).background(Design.sidebarSurface, in: RoundedRectangle(cornerRadius: Design.controlRadius))
     }
@@ -171,23 +176,23 @@ struct ItemInspector: View {
             HStack { Text(L("source.title")).font(Design.heading); Spacer(); Button { showSourceEditor = true } label: { Image(systemName: "link.badge.plus") }.buttonStyle(.borderless).help(L("source.edit")) }
             if let source = item.makerWorldSource {
                 HStack(spacing: Design.medium) {
-                Button { model.openSource(item) } label: { Label("모델 페이지", systemImage: "arrow.up.right") }.buttonStyle(.link)
+                Button { model.openSource(item) } label: { Label(L("모델 페이지"), systemImage: "arrow.up.right") }.buttonStyle(.link)
                 if let profile = source.profileURL, let url = URL(string: profile) {
-                    Button("출력 프로필") { model.showMakerWorld(url) }.buttonStyle(.link)
+                    Button(L("출력 프로필")) { model.showMakerWorld(url) }.buttonStyle(.link)
                 }
                 }
                 if let title = source.profileTitle, !title.isEmpty { Text(title).font(Design.caption).foregroundStyle(Design.secondary).lineLimit(2) }
                 if source.estimatedSeconds != nil || source.plates?.isEmpty == false {
-                    DisclosureGroup("보관한 웹 정보") {
+                    DisclosureGroup(L("보관한 웹 정보")) {
                         VStack(alignment: .leading, spacing: Design.small) {
-                            if let count = source.plateCount { Text("출력 프로필 · \(count) 플레이트") }
+                            if let count = source.plateCount { Text(String(format: L("출력 프로필 · %@ 플레이트"), String(count))) }
                             if let plates = source.plates {
                                 ForEach(plates) { p in
                                     HStack { Text(p.name ?? String(format: L("plate.number"), p.id)); Spacer(); Text(timeText(p.estimatedSeconds)) }
                                     if let kind = p.plateType, !kind.isEmpty { Text(kind) }
                                 }
                             }
-                            Text(String(format: L("source.savedAt"), source.capturedAt.formatted(date: .abbreviated, time: .shortened)))
+                            Text(String(format: L("source.savedAt"), dateText(source.capturedAt)))
                             Text(L("source.webExplanation"))
                         }.padding(.top, Design.small)
                     }.font(Design.caption).foregroundStyle(Design.secondary)
@@ -218,6 +223,7 @@ struct PrintRecordSheet: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject var model: LibraryViewModel
     let item: ShelfItem
+    @State private var details = PrintDetailsDraft()
     @State private var status = "completed"
     @State private var note = ""
     @State private var isSaving = false
@@ -228,55 +234,60 @@ struct PrintRecordSheet: View {
     private var source: URL? { sourcePath.isEmpty ? nil : URL(fileURLWithPath: sourcePath) }
     var body: some View {
         VStack(alignment: .leading, spacing: Design.large) {
-            Text("출력 결과 기록").font(Design.detailTitle)
+            Text(L("출력 결과 기록")).font(Design.detailTitle)
+            ScrollView { VStack(alignment: .leading, spacing: Design.regular) {
             Text(item.title).foregroundStyle(Design.secondary).lineLimit(2)
             Picker(L("history.result"), selection: $status) { Text(L("run.completed")).tag("completed"); Text(L("run.failed")).tag("failed") }.pickerStyle(.segmented)
-            Text("출력 메모").font(Design.value)
+            PrintDetailsFields(draft: $details)
+            Text(L("출력 메모")).font(Design.value)
             TextEditor(text: $note).font(Design.body).frame(height: 76)
                 .overlay(RoundedRectangle(cornerRadius: Design.controlRadius).stroke(Design.divider))
-                .accessibilityLabel("출력 메모")
+                .accessibilityLabel(L("출력 메모"))
             if status == "completed" {
-                Toggle("완료 폴더로 파일 이동", isOn: $moveFiles)
+                Toggle(L("완료 폴더로 파일 이동"), isOn: $moveFiles)
                 if moveFiles {
                     VStack(alignment: .leading, spacing: Design.small) {
                         if !sources.isEmpty {
-                            Picker("이동할 파일", selection: $sourcePath) {
-                                Text("앱 보관 파일만 이동").tag("")
+                            Picker(L("이동할 파일"), selection: $sourcePath) {
+                                Text(L("앱 보관 파일만 이동")).tag("")
                                 ForEach(sources, id: \.path) { source in Text(source.path).tag(source.path) }
                             }.onChange(of: sourcePath) { _ in directory = model.printDestination(for: source) }
-                            if sources.count > 1 { Text("선택한 원본 1개를 이동합니다. 다른 위치의 복제본은 유지됩니다.").font(Design.caption).foregroundStyle(Design.secondary) }
+                            if sources.count > 1 { Text(L("선택한 원본 1개를 이동합니다. 다른 위치의 복제본은 유지됩니다.")).font(Design.caption).foregroundStyle(Design.secondary) }
                         }
                         HStack {
-                            Label("이동 위치", systemImage: "folder").font(Design.value)
+                            Label(L("이동 위치"), systemImage: "folder").font(Design.value)
                             Spacer()
                             if source != nil {
-                                Button("폴더 변경…") { if let chosen = model.selectCompletedFolder() { directory = chosen } }
+                                Button(L("폴더 변경…")) { if let chosen = model.selectCompletedFolder() { directory = chosen } }
                             }
                         }
                         Text((directory ?? model.printDestination(for: source)).path).font(Design.caption).foregroundStyle(Design.secondary)
                             .textSelection(.enabled).fixedSize(horizontal: false, vertical: true)
-                        Text(source == nil ? "보관된 3MF를 앱의 출력 완료 폴더로 옮깁니다." : "원본과 앱 보관 파일을 정리합니다. 같은 이름이 있으면 번호를 붙여 보존합니다.")
+                        Text(source == nil ? L("보관된 3MF를 앱의 출력 완료 폴더로 옮깁니다.") : L("원본과 앱 보관 파일을 정리합니다. 같은 이름이 있으면 번호를 붙여 보존합니다."))
                             .font(Design.caption).foregroundStyle(Design.secondary)
                     }.padding(Design.medium).background(Design.canvas, in: RoundedRectangle(cornerRadius: Design.controlRadius))
                 }
             }
             Text(L("history.manualExplanation")).font(Design.caption).foregroundStyle(Design.secondary)
+            }}
             if let error = model.errorMessage { Text(error).font(Design.caption).foregroundStyle(Design.warning) }
             HStack {
                 if isSaving { ProgressView().controlSize(.small) }
                 Spacer()
                 Button(L("cancel")) { dismiss() }.keyboardShortcut(.cancelAction).disabled(isSaving)
-                Button(status == "completed" && moveFiles ? "완료 표시하고 이동" : "기록 저장") {
+                Button(status == "completed" && moveFiles ? L("완료 표시하고 이동") : L("기록 저장")) {
                     isSaving = true
                     Task {
                         if await model.recordPrint(item, status: status, note: note, moveFiles: moveFiles,
-                                                   sourceURL: source, directoryURL: directory ?? model.printDestination(for: source)) { dismiss() }
+                                                   sourceURL: source, directoryURL: directory ?? model.printDestination(for: source),
+                                                   durationSeconds: details.seconds, durationSource: details.durationSource, filaments: details.records) { dismiss() }
                         isSaving = false
                     }
-                }.buttonStyle(.borderedProminent).keyboardShortcut(.defaultAction).disabled(isSaving || model.isWorking)
+                }.buttonStyle(.borderedProminent).keyboardShortcut(.defaultAction).disabled(isSaving || model.isWorking || !details.valid)
             }
-        }.padding(Design.xlarge).frame(width: 560)
+        }.padding(Design.xlarge).frame(width: 600, height: 740)
             .onAppear {
+                details = model.printDetails(item)
                 sourcePath = model.preferences.completedMoveMode == "library" ? "" : sources.first?.path ?? ""
                 directory = source == nil ? model.rootURL.appendingPathComponent("Files/Printed") : model.printDestination(for: source)
             }

@@ -50,6 +50,19 @@ public actor LibraryRepository {
         records.filter { includeTrashed || !$0.isTrashed }.sorted { lhs, rhs in lhs.importedAt == rhs.importedAt ? lhs.id < rhs.id : lhs.importedAt > rhs.importedAt }
     }
 
+    public func recoverFilaments() throws {
+        var candidate = records; var changed = false
+        for i in candidate.indices where candidate[i].filaments == nil {
+            guard let parsed = try? ThreeMFReader(url: rootURL.appendingPathComponent(candidate[i].filePath)).parse() else { continue }
+            candidate[i].filaments = parsed.filaments
+            for p in candidate[i].plates.indices {
+                candidate[i].plates[p].filaments = parsed.plates.first { $0.id == candidate[i].plates[p].id }?.filaments
+            }
+            changed = true
+        }
+        if changed { try commit(candidate) }
+    }
+
     public func recoverSavedGCodeTimes() throws {
         var candidate = records
         var changed = false
@@ -84,7 +97,7 @@ public actor LibraryRepository {
         if let expectedHash {
             guard expectedHash.utf8.count == 64,
                   expectedHash.utf8.allSatisfy({ (48...57).contains($0) || (97...102).contains($0) }) else {
-                throw LibraryError.invalidArchive("SHA256 확인값이 올바르지 않습니다")
+                throw LibraryError.invalidArchive(CL("SHA256 확인값이 올바르지 않습니다"))
             }
         }
         var source = source.standardizedFileURL
@@ -92,7 +105,7 @@ public actor LibraryRepository {
         let keys: Set<URLResourceKey> = [.isRegularFileKey, .isSymbolicLinkKey, .fileSizeKey, .contentModificationDateKey, .creationDateKey]
         let before = try source.resourceValues(forKeys: keys)
         guard before.isRegularFile == true, before.isSymbolicLink != true else { throw LibraryError.unsupportedFile }
-        guard UInt64(before.fileSize ?? 0) <= ArchiveLimits.archiveBytes else { throw LibraryError.limitExceeded("원본 파일 크기") }
+        guard UInt64(before.fileSize ?? 0) <= ArchiveLimits.archiveBytes else { throw LibraryError.limitExceeded(CL("원본 파일 크기")) }
         let staging = rootURL.appendingPathComponent(".staging/\(UUID().uuidString)", isDirectory: true)
         try fileManager.createDirectory(at: staging, withIntermediateDirectories: true)
         defer { try? fileManager.removeItem(at: staging) }
@@ -106,7 +119,7 @@ public actor LibraryRepository {
         let id = try Self.hashFile(stagedArchive)
         // Verify the independent staged copy before dedup metadata, files, or the index can change.
         if let expectedHash, id != expectedHash {
-            throw LibraryError.invalidArchive("파일 확인값이 기록과 일치하지 않습니다")
+            throw LibraryError.invalidArchive(CL("파일 확인값이 기록과 일치하지 않습니다"))
         }
         if let deleted = records.first(where: { $0.id == id && $0.isTrashed }) {
             // Background scans must never resurrect a deliberately removed model.
@@ -136,7 +149,7 @@ public actor LibraryRepository {
                                profileID: (meta["designprofileid"] ?? meta["profileid"] ?? meta["bambustudio:designprofileid"])?.nonEmpty,
                                profileTitle: meta["profiletitle"]?.nonEmpty, materials: parsed.materials,
                                printerModel: parsed.printerModel, plates: parsed.plates, hasGCode: parsed.hasGCode,
-                               fileAddedAt: before.creationDate)
+                               fileAddedAt: before.creationDate, filaments: parsed.filaments)
             candidate.append(item)
         }
 
@@ -150,7 +163,7 @@ public actor LibraryRepository {
             } else {
                 let values = try finalArchive.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey])
                 guard values.isRegularFile == true, values.isSymbolicLink != true,
-                      try Self.hashFile(finalArchive) == id else { throw LibraryError.invalidArchive("보관한 원본의 무결성 검사 실패") }
+                      try Self.hashFile(finalArchive) == id else { throw LibraryError.invalidArchive(CL("보관한 원본의 무결성 검사 실패")) }
             }
             for (relative, bytes) in previews {
                 let destination = rootURL.appendingPathComponent(relative)
@@ -206,7 +219,14 @@ public actor LibraryRepository {
     }
 
     /// Studio's stable run ID allows prepared/submitted updates without creating duplicate history.
+    private static func validatePrintDetails(_ seconds: Double?, _ filaments: [FilamentRecord]?) throws {
+        guard seconds == nil || (seconds!.isFinite && seconds! > 0),
+              (filaments ?? []).allSatisfy({ f in
+                  [f.grams, f.meters].allSatisfy { $0 == nil || ($0!.isFinite && $0! >= 0) }
+              }) else { throw LibraryError.invalidSettings }
+    }
     public func appendRun(itemID: String, run: PrintRun) throws {
+        try Self.validatePrintDetails(run.durationSeconds, run.filaments)
         guard let offset = records.firstIndex(where: { $0.id == itemID }) else { throw LibraryError.itemNotFound }
         var candidate = records
         if let existing = candidate[offset].printRuns.firstIndex(where: { $0.id == run.id }) {
@@ -222,10 +242,10 @@ public actor LibraryRepository {
     @discardableResult public func saveCategory(id: String? = nil, name: String, assigningTo itemID: String? = nil) throws -> LibraryCategory {
         let name = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !name.isEmpty, name.count <= 80, !name.contains("\n"), !name.contains("\0") else {
-            throw LibraryError.fileMove("분류 이름은 1~80자로 입력해 주세요.")
+            throw LibraryError.fileMove(CL("분류 이름은 1~80자로 입력해 주세요."))
         }
         guard !categoryRecords.contains(where: { $0.id != id && $0.name.compare(name, options: [.caseInsensitive, .diacriticInsensitive]) == .orderedSame }) else {
-            throw LibraryError.fileMove("같은 이름의 분류가 이미 있습니다.")
+            throw LibraryError.fileMove(CL("같은 이름의 분류가 이미 있습니다."))
         }
         var categories = categoryRecords
         let category: LibraryCategory
@@ -293,7 +313,7 @@ public actor LibraryRepository {
         try fileManager.createDirectory(at: to.deletingLastPathComponent(), withIntermediateDirectories: true)
         let values = try to.deletingLastPathComponent().resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey])
         guard values.isDirectory == true, values.isSymbolicLink != true else { throw LibraryError.unsafePath(after.filePath) }
-        guard !fileManager.fileExists(atPath: to.path) else { throw LibraryError.fileMove("이동 위치에 파일이 이미 있습니다. 기존 파일을 보존했습니다.") }
+        guard !fileManager.fileExists(atPath: to.path) else { throw LibraryError.fileMove(CL("이동 위치에 파일이 이미 있습니다. 기존 파일을 보존했습니다.")) }
         let journal = ArchiveMoveJournal(itemID: before.id, from: before.filePath, to: after.filePath)
         let journalURL = rootURL.appendingPathComponent(".archive-move.json")
         try JSONEncoder().encode(journal).write(to: journalURL, options: .atomic)
@@ -349,7 +369,8 @@ public actor LibraryRepository {
 
     /// Move the archived original and, when selected, one external source; preserve all other copies.
     /// The journal rolls incomplete moves back after interruption, before the library is used again.
-    public func completePrint(itemID: String, note: String, sourceURL: URL? = nil, directoryURL: URL? = nil) throws -> PrintRun {
+    public func completePrint(itemID: String, note: String, sourceURL: URL? = nil, directoryURL: URL? = nil, durationSeconds: Double? = nil, durationSource: String? = nil, filaments: [FilamentRecord]? = nil) throws -> PrintRun {
+        try Self.validatePrintDetails(durationSeconds, filaments)
         try Self.recoverPrintMove(root: rootURL, records: records)
         guard let offset = records.firstIndex(where: { $0.id == itemID && !$0.isTrashed }) else { throw LibraryError.itemNotFound }
         let item = records[offset]
@@ -367,20 +388,20 @@ public actor LibraryRepository {
         if let sourceURL {
             let source = sourceURL.standardizedFileURL
             guard source.isFileURL, !source.path.hasPrefix(rootURL.path + "/"), item.sourcePaths.contains(source.path),
-                  let directoryURL, directoryURL.isFileURL else { throw LibraryError.fileMove("이 모델의 원본 파일과 이동 폴더를 선택해 주세요.") }
+                  let directoryURL, directoryURL.isFileURL else { throw LibraryError.fileMove(CL("이 모델의 원본 파일과 이동 폴더를 선택해 주세요.")) }
             try Self.verifyMoveFile(source, id: itemID)
             let directory = directoryURL.standardizedFileURL.resolvingSymlinksInPath()
             guard directory != rootURL, !directory.path.hasPrefix(rootURL.path + "/") else {
-                throw LibraryError.fileMove("원본 파일의 이동 위치는 앱 보관함 밖의 폴더를 선택해 주세요.")
+                throw LibraryError.fileMove(CL("원본 파일의 이동 위치는 앱 보관함 밖의 폴더를 선택해 주세요."))
             }
             try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
             let values = try directory.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey])
-            guard values.isDirectory == true, values.isSymbolicLink != true else { throw LibraryError.fileMove("이동할 폴더를 사용할 수 없습니다.") }
+            guard values.isDirectory == true, values.isSymbolicLink != true else { throw LibraryError.fileMove(CL("이동할 폴더를 사용할 수 없습니다.")) }
             var destination = directory.appendingPathComponent(source.lastPathComponent)
             if source != destination {
                 var suffix = 2
                 while fileManager.fileExists(atPath: destination.path) {
-                    guard suffix <= 10_000 else { throw LibraryError.fileMove("같은 이름의 파일이 너무 많습니다. 다른 폴더를 선택해 주세요.") }
+                    guard suffix <= 10_000 else { throw LibraryError.fileMove(CL("같은 이름의 파일이 너무 많습니다. 다른 폴더를 선택해 주세요.")) }
                     destination = directory.appendingPathComponent("\(source.deletingPathExtension().lastPathComponent) (\(suffix)).3mf")
                     suffix += 1
                 }
@@ -389,11 +410,12 @@ public actor LibraryRepository {
             }
         }
         for move in moves {
-            guard !fileManager.fileExists(atPath: move.to) else { throw LibraryError.fileMove("이동 위치에 파일이 이미 있습니다. 기존 파일은 보존했습니다.") }
+            guard !fileManager.fileExists(atPath: move.to) else { throw LibraryError.fileMove(CL("이동 위치에 파일이 이미 있습니다. 기존 파일은 보존했습니다.")) }
         }
         let run = PrintRun(status: "completed", source: "manual", note: note,
                            movedFrom: externalMove?.from ?? (archived == completed ? nil : archived.path),
-                           movedTo: externalMove?.to ?? sourceURL?.path ?? completed.path)
+                           movedTo: externalMove?.to ?? sourceURL?.path ?? completed.path,
+                           durationSeconds: durationSeconds, durationSource: durationSource, filaments: filaments)
         var candidate = records
         candidate[offset].filePath = completedRelative
         if let move = externalMove {
@@ -413,7 +435,7 @@ public actor LibraryRepository {
             try commit(candidate)
         } catch {
             do { try Self.recoverPrintMove(root: rootURL, records: records) }
-            catch { throw LibraryError.fileMove("파일 이동 복구를 완료하지 못했습니다. 파일을 삭제하지 말고 앱을 다시 열어 주세요. \(error.localizedDescription)") }
+            catch { throw LibraryError.fileMove(String(format: CL("파일 이동 복구를 완료하지 못했습니다. 파일을 삭제하지 말고 앱을 다시 열어 주세요. %@"), String(error.localizedDescription))) }
             throw error
         }
         // A leftover committed journal is harmless and is cleared on the next open.
@@ -424,7 +446,7 @@ public actor LibraryRepository {
     private static func verifyMoveFile(_ url: URL, id: String) throws {
         let values = try url.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey])
         guard values.isRegularFile == true, values.isSymbolicLink != true, try hashFile(url) == id else {
-            throw LibraryError.fileMove("파일이 보관 당시와 달라 이동하지 않았습니다. 변경한 파일을 먼저 다시 가져와 주세요.")
+            throw LibraryError.fileMove(CL("파일이 보관 당시와 달라 이동하지 않았습니다. 변경한 파일을 먼저 다시 가져와 주세요."))
         }
     }
     private static func recoverPrintMove(root: URL, records: [LibraryItem]) throws {
@@ -434,7 +456,7 @@ public actor LibraryRepository {
         guard values.isRegularFile == true, values.isSymbolicLink != true, (values.fileSize ?? .max) <= 65_536,
               let journal = try? JSONDecoder().decode(PrintMoveJournal.self, from: Data(contentsOf: journalURL)),
               let item = records.first(where: { $0.id == journal.itemID }), journal.moves.count <= 2,
-              UUID(uuidString: journal.runID) != nil else { throw LibraryError.fileMove("출력 완료 파일의 이동 기록을 확인할 수 없습니다.") }
+              UUID(uuidString: journal.runID) != nil else { throw LibraryError.fileMove(CL("출력 완료 파일의 이동 기록을 확인할 수 없습니다.")) }
         if item.printRuns.contains(where: { $0.id == journal.runID && $0.status == "completed" }) {
             try manager.removeItem(at: journalURL); return
         }
@@ -444,14 +466,14 @@ public actor LibraryRepository {
             let archiveMove = move.from == archiveFrom && move.to == archiveTo && item.filePath == "Files/\(item.id).3mf"
             let externalMove = item.sourcePaths.contains(move.from) && !move.from.hasPrefix(root.path + "/") &&
                 move.to.hasPrefix("/") && !move.to.hasPrefix(root.path + "/") && URL(fileURLWithPath: move.to).pathExtension.lowercased() == "3mf"
-            guard archiveMove || externalMove else { throw LibraryError.fileMove("파일 이동 기록의 경로를 확인할 수 없습니다.") }
+            guard archiveMove || externalMove else { throw LibraryError.fileMove(CL("파일 이동 기록의 경로를 확인할 수 없습니다.")) }
         }
         for move in journal.moves.reversed() {
             let from = URL(fileURLWithPath: move.from), to = URL(fileURLWithPath: move.to)
             // A failed rename (including a destination collision) leaves the source in place.
             // Preserve both files if another process created one; never overwrite a source while recovering.
             if manager.fileExists(atPath: from.path) { continue }
-            guard manager.fileExists(atPath: to.path) else { throw LibraryError.fileMove("이동 중인 파일을 찾을 수 없습니다: \(from.lastPathComponent)") }
+            guard manager.fileExists(atPath: to.path) else { throw LibraryError.fileMove(String(format: CL("이동 중인 파일을 찾을 수 없습니다: %@"), String(from.lastPathComponent))) }
             try verifyMoveFile(to, id: item.id)
             try manager.moveItem(at: to, to: from)
         }
@@ -483,7 +505,7 @@ public actor LibraryRepository {
         var total: UInt64 = 0
         while let bytes = try handle.read(upToCount: 1_024 * 1_024), !bytes.isEmpty {
             total += UInt64(bytes.count)
-            guard total <= ArchiveLimits.archiveBytes else { throw LibraryError.limitExceeded("원본 파일 크기") }
+            guard total <= ArchiveLimits.archiveBytes else { throw LibraryError.limitExceeded(CL("원본 파일 크기")) }
             hash.update(data: bytes)
         }
         return hash.finalize().map { String(format: "%02x", $0) }.joined()

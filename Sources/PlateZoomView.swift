@@ -12,7 +12,7 @@ struct PlateZoomView: View {
         VStack(spacing: Design.large) {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: Design.tiny) {
-                    Text(plate?.name ?? L("plate")).font(Design.detailTitle)
+                    Text(plate.map(plateTitle) ?? L("plate")).font(Design.detailTitle)
                     Text(item.title).font(Design.body).foregroundStyle(Design.secondary).lineLimit(1)
                 }
                 Spacer()
@@ -23,7 +23,7 @@ struct PlateZoomView: View {
             HStack(spacing: Design.large) {
                 Button { index -= 1 } label: { Label(L("plate.previous"), systemImage: "chevron.left") }.disabled(index == 0).keyboardShortcut(.leftArrow, modifiers: [])
                 Spacer()
-                EstimateLabel(estimate: plate.flatMap { model.displayedEstimate(item, plate: $0) }, missing: "개별 시간 미제공")
+                EstimateLabel(estimate: plate.flatMap { model.displayedEstimate(item, plate: $0) }, missing: L("개별 시간 미제공"))
                 if let grams = plate?.weightGrams { Text(weightText(grams)).monospacedDigit() }
                 Spacer()
                 Button { index += 1 } label: { Label(L("plate.next"), systemImage: "chevron.right") }.disabled(index + 1 >= item.plates.count).keyboardShortcut(.rightArrow, modifiers: [])
@@ -37,7 +37,7 @@ struct PlateZoomView: View {
                                     ModelImage(url: model.imageURL(item, plate: p)).frame(width: Design.plateThumbnail, height: Design.hero)
                                     Text("\(offset + 1)").font(Design.caption)
                                 }.padding(Design.tiny).overlay(RoundedRectangle(cornerRadius: Design.imageRadius).stroke(index == offset ? Design.accent : Color.clear, lineWidth: 2))
-                            }.buttonStyle(.plain).accessibilityLabel(p.name)
+                            }.buttonStyle(.plain).accessibilityLabel(plateTitle(p))
                         }
                     }.padding(Design.tiny)
                 }.fixedSize(horizontal: false, vertical: true)

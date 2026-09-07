@@ -13,7 +13,7 @@ final class MakerWorldBrowser: NSObject, ObservableObject, WKNavigationDelegate,
     @Published var pageError: String?
     @Published var context: CapturedMakerWorldSource?
     @Published var transferCount = 0
-    @Published var transferMessage = "웹에서 다운로드하거나 Studio로 열면 여기에 보관됩니다."
+    @Published var transferMessage = L("웹에서 다운로드하거나 Studio로 열면 여기에 보관됩니다.")
     @Published var transferError: String?
     @Published var lastItemID: String?
     @Published var preferStored = true {
@@ -46,7 +46,7 @@ final class MakerWorldBrowser: NSObject, ObservableObject, WKNavigationDelegate,
                let source = try? String(contentsOf: url, encoding: .utf8) {
                 content.addUserScript(WKUserScript(source: source, injectionTime: .atDocumentStart, forMainFrameOnly: true))
             } else {
-                pageError = "MakerWorld 보관 연결을 불러오지 못했습니다. 앱을 다시 설치해 주세요."
+                pageError = L("MakerWorld 보관 연결을 불러오지 못했습니다. 앱을 다시 설치해 주세요.")
             }
         }
         let view = WKWebView(frame: .zero, configuration: configuration)
@@ -88,7 +88,7 @@ final class MakerWorldBrowser: NSObject, ObservableObject, WKNavigationDelegate,
     }
     func navigate(_ text: String) {
         guard let url = MakerWorldBrowserPolicy.address(text) else {
-            pageError = "MakerWorld 주소나 검색어를 입력해 주세요."; return
+            pageError = L("MakerWorld 주소나 검색어를 입력해 주세요."); return
         }
         load(url)
     }
@@ -145,7 +145,7 @@ final class MakerWorldBrowser: NSObject, ObservableObject, WKNavigationDelegate,
         guard activeLinks.insert(key).inserted else { return }
         lastHandoff = url // Session memory only; never persist signed asset URLs.
         transferCount += 1; transferError = nil
-        transferMessage = force ? "최신 파일을 확인하고 있습니다…" : "선택한 프로필을 보관하고 있습니다…"
+        transferMessage = force ? L("최신 파일을 확인하고 있습니다…") : L("선택한 프로필을 보관하고 있습니다…")
         let reuse = preferStored
         Task { @MainActor [weak self] in
             guard let self else { return }
@@ -154,11 +154,11 @@ final class MakerWorldBrowser: NSObject, ObservableObject, WKNavigationDelegate,
                 let result = try await model.receiveBrowserDownload(url, preferStored: reuse, forceDownload: force)
                 self.lastItemID = result.itemID
                 self.transferMessage = result.usedLibrary
-                    ? (result.openedStudio ? "보관된 파일을 다운로드 없이 Studio에서 열었습니다." : "이미 보관한 프로필입니다. 저장된 파일을 사용합니다.")
-                    : (result.openedStudio ? "원본 링크와 함께 보관하고 Studio에서 열었습니다." : "3MF와 원본·프로필 정보를 보관했습니다.")
+                    ? (result.openedStudio ? L("보관된 파일을 다운로드 없이 Studio에서 열었습니다.") : L("이미 보관한 프로필입니다. 저장된 파일을 사용합니다."))
+                    : (result.openedStudio ? L("원본 링크와 함께 보관하고 Studio에서 열었습니다.") : L("3MF와 원본·프로필 정보를 보관했습니다."))
             } catch {
                 self.transferError = error.localizedDescription
-                self.transferMessage = "파일을 보관하지 못했습니다."
+                self.transferMessage = L("파일을 보관하지 못했습니다.")
             }
         }
     }
@@ -198,11 +198,11 @@ final class MakerWorldBrowser: NSObject, ObservableObject, WKNavigationDelegate,
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) { navigationFailed(webView, error) }
     private func navigationFailed(_ view: WKWebView, _ error: Error) {
         guard view === webView, (error as NSError).code != NSURLErrorCancelled else { return }
-        pageError = "페이지를 불러오지 못했습니다. 연결을 확인한 뒤 다시 시도해 주세요."
+        pageError = L("페이지를 불러오지 못했습니다. 연결을 확인한 뒤 다시 시도해 주세요.")
         isLoading = false
     }
     func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
-        if webView === self.webView { pageError = "웹 화면이 종료되었습니다. 새로고침하면 다시 열립니다."; isLoading = false }
+        if webView === self.webView { pageError = L("웹 화면이 종료되었습니다. 새로고침하면 다시 열립니다."); isLoading = false }
     }
     func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration, for action: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
         if let url = action.request.url, MakerWorldBrowserPolicy.isMakerWorld(url) {
@@ -212,7 +212,7 @@ final class MakerWorldBrowser: NSObject, ObservableObject, WKNavigationDelegate,
         let popup = WKWebView(frame: NSRect(x: 0, y: 0, width: 640, height: 760), configuration: configuration)
         popup.navigationDelegate = self; popup.uiDelegate = self
         let window = NSWindow(contentRect: popup.frame, styleMask: [.titled, .closable, .resizable], backing: .buffered, defer: false)
-        window.title = "MakerWorld 로그인"; window.isReleasedWhenClosed = false
+        window.title = L("MakerWorld 로그인"); window.isReleasedWhenClosed = false
         window.contentView = popup; window.delegate = self; window.center()
         popups[ObjectIdentifier(popup)] = (window, popup)
         window.makeKeyAndOrderFront(nil)
@@ -226,13 +226,13 @@ final class MakerWorldBrowser: NSObject, ObservableObject, WKNavigationDelegate,
     }
     func webView(_ webView: WKWebView, runJavaScriptAlertPanelWithMessage message: String, initiatedByFrame frame: WKFrameInfo, completionHandler: @escaping () -> Void) {
         let alert = NSAlert(); alert.messageText = frame.securityOrigin.host
-        alert.informativeText = String(message.prefix(2000)); alert.addButton(withTitle: "확인")
+        alert.informativeText = String(message.prefix(2000)); alert.addButton(withTitle: L("확인"))
         if let window = webView.window { alert.beginSheetModal(for: window) { _ in completionHandler() } }
         else { completionHandler() }
     }
     func webView(_ webView: WKWebView, runJavaScriptConfirmPanelWithMessage message: String, initiatedByFrame frame: WKFrameInfo, completionHandler: @escaping (Bool) -> Void) {
         let alert = NSAlert(); alert.messageText = frame.securityOrigin.host; alert.informativeText = String(message.prefix(2000))
-        alert.addButton(withTitle: "확인"); alert.addButton(withTitle: "취소")
+        alert.addButton(withTitle: L("확인")); alert.addButton(withTitle: L("취소"))
         if let window = webView.window { alert.beginSheetModal(for: window) { completionHandler($0 == .alertFirstButtonReturn) } }
         else { completionHandler(false) }
     }
@@ -247,7 +247,7 @@ final class MakerWorldBrowser: NSObject, ObservableObject, WKNavigationDelegate,
     func download(_ download: WKDownload, decideDestinationUsing response: URLResponse, suggestedFilename: String, completionHandler: @escaping (URL?) -> Void) {
         // Known 3MF handoffs use the bounded native importer. Other site files use an explicit Save dialog.
         let panel = NSSavePanel(); panel.nameFieldStringValue = URL(fileURLWithPath: suggestedFilename).lastPathComponent
-        panel.title = "파일 저장"; panel.canCreateDirectories = true
+        panel.title = L("파일 저장"); panel.canCreateDirectories = true
         guard let window = webView.window else { completionHandler(nil); return }
         panel.beginSheetModal(for: window) { [weak self] result in
             let destination = result == .OK ? panel.url : nil
@@ -257,12 +257,12 @@ final class MakerWorldBrowser: NSObject, ObservableObject, WKNavigationDelegate,
     }
     func downloadDidFinish(_ download: WKDownload) {
         if let file = downloadDestinations.removeValue(forKey: ObjectIdentifier(download)) {
-            transferMessage = "\(file.lastPathComponent)을 저장했습니다."
+            transferMessage = String(format: L("%@을 저장했습니다."), String(file.lastPathComponent))
         }
     }
     func download(_ download: WKDownload, didFailWithError error: Error, resumeData: Data?) {
         downloadDestinations.removeValue(forKey: ObjectIdentifier(download))
-        if (error as NSError).code != NSURLErrorCancelled { transferError = "다운로드가 중단되었습니다. 다시 시도해 주세요." }
+        if (error as NSError).code != NSURLErrorCancelled { transferError = L("다운로드가 중단되었습니다. 다시 시도해 주세요.") }
     }
 }
 

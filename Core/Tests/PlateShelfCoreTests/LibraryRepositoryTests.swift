@@ -475,3 +475,41 @@ final class LibraryRepositoryTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: repo.rootURL.appendingPathComponent("index.json").path))
     }
 }
+
+extension LibraryRepositoryTests {
+    func testFilamentSlotMappingAndBackfillPreserveLegacyPrintRecords() async throws {
+        let settings = Data(##"{"filament_type":["PLA","PETG"],"filament_settings_id":["Bambu PLA Basic","Generic PETG"],"filament_colour":["#F5CF00","#FF0000"]}"##.utf8)
+        let slices = Data(##"<config><plate><metadata key="index" value="2"/><filament id="2" type="PETG" color="#FF0000" used_g="3.5" used_m="1.2"/></plate><plate><metadata key="index" value="1"/><filament id="1" type="PLA" color="#F5CF00" used_g="12" used_m="4"/></plate></config>"##.utf8)
+        let repo = try repository(), source = try fixture(changes: ["Metadata/project_settings.config": settings, "Metadata/slice_info.config": slices])
+        let item = try await repo.importFile(at: source).item
+        XCTAssertEqual(item.filaments?.map(\.name), ["Bambu PLA Basic", "Generic PETG"])
+        XCTAssertEqual(item.plates[0].filaments?.first?.name, "Generic PETG")
+        XCTAssertEqual(item.plates[0].filaments?.first?.grams, 3.5)
+        XCTAssertEqual(item.plates[1].filaments?.first?.color, "#F5CF00")
+        let run = PrintRun(status: "completed", source: "manual", note: "Keep this", durationSeconds: 1620, durationSource: "makerWorld", filaments: [FilamentRecord(material: "PLA", grams: 12)])
+        try await repo.appendRun(itemID: item.id, run: run)
+        // Simulate an older index without newly imported filament metadata.
+        let indexURL = repo.rootURL.appendingPathComponent("index.json")
+        var json = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: indexURL)) as? [String:Any])
+        var items = try XCTUnwrap(json["items"] as? [[String:Any]])
+        items[0].removeValue(forKey: "filaments")
+        var plates = items[0]["plates"] as! [[String:Any]]
+        for i in plates.indices { plates[i].removeValue(forKey: "filaments") }
+        items[0]["plates"] = plates; json["items"] = items
+        try JSONSerialization.data(withJSONObject: json).write(to: indexURL)
+        let reopened = try LibraryRepository(rootURL: repo.rootURL)
+        try await reopened.recoverFilaments()
+        let restored = await reopened.items()[0]
+        XCTAssertEqual(restored.printRuns.count, 1); XCTAssertEqual(restored.printRuns[0].note, run.note); XCTAssertEqual(restored.printRuns[0].durationSeconds, run.durationSeconds); XCTAssertEqual(restored.printRuns[0].filaments, run.filaments); XCTAssertEqual(restored.filaments, item.filaments)
+        XCTAssertEqual(restored.plates.map(\.filaments), item.plates.map(\.filaments))
+        let bytes = try Data(contentsOf: indexURL); try await reopened.recoverFilaments()
+        XCTAssertEqual(try Data(contentsOf: indexURL), bytes)
+    }
+    func testInvalidPrintDetailsAreRejectedBeforeFileMoves() async throws {
+        let repo = try repository(), source = try fixture(), item = try await repo.importFile(at: source).item
+        do { _ = try await repo.completePrint(itemID: item.id, note: "", durationSeconds: -1); XCTFail("Invalid duration") } catch {}
+        do { try await repo.appendRun(itemID: item.id, run: PrintRun(status: "completed", source: "manual", filaments: [FilamentRecord(grams: -.infinity)])); XCTFail("Invalid filament") } catch {}
+        let records = await repo.items(); XCTAssertTrue(records[0].printRuns.isEmpty)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: repo.rootURL.appendingPathComponent(item.filePath).path))
+    }
+}

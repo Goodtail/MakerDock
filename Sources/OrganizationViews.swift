@@ -17,7 +17,7 @@ struct CategoryMenu: View {
     var body: some View {
         Menu {
             Button { Task { await model.assignCategory(item, categoryID: nil) } } label: {
-                Label("미분류", systemImage: item.categoryID == nil ? "checkmark" : "tray")
+                Label(L("미분류"), systemImage: item.categoryID == nil ? "checkmark" : "tray")
             }
             ForEach(model.categories) { category in
                 Button { Task { await model.assignCategory(item, categoryID: category.id) } } label: {
@@ -25,10 +25,10 @@ struct CategoryMenu: View {
                 }
             }
             Divider()
-            Button("새 분류 만들기…") { model.categoryEditor = CategoryEditRequest(itemID: item.id) }
+            Button(L("새 분류 만들기…")) { model.categoryEditor = CategoryEditRequest(itemID: item.id) }
         } label: {
             Label(model.categoryName(item), systemImage: "folder")
-        }.disabled(model.isWorking).help("분류 선택")
+        }.disabled(model.isWorking).help(L("분류 선택"))
     }
 }
 
@@ -42,16 +42,16 @@ struct CategoryEditorSheet: View {
     @FocusState private var nameFocused: Bool
     var body: some View {
         VStack(alignment: .leading, spacing: Design.large) {
-            Label(request.categoryID == nil ? "새 분류" : "분류 이름 변경", systemImage: "folder.badge.plus").font(Design.detailTitle)
-            TextField("예: 생활용품, 작업 도구, 선물", text: $name).textFieldStyle(.roundedBorder).focused($nameFocused)
+            Label(request.categoryID == nil ? L("새 분류") : L("분류 이름 변경"), systemImage: "folder.badge.plus").font(Design.detailTitle)
+            TextField(L("예: 생활용품, 작업 도구, 선물"), text: $name).textFieldStyle(.roundedBorder).focused($nameFocused)
                 .onSubmit { save() }
-            Text(request.itemID == nil ? "분류를 만들어 모델을 모아보세요. 분류 이름을 바꿔도 파일 위치는 유지됩니다." : "새 분류를 만들고 선택한 모델에 바로 적용합니다.")
+            Text(request.itemID == nil ? L("분류를 만들어 모델을 모아보세요. 분류 이름을 바꿔도 파일 위치는 유지됩니다.") : L("새 분류를 만들고 선택한 모델에 바로 적용합니다."))
                 .font(Design.caption).foregroundStyle(Design.secondary)
             if let error { Text(error).font(Design.caption).foregroundStyle(.red) }
             HStack {
                 Spacer()
-                Button("취소") { dismiss() }.keyboardShortcut(.cancelAction).disabled(isSaving)
-                Button("저장") { save() }.keyboardShortcut(.defaultAction).buttonStyle(.borderedProminent)
+                Button(L("취소")) { dismiss() }.keyboardShortcut(.cancelAction).disabled(isSaving)
+                Button(L("저장")) { save() }.keyboardShortcut(.defaultAction).buttonStyle(.borderedProminent)
                     .disabled(isSaving || name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
         }.padding(Design.xlarge).frame(width: 420)
@@ -74,18 +74,18 @@ struct TrashInspector: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Design.large) {
-                Label("휴지통", systemImage: "trash").font(Design.heading)
+                Label(L("휴지통"), systemImage: "trash").font(Design.heading)
                 ModelImage(url: model.imageURL(item)).frame(height: 220)
                 Text(item.title).font(Design.detailTitle).textSelection(.enabled)
-                if let date = item.deletedAt { Text("삭제일: " + date.formatted(date: .abbreviated, time: .shortened)).font(Design.caption).foregroundStyle(Design.secondary) }
-                Button { Task { await model.restore(item.id) } } label: { Label("모델 복원", systemImage: "arrow.uturn.backward").frame(maxWidth: .infinity) }
+                if let date = item.deletedAt { Text(L("삭제일: ") + dateText(date)).font(Design.caption).foregroundStyle(Design.secondary) }
+                Button { Task { await model.restore(item.id) } } label: { Label(L("모델 복원"), systemImage: "arrow.uturn.backward").frame(maxWidth: .infinity) }
                     .buttonStyle(.borderedProminent).disabled(model.isWorking)
-                Text("분류·메모·출력 기록을 함께 복원합니다. 외부 원본 파일은 삭제하지 않았습니다.").font(Design.body).foregroundStyle(Design.secondary)
+                Text(L("분류·메모·출력 기록을 함께 복원합니다. 외부 원본 파일은 삭제하지 않았습니다.")).font(Design.body).foregroundStyle(Design.secondary)
                 Divider()
                 Label(model.categoryName(item), systemImage: "folder")
                 if !item.note.isEmpty { Text(item.note).textSelection(.enabled) }
-                Text("출력 기록 \(item.printRuns.count)개").font(Design.caption)
-                Button("보관 파일을 Finder에서 보기") { model.reveal(item) }.buttonStyle(.link)
+                Text(String(format: L("출력 기록 %@개"), String(item.printRuns.count))).font(Design.caption)
+                Button(L("보관 파일을 Finder에서 보기")) { model.reveal(item) }.buttonStyle(.link)
             }.padding(Design.large)
         }.background(Design.surface)
     }
