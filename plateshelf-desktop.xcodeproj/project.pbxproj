@@ -21,10 +21,12 @@
 		8256703034936714F00678BF /* PlateShelfCore in Frameworks */ = {isa = PBXBuildFile; productRef = 56518E8A52EAF49B75CB3580 /* PlateShelfCore */; };
 		8C51FD22A6F44BB06D0CA5F0 /* PlateZoomView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FEC715B4ACBB3F8A32C80F2 /* PlateZoomView.swift */; };
 		97273E8C32351DA88ACCE3E9 /* BrowserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33DF895B5CB02E230BB15C5D /* BrowserTests.swift */; };
+		A4CD2A0A2C51EABB8C194114 /* licenses in Resources */ = {isa = PBXBuildFile; fileRef = 85F2691F84BCB2888298DC12 /* licenses */; };
 		B06F791627EBDF474AEFBAC5 /* BrowserShared.js in Resources */ = {isa = PBXBuildFile; fileRef = F7C2856C15218E3EC7AAF595 /* BrowserShared.js */; };
 		BEB4C06AB417C0985CD811AC /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = C97D7FA18582412B877C026F /* Localizable.strings */; };
 		CA4CA8D83A17063C8AD9523D /* PlateShelfCore in Frameworks */ = {isa = PBXBuildFile; productRef = C301486F81BF550C724655D5 /* PlateShelfCore */; };
 		CD1BE20C4492E2702DE8EB5F /* LibraryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4505945EEEC1C08C64C32C8B /* LibraryViewModel.swift */; };
+		D67718818CB2A2EE4582F1AE /* THIRD_PARTY_NOTICES.md in Resources */ = {isa = PBXBuildFile; fileRef = C2E8ED3751658528295577BC /* THIRD_PARTY_NOTICES.md */; };
 		D8EA5BBF5D1521F2D1146A24 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4328522F98647FF99E472A7D /* ContentView.swift */; };
 		E641AB0D60B4B87970D5C73A /* BrowserBridge.js in Resources */ = {isa = PBXBuildFile; fileRef = 51B5A240EDC22A77760728B5 /* BrowserBridge.js */; };
 		EA18373C8696F6C903401868 /* MakerWorldLinkService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 879CEA159C671B0AF8BD9CF0 /* MakerWorldLinkService.swift */; };
@@ -52,12 +54,14 @@
 		5F1DCA1268B7EE9C009BCF35 /* ko */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ko; path = ko.lproj/Localizable.strings; sourceTree = "<group>"; };
 		7FEC715B4ACBB3F8A32C80F2 /* PlateZoomView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlateZoomView.swift; sourceTree = "<group>"; };
 		82CD39E9F8DF205183B8CF49 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		85F2691F84BCB2888298DC12 /* licenses */ = {isa = PBXFileReference; lastKnownFileType = folder; path = licenses; sourceTree = SOURCE_ROOT; };
 		879CEA159C671B0AF8BD9CF0 /* MakerWorldLinkService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MakerWorldLinkService.swift; sourceTree = "<group>"; };
 		ADB95C1613120A86A37B149F /* StudioInbox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StudioInbox.swift; sourceTree = "<group>"; };
 		AEA2A73E5DB9E5C894990A5D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		AF6AFFF1DBA92E35EAA3306F /* MakerWorldView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MakerWorldView.swift; sourceTree = "<group>"; };
 		B53503833DD32F1F9D796AD6 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		C02E7C889F38E6192F51CB85 /* Core */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Core; path = Core; sourceTree = SOURCE_ROOT; };
+		C2E8ED3751658528295577BC /* THIRD_PARTY_NOTICES.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = THIRD_PARTY_NOTICES.md; sourceTree = "<group>"; };
 		C70E7D5D8D9242EF6968443A /* plateshelf-desktop.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "plateshelf-desktop.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		C720A1BA683FA3BC912414CC /* PlateShelfTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PlateShelfTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		DE50C74AC6FC33AACC97C5EA /* Fixture.3mf */ = {isa = PBXFileReference; path = Fixture.3mf; sourceTree = "<group>"; };
@@ -155,6 +159,8 @@
 			isa = PBXGroup;
 			children = (
 				AEA2A73E5DB9E5C894990A5D /* Assets.xcassets */,
+				85F2691F84BCB2888298DC12 /* licenses */,
+				C2E8ED3751658528295577BC /* THIRD_PARTY_NOTICES.md */,
 				92CE926346A400BC748C3611 /* AppTests */,
 				FAE37835C4AB46D8E61D6854 /* Config */,
 				06E71D59F72F6DAD15F7B5D4 /* Packages */,
@@ -286,6 +292,8 @@
 				E641AB0D60B4B87970D5C73A /* BrowserBridge.js in Resources */,
 				B06F791627EBDF474AEFBAC5 /* BrowserShared.js in Resources */,
 				BEB4C06AB417C0985CD811AC /* Localizable.strings in Resources */,
+				D67718818CB2A2EE4582F1AE /* THIRD_PARTY_NOTICES.md in Resources */,
+				A4CD2A0A2C51EABB8C194114 /* licenses in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -389,6 +397,7 @@
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_APP_SANDBOX = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
@@ -402,6 +411,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = NO;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(APP_BUNDLE_ID)";
 				PRODUCT_NAME = "$(APP_DISPLAY_NAME)";
 				SDKROOT = macosx;
