@@ -175,7 +175,7 @@ struct ContentView: View {
                     Image(systemName: model.filter == .trash ? "trash" : model.items.isEmpty ? "shippingbox" : "magnifyingglass").font(.system(size: Design.jumbo)).foregroundStyle(Design.secondary)
                     Text(model.filter == .trash && model.search.isEmpty ? L("휴지통이 비어 있습니다") : model.items.isEmpty ? L("empty.title") : L("search.empty")).font(Design.heading)
                     Text(model.filter == .trash && model.search.isEmpty ? L("삭제한 모델을 여기에서 복원할 수 있습니다.") : model.items.isEmpty ? L("empty.description") : L("search.retry")).multilineTextAlignment(.center).foregroundStyle(Design.secondary)
-                    if model.items.isEmpty && model.filter != .trash { Button(L("import.folder")) { model.chooseFolder() }.buttonStyle(.borderedProminent).disabled(model.isWorking) }
+                    if model.items.isEmpty && model.filter != .trash { Button(L("import.folder")) { model.chooseFolder() }.buttonStyle(.borderedProminent).tint(Design.action).foregroundStyle(Color.white).disabled(model.isWorking) }
                     else { Button(L("filter.reset")) { model.search = ""; model.filter = .all } }
                 }.padding(Design.xlarge)
                 Spacer()
@@ -297,7 +297,7 @@ struct ModelCard: View {
             .background(selected || hover ? Design.selection : Design.surface)
             .clipShape(RoundedRectangle(cornerRadius: Design.cardRadius))
             .overlay(RoundedRectangle(cornerRadius: Design.cardRadius).strokeBorder(selected ? Design.accent : Design.divider, lineWidth: selected ? 2 : 1))
-            .shadow(color: Design.ink.opacity(selected ? 0.07 : 0.025), radius: selected ? 8 : 3, y: 2)
+            .shadow(color: Design.shadow.opacity(selected ? 0.12 : 0.06), radius: selected ? 8 : 3, y: 2)
         }.buttonStyle(.plain).onHover { hover = $0 }.help(item.title)
     }
 }

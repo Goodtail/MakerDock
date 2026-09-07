@@ -34,7 +34,7 @@ struct MakerWorldView: View {
                     if let saved {
                         Text(L("보관된 프로필")).font(Design.caption).foregroundStyle(Design.accent)
                         Button(L("보관함에서 보기")) { model.showLibraryItem(saved.id) }
-                        Button(L("저장된 파일 열기")) { model.openInStudio(saved) }.buttonStyle(.borderedProminent)
+                        Button(L("저장된 파일 열기")) { model.openInStudio(saved) }.buttonStyle(.borderedProminent).tint(Design.action).foregroundStyle(Color.white)
                     } else {
                         Text(L("웹에서 3MF를 받으면 자동 보관")).font(Design.caption).foregroundStyle(Design.secondary)
                     }
@@ -48,7 +48,7 @@ struct MakerWorldView: View {
                         Image(systemName: "wifi.exclamationmark").font(.system(size: 30)).foregroundStyle(Design.secondary)
                         Text(error).multilineTextAlignment(.center)
                         HStack {
-                            Button(L("다시 불러오기")) { browser.reload() }.buttonStyle(.borderedProminent)
+                            Button(L("다시 불러오기")) { browser.reload() }.buttonStyle(.borderedProminent).tint(Design.action).foregroundStyle(Color.white)
                             Button(L("브라우저에서 열기")) { browser.openInBrowser() }
                         }
                     }.padding(Design.xlarge).frame(maxWidth: 440)

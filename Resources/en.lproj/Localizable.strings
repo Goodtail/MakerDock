@@ -368,3 +368,8 @@
 
 "integration.unavailable" = "Web download integration is not included in this release. Download the 3MF in your browser, then import it into MakerDock.";
 "plates.single" = "1 plate";
+"appearance.title" = "Appearance";
+"appearance.system" = "System";
+"appearance.light" = "Light";
+"appearance.dark" = "Dark";
+"appearance.description" = "Follow your Mac’s appearance or choose a theme for MakerDock.";

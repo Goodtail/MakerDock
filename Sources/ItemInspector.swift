@@ -26,7 +26,7 @@ struct ItemInspector: View {
                 }
                 VStack(alignment: .leading, spacing: Design.small) {
                     Button { model.openInStudio(item) } label: { Label(L("studio.open"), systemImage: "arrow.up.forward.app").frame(maxWidth: .infinity).padding(.vertical, Design.tiny) }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(.borderedProminent).tint(Design.action).foregroundStyle(Color.white)
                 HStack {
                     if model.isPrinted(item) { Label(L("출력 완료"), systemImage: "checkmark.circle.fill").foregroundStyle(Design.accent).font(Design.value) }
                     Button { showRecord = true } label: {
@@ -283,7 +283,7 @@ struct PrintRecordSheet: View {
                                                    durationSeconds: details.seconds, durationSource: details.durationSource, filaments: details.records) { dismiss() }
                         isSaving = false
                     }
-                }.buttonStyle(.borderedProminent).keyboardShortcut(.defaultAction).disabled(isSaving || model.isWorking || !details.valid)
+                }.buttonStyle(.borderedProminent).tint(Design.action).foregroundStyle(Color.white).keyboardShortcut(.defaultAction).disabled(isSaving || model.isWorking || !details.valid)
             }
         }.padding(Design.xlarge).frame(width: 600, height: 740)
             .onAppear {
