@@ -1,6 +1,6 @@
 # Privacy
 
-Applies to the official MakerDock 1.5.1 public DMG.
+Applies to the official MakerDock 1.6.0 public DMG.
 
 MakerDock keeps its model library on your Mac. It does not operate an account service, upload the library to a MakerDock server, include analytics, or collect printer/cloud credentials.
 
