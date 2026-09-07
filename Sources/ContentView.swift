@@ -76,9 +76,10 @@ struct ContentView: View {
     private var sidebar: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: Design.small) {
-                Image(systemName: "square.stack.3d.up.fill").foregroundStyle(Design.accent).font(Design.detailTitle)
+                Image(AppIdentity.logo).resizable().interpolation(.high).scaledToFit()
+                    .frame(width: 40, height: 40).accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: Design.tiny) {
-                    Text("PlateShelf").font(Design.heading)
+                    Text(AppIdentity.name).font(Design.heading)
                     Text(L("sidebar.subtitle")).font(Design.caption).foregroundStyle(Design.secondary)
                 }
             }.padding(Design.large)
@@ -151,7 +152,7 @@ struct ContentView: View {
                     }.pickerStyle(.segmented).labelsHidden().frame(width: Design.hero + Design.large)
                 }
                 if model.filter == .trash {
-                    Text("PlateShelf 보관 파일을 휴지통에 보관합니다. 복원하면 분류·메모·출력 기록도 돌아옵니다. 외부 원본은 유지됩니다.")
+                    Text("MakerDock 보관 파일을 휴지통에 보관합니다. 복원하면 분류·메모·출력 기록도 돌아옵니다. 외부 원본은 유지됩니다.")
                         .font(Design.caption).foregroundStyle(Design.secondary)
                 }
                 HStack(spacing: Design.small) {

@@ -1,4 +1,4 @@
-name: plateshelf-desktop
+name: makerdock-desktop
 options:
   developmentLanguage: ko
 packages:
@@ -24,7 +24,7 @@ configs:
   Debug: debug
   Release: release
 targets:
-  plateshelf-desktop:
+  makerdock-desktop:
     type: application
     platform: macOS
     sources:
@@ -59,8 +59,8 @@ targets:
         LSMinimumSystemVersion: "13.0"
         LSApplicationCategoryType: public.app-category.utilities
         CFBundleURLTypes:
-          - CFBundleURLName: PlateShelf model links
-            CFBundleURLSchemes: [plateshelf, bambustudioopen, bambustudio]
+          - CFBundleURLName: MakerDock model links
+            CFBundleURLSchemes: [makerdock, plateshelf, bambustudioopen, bambustudio]
         CFBundleDocumentTypes:
           - CFBundleTypeName: 3MF project
             CFBundleTypeRole: Viewer
@@ -71,7 +71,7 @@ targets:
     platform: macOS
     sources: [AppTests]
     dependencies:
-      - target: plateshelf-desktop
+      - target: makerdock-desktop
       - package: PlateShelfCore
     configFiles:
       Debug: Config/Dev.xcconfig
@@ -84,10 +84,10 @@ targets:
         TEST_HOST: $(BUILT_PRODUCTS_DIR)/$(APP_DISPLAY_NAME).app/Contents/MacOS/$(APP_DISPLAY_NAME)
         BUNDLE_LOADER: $(TEST_HOST)
 schemes:
-  plateshelf-desktop:
+  makerdock-desktop:
     build:
       targets:
-        plateshelf-desktop: all
+        makerdock-desktop: all
         PlateShelfTests: [test]
     test:
       targets: [PlateShelfTests]

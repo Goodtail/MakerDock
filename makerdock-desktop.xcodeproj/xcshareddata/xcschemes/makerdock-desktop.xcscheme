@@ -15,10 +15,10 @@
             buildForAnalyzing = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "37D56B1FE7A31F05286C17F7"
+               BlueprintIdentifier = "981B30DB343E1C2EC2410916"
                BuildableName = "PlateShelfTests.xctest"
                BlueprintName = "PlateShelfTests"
-               ReferencedContainer = "container:plateshelf-desktop.xcodeproj">
+               ReferencedContainer = "container:makerdock-desktop.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
          <BuildActionEntry
@@ -29,10 +29,10 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "F7CA3F15B0B6C84B9404A13D"
-               BuildableName = "plateshelf-desktop.app"
-               BlueprintName = "plateshelf-desktop"
-               ReferencedContainer = "container:plateshelf-desktop.xcodeproj">
+               BlueprintIdentifier = "B70F96D1DF4E8210C7567008"
+               BuildableName = "makerdock-desktop.app"
+               BlueprintName = "makerdock-desktop"
+               ReferencedContainer = "container:makerdock-desktop.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -46,10 +46,10 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "F7CA3F15B0B6C84B9404A13D"
-            BuildableName = "plateshelf-desktop.app"
-            BlueprintName = "plateshelf-desktop"
-            ReferencedContainer = "container:plateshelf-desktop.xcodeproj">
+            BlueprintIdentifier = "B70F96D1DF4E8210C7567008"
+            BuildableName = "makerdock-desktop.app"
+            BlueprintName = "makerdock-desktop"
+            ReferencedContainer = "container:makerdock-desktop.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
       <Testables>
@@ -58,10 +58,10 @@
             parallelizable = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "37D56B1FE7A31F05286C17F7"
+               BlueprintIdentifier = "981B30DB343E1C2EC2410916"
                BuildableName = "PlateShelfTests.xctest"
                BlueprintName = "PlateShelfTests"
-               ReferencedContainer = "container:plateshelf-desktop.xcodeproj">
+               ReferencedContainer = "container:makerdock-desktop.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>
@@ -82,10 +82,10 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "F7CA3F15B0B6C84B9404A13D"
-            BuildableName = "plateshelf-desktop.app"
-            BlueprintName = "plateshelf-desktop"
-            ReferencedContainer = "container:plateshelf-desktop.xcodeproj">
+            BlueprintIdentifier = "B70F96D1DF4E8210C7567008"
+            BuildableName = "makerdock-desktop.app"
+            BlueprintName = "makerdock-desktop"
+            ReferencedContainer = "container:makerdock-desktop.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -99,10 +99,10 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "F7CA3F15B0B6C84B9404A13D"
-            BuildableName = "plateshelf-desktop.app"
-            BlueprintName = "plateshelf-desktop"
-            ReferencedContainer = "container:plateshelf-desktop.xcodeproj">
+            BlueprintIdentifier = "B70F96D1DF4E8210C7567008"
+            BuildableName = "makerdock-desktop.app"
+            BlueprintName = "makerdock-desktop"
+            ReferencedContainer = "container:makerdock-desktop.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

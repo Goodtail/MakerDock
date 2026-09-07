@@ -1,4 +1,4 @@
-# PlateShelf desktop source
+# MakerDock desktop source
 
 SwiftUI + embedded WebKit, macOS 13+, MakerWorld browser and local 3MF library. Main usage guide: `../README.md`. Browser contracts and live verification: `../docs/embedded-browser.md`.
 
@@ -8,13 +8,13 @@ Install Xcode and XcodeGen. From this folder:
 
 ```sh
 xcodegen generate
-xcodebuild -scheme plateshelf-desktop -configuration Debug \
-  -destination 'platform=macOS' -derivedDataPath /tmp/PlateShelfBuild \
+xcodebuild -scheme makerdock-desktop -configuration Debug \
+  -destination 'platform=macOS' -derivedDataPath /tmp/MakerDockBuild \
   CODE_SIGN_IDENTITY=- build
 ```
 
-Development identity: `PlateShelf-dev` / `com.ninepiece.app.mac.plateshelf.dev` / `AppIconDev`.
-Production identity: `PlateShelf` / `com.ninepiece.app.mac.plateshelf` / `AppIcon`.
+Development identity: `MakerDock-dev` / `com.ninepiece.app.mac.makerdock.dev` / `AppIconDev`.
+Production identity: `MakerDock` / `com.ninepiece.app.mac.makerdock` / `AppIcon`.
 The app is ad-hoc signed for local execution; Apple portal resources are not required for this command. Configured personal team is `D523TSBMWR`; no company account is used.
 
 ## Validation
@@ -23,14 +23,14 @@ The app is ad-hoc signed for local execution; Apple portal resources are not req
 (cd Core && swift test)
 zsh LinkTests/run.sh
 node BrowserTests/bridge.cjs
-xcodebuild -scheme plateshelf-desktop -configuration Debug \
-  -destination 'platform=macOS' -derivedDataPath /tmp/PlateShelfBuild \
+xcodebuild -scheme makerdock-desktop -configuration Debug \
+  -destination 'platform=macOS' -derivedDataPath /tmp/MakerDockBuild \
   CODE_SIGN_IDENTITY=- test
 ```
 
 The temporary build location keeps XCTest runtime loads outside protected Documents folders. Tests use their own temporary libraries and never print. App tests cover independent working copies, persistent metadata/source links, queued imports, profile-total provenance, submission/actual-completion distinction, browser URL/context validation and stored-profile reuse with zero transport requests. The bridge harness exercises the bundled page script, including request-time profile changes and the native WebKit message boundary.
 
-All 3MF sources are copied before processing. Core validates ZIP paths, XML, metadata limits and content hashes. The macOS app maintains user-selected folder bookmarks. Printer credentials are not required or collected by PlateShelf.
+All 3MF sources are copied before processing. Core validates ZIP paths, XML, metadata limits and content hashes. The macOS app maintains user-selected folder bookmarks. Printer credentials are not required or collected by MakerDock.
 
 ## Appearance
 

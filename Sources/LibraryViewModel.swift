@@ -92,6 +92,7 @@ final class LibraryViewModel: ObservableObject {
     var repository: LibraryRepository?
     private var linkService: MakerWorldLinkService
     private var started = false
+    private var identityUpgradeEnabled = false
     private var watchTimer: Timer?
     private var fileSignatures: [String: String] = [:]
     var archiveSignatures: [String: String] = [:]
@@ -100,6 +101,7 @@ final class LibraryViewModel: ObservableObject {
 
     init(rootOverride: URL? = nil, linkServiceOverride: MakerWorldLinkService? = nil) {
         let args = ProcessInfo.processInfo.arguments
+        var usesDefaultRoot = false
         if let rootOverride {
             rootURL = rootOverride
         } else if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil || NSClassFromString("XCTestCase") != nil {
@@ -107,11 +109,16 @@ final class LibraryViewModel: ObservableObject {
         } else if let index = args.firstIndex(of: "--library-root"), args.indices.contains(index + 1) {
             rootURL = URL(fileURLWithPath: args[index + 1], isDirectory: true)
         } else {
+            usesDefaultRoot = true
             rootURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-                .appendingPathComponent(Bundle.main.bundleIdentifier ?? "com.ninepiece.app.mac.plateshelf.dev")
+                .appendingPathComponent(Bundle.main.bundleIdentifier ?? "com.ninepiece.app.mac.makerdock.dev")
         }
         linkService = linkServiceOverride ?? MakerWorldLinkService(cacheDirectory: rootURL.appendingPathComponent("Downloads"))
+        identityUpgradeEnabled = usesDefaultRoot
         do {
+            if usesDefaultRoot, let identifier = Bundle.main.bundleIdentifier {
+                try AppIdentity.prepareUpgrade(root: rootURL, identifier: identifier)
+            }
             repository = try LibraryRepository(rootURL: rootURL)
             let prefs = rootURL.appendingPathComponent("preferences.json")
             if FileManager.default.fileExists(atPath: prefs.path) { preferences = try JSONDecoder().decode(ShelfPreferences.self, from: Data(contentsOf: prefs)) }
@@ -154,7 +161,8 @@ final class LibraryViewModel: ObservableObject {
         }.sorted(by: sort.precedes)
     }
     func start() async {
-        guard !started else { return }; started = true
+        guard !started, repository != nil else { return }; started = true
+        if identityUpgradeEnabled, let error = await AppIdentity.migrateLegacyLinks() { errorMessage = error }
         for data in preferences.folderBookmarks.values {
             var stale = false
             if let url = try? URL(resolvingBookmarkData: data, options: [.withSecurityScope], relativeTo: nil, bookmarkDataIsStale: &stale), url.startAccessingSecurityScopedResource() { grantedURLs.append(url) }

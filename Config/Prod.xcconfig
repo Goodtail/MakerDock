@@ -2,8 +2,8 @@
 #include "Version.xcconfig"
 
 APP_PHASE = production
-APP_BUNDLE_ID = com.ninepiece.app.mac.plateshelf
-APP_DISPLAY_NAME = PlateShelf
+APP_BUNDLE_ID = com.ninepiece.app.mac.makerdock
+APP_DISPLAY_NAME = MakerDock
 APP_ICON_NAME = AppIcon
 API_BASE_URL =
 SEO_BASE_URL =

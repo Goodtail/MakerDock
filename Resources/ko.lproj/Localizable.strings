@@ -94,10 +94,10 @@
 "settings.studio" = "Studio 실행 앱";
 "settings.workingCopy" = "Studio에는 편집용 사본을 엽니다. 보관 원본은 수정되지 않으며, 다시 열 때 작업 중이던 사본을 재사용합니다.";
 "settings.links" = "MakerWorld에서 열기";
-"settings.linksDescription" = "MakerWorld의 Studio 열기 링크를 PlateShelf로 연결합니다. 저장된 파일의 변경 여부를 확인해 재사용하고 Studio로 넘깁니다.";
-"link.register" = "PlateShelf로 연결";
+"settings.linksDescription" = "MakerWorld의 Studio 열기 링크를 MakerDock으로 연결합니다. 저장된 파일의 변경 여부를 확인해 재사용하고 Studio로 넘깁니다.";
+"link.register" = "MakerDock으로 연결";
 "link.restore" = "Bambu Studio로 되돌리기";
-"link.registered" = "MakerWorld 열기 링크를 PlateShelf로 연결했습니다";
+"link.registered" = "MakerWorld 열기 링크를 MakerDock으로 연결했습니다";
 "link.restored" = "MakerWorld 열기 링크를 Bambu Studio로 되돌렸습니다";
 "link.resolving" = "보관한 다운로드와 최신 파일 확인 중…";
 "link.reused" = "보관한 다운로드를 재사용했습니다";
