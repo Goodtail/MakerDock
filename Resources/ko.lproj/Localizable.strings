@@ -111,7 +111,7 @@
 "inbox.error" = "기록을 가져오지 못했습니다:";
 "settings.storage" = "보관함 위치";
 "storage.open" = "보관함 폴더 열기";
-"settings.localOnly" = "모델, 태그, 메모와 기록은 이 Mac에 저장됩니다. 이 개발 버전은 별도 계정이 필요하지 않습니다.";
+"settings.localOnly" = "모델, 태그, 메모와 기록은 이 Mac에 저장됩니다. 보관함에는 별도 계정이 필요하지 않습니다.";
 
 "folder.scanning" = "폴더에서 새 파일을 확인하고 있습니다…";
 "inbox.invalidState" = "Studio 전송 기록에 허용되지 않는 상태입니다.";
