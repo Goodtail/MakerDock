@@ -6,6 +6,8 @@ struct ContentView: View {
     @ObservedObject var model: LibraryViewModel
     @StateObject private var browser = MakerWorldBrowser()
     @State private var recordItem: ShelfItem?
+    @Environment(\.controlActiveState) private var controlActiveState
+    @FocusState private var sidebarFocused: Bool
     var body: some View {
         NavigationSplitView {
             sidebar
@@ -82,7 +84,7 @@ struct ContentView: View {
             }.padding(Design.large)
             List(selection: Binding<ShelfFilter?>(get: { model.filter }, set: { if let value = $0 { model.filter = value } })) {
                 Section("탐색") {
-                    Label("MakerWorld", systemImage: "globe").tag(ShelfFilter.makerWorld).padding(.vertical, Design.tiny)
+                    sideRow(.makerWorld, icon: "globe")
                 }
                 Section(L("sidebar.library")) {
                     sideRow(.all, icon: "square.grid.2x2", count: model.items.count)
@@ -94,11 +96,7 @@ struct ContentView: View {
                 Section {
                     sideRow(.uncategorized, icon: "tray", count: model.items.filter { $0.categoryID == nil }.count)
                     ForEach(model.categories) { category in
-                        HStack {
-                            Label(category.name, systemImage: "folder")
-                            Spacer()
-                            Text("\(model.items.filter { $0.categoryID == category.id }.count)").font(Design.caption).foregroundStyle(Design.secondary)
-                        }.tag(ShelfFilter.category(category.id)).padding(.vertical, Design.tiny)
+                        sideRow(.category(category.id), icon: "folder", count: model.items.filter { $0.categoryID == category.id }.count, title: category.name)
                             .contextMenu {
                                 Button("이름 변경…") { model.categoryEditor = CategoryEditRequest(category: category) }
                                 Button("분류 삭제 · 모델 유지", role: .destructive) { Task { await model.deleteCategory(category) } }
@@ -112,7 +110,7 @@ struct ContentView: View {
                     if model.allTags.isEmpty { Text(L("tags.empty")).font(Design.caption).foregroundStyle(Design.secondary) }
                     ForEach(model.allTags, id: \.self) { tag in sideRow(.tag(tag), icon: "tag", count: model.items.filter { $0.tags.contains(tag) }.count) }
                 }
-            }.listStyle(.sidebar).scrollContentBackground(.hidden)
+            }.listStyle(.sidebar).scrollContentBackground(.hidden).focused($sidebarFocused)
             VStack(alignment: .leading, spacing: Design.small) {
                 Label(L("local.storage"), systemImage: "internaldrive").font(Design.value)
                 Text(String(format: L("folder.count"), model.preferences.folders.count)).font(Design.caption).foregroundStyle(Design.secondary)
@@ -120,11 +118,17 @@ struct ContentView: View {
             }.padding(Design.large)
         }.background(Design.sidebarSurface)
     }
-    private func sideRow(_ filter: ShelfFilter, icon: String, count: Int) -> some View {
-        HStack {
-            Label(filter.title, systemImage: icon)
+    private func sideRow(_ filter: ShelfFilter, icon: String, count: Int? = nil, title: String? = nil) -> some View {
+        // Match the native blue selection; keep the inactive gray selection readable.
+        let highlighted = model.filter == filter && sidebarFocused && controlActiveState != .inactive
+        return HStack {
+            Label(title ?? filter.title, systemImage: icon)
+                .foregroundStyle(highlighted ? Color.white : Design.ink)
             Spacer()
-            Text("\(count)").foregroundStyle(Design.secondary).monospacedDigit().font(Design.caption)
+            if let count {
+                Text("\(count)").foregroundStyle(highlighted ? Color.white : Design.secondary)
+                    .monospacedDigit().font(Design.caption)
+            }
         }.tag(filter).padding(.vertical, Design.tiny)
     }
     private var library: some View {
