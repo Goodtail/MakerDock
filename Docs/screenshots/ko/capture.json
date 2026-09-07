@@ -1,0 +1,14 @@
+{
+  "locale": "ko",
+  "appVersion": "1.5.1",
+  "build": "10",
+  "sourceCommit": "bc79689",
+  "demo": true,
+  "models": 6,
+  "images": [
+    "library.png",
+    "print-record.png",
+    "plates.png",
+    "selection.png"
+  ]
+}

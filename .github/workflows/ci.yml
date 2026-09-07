@@ -1,0 +1,37 @@
+name: Build and test
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  macos:
+    runs-on: macos-15
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install project generator
+        run: brew install xcodegen
+      - name: Generate Xcode project
+        run: xcodegen generate
+      - name: Test Swift package
+        working-directory: Core
+        run: swift test
+      - name: Test link policy and browser bridge offline
+        run: |
+          zsh LinkTests/run.sh
+          node BrowserTests/bridge.cjs
+      - name: Test development app
+        run: |
+          defaults write com.ninepiece.app.mac.makerdock.dev MakerDockLanguage -string ko
+          xcodebuild -scheme makerdock-desktop -configuration Debug \
+            -destination 'platform=macOS' -derivedDataPath /tmp/MakerDockBuild \
+            CODE_SIGN_IDENTITY=- test
+      - name: Test public release boundaries
+        run: >-
+          xcodebuild -scheme makerdock-desktop -configuration Release
+          -destination 'platform=macOS' -derivedDataPath /tmp/MakerDockReleaseTests
+          CODE_SIGN_IDENTITY=- ENABLE_TESTABILITY=YES ENABLE_HARDENED_RUNTIME=NO
+          ONLY_ACTIVE_ARCH=YES
+          -only-testing:PlateShelfTests/PublicDistributionTests test
