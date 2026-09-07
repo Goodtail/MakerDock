@@ -51,7 +51,7 @@ struct CategoryEditorSheet: View {
             HStack {
                 Spacer()
                 Button(L("취소")) { dismiss() }.keyboardShortcut(.cancelAction).disabled(isSaving)
-                Button(L("저장")) { save() }.keyboardShortcut(.defaultAction).buttonStyle(.borderedProminent)
+                Button(L("저장")) { save() }.keyboardShortcut(.defaultAction).buttonStyle(.borderedProminent).tint(Design.action).foregroundStyle(Color.white)
                     .disabled(isSaving || name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
         }.padding(Design.xlarge).frame(width: 420)
@@ -79,7 +79,7 @@ struct TrashInspector: View {
                 Text(item.title).font(Design.detailTitle).textSelection(.enabled)
                 if let date = item.deletedAt { Text(L("삭제일: ") + dateText(date)).font(Design.caption).foregroundStyle(Design.secondary) }
                 Button { Task { await model.restore(item.id) } } label: { Label(L("모델 복원"), systemImage: "arrow.uturn.backward").frame(maxWidth: .infinity) }
-                    .buttonStyle(.borderedProminent).disabled(model.isWorking)
+                    .buttonStyle(.borderedProminent).tint(Design.action).foregroundStyle(Color.white).disabled(model.isWorking)
                 Text(L("분류·메모·출력 기록을 함께 복원합니다. 외부 원본 파일은 삭제하지 않았습니다.")).font(Design.body).foregroundStyle(Design.secondary)
                 Divider()
                 Label(model.categoryName(item), systemImage: "folder")

@@ -368,3 +368,8 @@
 
 "integration.unavailable" = "이 배포 버전에는 웹 다운로드 연동이 포함되어 있지 않습니다. 브라우저에서 3MF를 받은 뒤 MakerDock으로 가져와 주세요.";
 "plates.single" = "1 플레이트";
+"appearance.title" = "화면 테마";
+"appearance.system" = "시스템";
+"appearance.light" = "라이트";
+"appearance.dark" = "다크";
+"appearance.description" = "Mac의 화면 모드를 따르거나 MakerDock의 테마를 직접 고르세요.";

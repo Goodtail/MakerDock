@@ -3,12 +3,20 @@ import SwiftUI
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @AppStorage("MakerDockLanguage") private var language = ""
+    @AppStorage("MakerDockAppearance") private var appearance = "system"
     @ObservedObject var model: LibraryViewModel
     var body: some View {
         VStack(alignment: .leading, spacing: Design.large) {
             HStack { Text(L("settings")).font(Design.title); Spacer(); Button(L("done")) { dismiss() }.keyboardShortcut(.cancelAction) }
             ScrollView {
                 VStack(alignment: .leading, spacing: Design.large) {
+                    section(L("appearance.title")) {
+                        Picker(L("appearance.title"), selection: $appearance) {
+                            ForEach(ShelfAppearance.allCases) { Text($0.title).tag($0.rawValue) }
+                        }.pickerStyle(.segmented)
+                        Text(L("appearance.description")).font(Design.caption).foregroundStyle(Design.secondary)
+                    }
+                    Divider()
                     section(L("settings.language")) {
                         Picker(L("settings.language"), selection: $language) {
                             Text(L("language.system")).tag("")
@@ -77,7 +85,10 @@ struct SettingsView: View {
                 }
             }
         }.font(Design.body).padding(Design.xlarge).frame(width: Design.inspector * 2, height: Design.windowMinHeight)
-            .onAppear { model.configurePrinter() }
+            .background(Design.surface).foregroundStyle(Design.ink)
+            .preferredColorScheme(ShelfAppearance.scheme(for: appearance))
+            .onAppear { ShelfAppearance.apply(appearance); model.configurePrinter() }
+            .onChange(of: appearance) { ShelfAppearance.apply($0) }
     }
     private func section<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: Design.medium) { Text(title).font(Design.heading); content() }

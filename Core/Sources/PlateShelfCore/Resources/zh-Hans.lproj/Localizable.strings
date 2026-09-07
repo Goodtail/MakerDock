@@ -368,3 +368,8 @@
 
 "integration.unavailable" = "此发行版不包含网页下载集成。请先在浏览器中下载3MF，再导入MakerDock。";
 "plates.single" = "1 个打印板";
+"appearance.title" = "外观";
+"appearance.system" = "跟随系统";
+"appearance.light" = "浅色";
+"appearance.dark" = "深色";
+"appearance.description" = "跟随Mac的外观，或为MakerDock选择主题。";

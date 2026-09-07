@@ -4,6 +4,7 @@ import PlateShelfCore
 @main
 struct PlateShelfApp: App {
     @AppStorage("MakerDockLanguage") private var language = ""
+    @AppStorage("MakerDockAppearance") private var appearance = "system"
     @StateObject private var model = LibraryViewModel()
     var body: some Scene {
         WindowGroup {
@@ -12,8 +13,9 @@ struct PlateShelfApp: App {
                 .onChange(of: language) { _ in model.statusMessage = "" }
                 .frame(minWidth: Design.windowMinWidth, minHeight: Design.windowMinHeight)
                 .tint(Design.accent)
-                .preferredColorScheme(.light)
-                .task { await model.start() }
+                .preferredColorScheme(ShelfAppearance.scheme(for: appearance))
+                .task { ShelfAppearance.apply(appearance); await model.start() }
+                .onChange(of: appearance) { ShelfAppearance.apply($0) }
                 .onOpenURL { url in Task { await model.handle(url) } }
         }
         .defaultSize(width: Design.windowWidth, height: Design.windowHeight)
@@ -36,6 +38,6 @@ struct PlateShelfApp: App {
                 }.keyboardShortcut("r")
             }
         }
-        Settings { SettingsView(model: model).id(language).environment(\.locale, ShelfLocalization.locale).tint(Design.accent).preferredColorScheme(.light) }
+        Settings { SettingsView(model: model).id(language).environment(\.locale, ShelfLocalization.locale).tint(Design.accent).preferredColorScheme(ShelfAppearance.scheme(for: appearance)) }
     }
 }

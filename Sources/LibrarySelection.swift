@@ -152,7 +152,7 @@ struct BatchPrintSheet: View {
                 if saving { ProgressView().controlSize(.small) }
                 Spacer()
                 Button(L("cancel")) { dismiss() }.keyboardShortcut(.cancelAction).disabled(saving)
-                Button(L("batch.savePrints")) { save() }.buttonStyle(.borderedProminent).keyboardShortcut(.defaultAction)
+                Button(L("batch.savePrints")) { save() }.buttonStyle(.borderedProminent).tint(Design.action).foregroundStyle(Color.white).keyboardShortcut(.defaultAction)
                     .disabled(saving || model.isWorking || drafts.isEmpty || !drafts.allSatisfy { $0.details.valid })
             }
         }.padding(Design.large).frame(width: 660, height: 740)

@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 import PlateShelfCore
 
 func L(_ key: String) -> String { ShelfLocalization.text(key, bundle: .main) }
@@ -7,7 +8,27 @@ func plateTitle(_ plate: PlateRecord) -> String {
     if plate.name.isEmpty || plate.name == "플레이트 \(plate.id)" || plate.name == "Plate \(plate.id)" { return String(format: L("plate.number"), plate.id) }
     return plate.name
 }
+enum ShelfAppearance: String, CaseIterable, Identifiable {
+    case system, light, dark
+    var id: String { rawValue }
+    var title: String { L("appearance." + rawValue) }
+    var colorScheme: ColorScheme? {
+        switch self { case .system: return nil; case .light: return .light; case .dark: return .dark }
+    }
+    static func scheme(for value: String) -> ColorScheme? {
+        (Self(rawValue: value) ?? .system).colorScheme
+    }
+    @MainActor static func apply(_ value: String) {
+        switch Self(rawValue: value) ?? .system {
+        case .system: NSApp.appearance = nil
+        case .light: NSApp.appearance = NSAppearance(named: .aqua)
+        case .dark: NSApp.appearance = NSAppearance(named: .darkAqua)
+        }
+    }
+}
+
 enum Design {
+    static let action = Color("ShelfAction"), shadow = Color("ShelfShadow")
     static let accent = Color("ShelfAccent"), canvas = Color("ShelfCanvas"), surface = Color("ShelfSurface"), preview = Color("ShelfPreview"), ink = Color("ShelfInk"), secondary = Color("ShelfSecondary"), divider = Color("ShelfDivider"), warning = Color("ShelfWarning")
     static let sidebarSurface = Color("ShelfSidebar"), selection = Color("ShelfSelection")
     static let title = Font.system(size: 24, weight: .semibold), detailTitle = Font.system(size: 20, weight: .semibold), heading = Font.system(size: 15, weight: .semibold), body = Font.system(size: 13), value = Font.system(size: 13, weight: .medium), caption = Font.system(size: 11)

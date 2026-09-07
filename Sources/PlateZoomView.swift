@@ -72,7 +72,7 @@ struct SourceLinkSheet: View {
                         catch { self.error = error.localizedDescription }
                         isSaving = false
                     }
-                }.buttonStyle(.borderedProminent).keyboardShortcut(.defaultAction).disabled(isSaving || page.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                }.buttonStyle(.borderedProminent).tint(Design.action).foregroundStyle(Color.white).keyboardShortcut(.defaultAction).disabled(isSaving || page.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
         }.padding(Design.large).frame(width: Design.zoomWidth - Design.inspector)
             .onAppear { page = item.makerWorldSource?.pageURL ?? ""; profile = item.makerWorldSource?.profileURL ?? "" }

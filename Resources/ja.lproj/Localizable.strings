@@ -368,3 +368,8 @@
 
 "integration.unavailable" = "このリリースにはWebダウンロード連携は含まれていません。ブラウザで3MFをダウンロードしてからMakerDockに読み込んでください。";
 "plates.single" = "1プレート";
+"appearance.title" = "外観";
+"appearance.system" = "システム";
+"appearance.light" = "ライト";
+"appearance.dark" = "ダーク";
+"appearance.description" = "Macの外観に合わせるか、MakerDockのテーマを選べます。";
