@@ -130,7 +130,7 @@ final class MakerWorldBrowser: NSObject, ObservableObject, WKNavigationDelegate,
                   self.collectionsResolutionID == resolutionID else { return }
             if case .success(let value) = result, let raw = value as? String,
                let url = URL(string: raw), MakerWorldBrowserPolicy.isCollections(url) {
-                self.load(url)
+                self.load(url.appendingPathComponent("models"))
             } else {
                 self.collectionsMessage = L("browser.collectionsRetry")
                 // Keep this attempt latched until a navigation or an explicit retry.

@@ -47,7 +47,7 @@ final class BrowserNavigationTests: XCTestCase {
         browser.start(model: model, location: model.browserRequest)
         XCTAssertEqual(view.resolutions.count, 1)
         view.resolutions[0](.success("https://makerworld.com/ko/@test-account/collections"))
-        XCTAssertEqual(view.requests.last?.path, "/ko/@test-account/collections")
+        XCTAssertEqual(view.requests.last?.path, "/ko/@test-account/collections/models")
         XCTAssertNil(browser.collectionsMessage)
         model.selectFilter(.all)
         XCTAssertFalse(model.filter.isBrowser)
