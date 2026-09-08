@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start --hostname 127.0.0.1",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "next typegen && tsc --noEmit"
   },
   "dependencies": {
     "@fontsource-variable/manrope": "^5.2.8",
