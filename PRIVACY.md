@@ -1,6 +1,6 @@
 # Privacy
 
-Applies to the official MakerDock 1.6.0 public DMG.
+Applies to the official MakerDock 1.6.1 public DMG.
 
 MakerDock keeps its model library on your Mac. It does not operate an account service, upload the library to a MakerDock server, include analytics, or collect printer/cloud credentials.
 
@@ -15,9 +15,9 @@ The library is stored in `~/Library/Application Support/com.ninepiece.app.mac.ma
 
 ## Other applications and websites
 
-Opening a source link launches your browser; that website's policies apply. Opening a model or calculating a time launches the separately installed official Bambu Studio, which has its own behavior and privacy policy. MakerDock gives it a working copy or temporary calculation copy.
+MakerWorld pages, source links, and My Collections open in the app's WebKit browser. WebKit sends requests to MakerWorld and its site resources and retains cookies and website data, including your sign-in session, locally. MakerDock does not copy credentials or cookies out of WebKit. The My Collections shortcut reads the account navigation link displayed by the website when you request it; it does not fetch your collection contents through a private API. You can also choose to open a page in your system browser. The websites' own policies apply. Opening a model or calculating a time launches the separately installed official Bambu Studio, which has its own behavior and privacy policy. MakerDock gives it a working copy or temporary calculation copy.
 
-The public DMG disables the experimental embedded browser, download capture, and remote link downloads. A development build that enables the browser can retain WebKit cookies/site data and make requests to third-party sites; this public-release statement does not describe those sites' data handling.
+The public DMG disables experimental automatic download capture, model/profile metadata extraction, and remote link handoff downloads. Ordinary website downloads use a save dialog, and Studio links open the separately installed Bambu Studio. MakerDock stores the last visited model page locally to restore browsing.
 
 ## Support and contributions
 

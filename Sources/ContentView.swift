@@ -14,7 +14,7 @@ struct ContentView: View {
             sidebar
                 .navigationSplitViewColumnWidth(min: Design.sidebar, ideal: Design.sidebar)
         } detail: {
-            if model.filter == .makerWorld && AppIdentity.makerWorldIntegrationEnabled {
+            if model.filter.isBrowser {
                 MakerWorldView(model: model, browser: browser)
             } else {
                 HSplitView {
@@ -33,7 +33,7 @@ struct ContentView: View {
         .toolbarBackground(.visible, for: .windowToolbar)
         .toolbar {
             ToolbarItemGroup {
-                if model.filter != .makerWorld {
+                if !model.filter.isBrowser {
                     Button { model.chooseFolder() } label: { Label(L("import.folder"), systemImage: "folder.badge.plus") }.disabled(model.isWorking)
                     Button { model.chooseFiles() } label: { Label(L("import.files"), systemImage: "plus") }.disabled(model.isWorking)
                     if !model.selectionMode, let item = model.selected {
@@ -51,7 +51,10 @@ struct ContentView: View {
         }
         .sheet(isPresented: $model.showSettings) { SettingsView(model: model) }
         .sheet(item: $model.categoryEditor) { request in CategoryEditorSheet(model: model, request: request) }
-        .onChange(of: model.filter) { _ in model.endSelection(); model.syncSelection() }
+        .onChange(of: model.filter) { filter in
+            model.endSelection(); model.syncSelection()
+            if !filter.isBrowser { browser.cancelCollectionsNavigation() }
+        }
         .onChange(of: model.search) { _ in model.pruneSelection() }
         .sheet(isPresented: $showBatchPrint) { BatchPrintSheet(model: model, items: model.selectedItems) }
         .sheet(item: $recordItem) { item in PrintRecordSheet(model: model, item: item) }
@@ -86,9 +89,10 @@ struct ContentView: View {
                     Text(L("sidebar.subtitle")).font(Design.caption).foregroundStyle(Design.secondary)
                 }
             }.padding(Design.large)
-            List(selection: Binding<ShelfFilter?>(get: { model.filter }, set: { if let value = $0 { model.filter = value } })) {
-                if AppIdentity.makerWorldIntegrationEnabled {
-                    Section(L("탐색")) { sideRow(.makerWorld, icon: "globe") }
+            List(selection: Binding<ShelfFilter?>(get: { model.filter }, set: { if let value = $0 { model.selectFilter(value) } })) {
+                Section(L("탐색")) {
+                    sideRow(.makerWorld, icon: "globe")
+                    sideRow(.makerWorldCollections, icon: "square.stack")
                 }
                 Section(L("sidebar.library")) {
                     sideRow(.all, icon: "square.grid.2x2", count: model.items.count)

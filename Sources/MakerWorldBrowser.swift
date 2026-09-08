@@ -13,7 +13,10 @@ final class MakerWorldBrowser: NSObject, ObservableObject, WKNavigationDelegate,
     @Published var pageError: String?
     @Published var context: CapturedMakerWorldSource?
     @Published var transferCount = 0
-    @Published var transferMessage = L("웹에서 다운로드하거나 Studio로 열면 여기에 보관됩니다.")
+    @Published var transferMessage = AppIdentity.makerWorldCaptureEnabled ? L("웹에서 다운로드하거나 Studio로 열면 여기에 보관됩니다.") : ""
+    @Published var collectionsMessage: String?
+    private var collectionsRequestID: UUID?
+    private var collectionsResolutionID: UUID?
     @Published var transferError: String?
     @Published var lastItemID: String?
     @Published var preferStored = true {
@@ -29,7 +32,12 @@ final class MakerWorldBrowser: NSObject, ObservableObject, WKNavigationDelegate,
     private var lastLocationID: UUID?
     lazy var webView: WKWebView = makeWebView()
 
-    override init() {
+    typealias CollectionsLookup = (WKWebView, String, @escaping (Result<Any, Error>) -> Void) -> Void
+    private let collectionsLookup: CollectionsLookup
+    init(collectionsLookup: @escaping CollectionsLookup = { view, script, completion in
+        view.callAsyncJavaScript(script, arguments: ["timeoutMilliseconds": 12_000], in: nil, in: .page, completionHandler: completion)
+    }) {
+        self.collectionsLookup = collectionsLookup
         super.init()
         if UserDefaults.standard.object(forKey: "browser.preferStored") != nil {
             preferStored = UserDefaults.standard.bool(forKey: "browser.preferStored")
@@ -40,10 +48,10 @@ final class MakerWorldBrowser: NSObject, ObservableObject, WKNavigationDelegate,
         configuration.websiteDataStore = .default()
         configuration.applicationNameForUserAgent = "MakerDock/" + (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.4.0")
         let content = configuration.userContentController
-        if AppIdentity.makerWorldIntegrationEnabled {
+        if AppIdentity.makerWorldCaptureEnabled {
             content.add(WeakBrowserMessageHandler(self), name: "plateShelf")
         }
-        for name in AppIdentity.makerWorldIntegrationEnabled ? ["BrowserShared", "BrowserBridge"] : [] {
+        for name in AppIdentity.makerWorldCaptureEnabled ? ["BrowserShared", "BrowserBridge"] : [] {
             if let url = Bundle.main.url(forResource: name, withExtension: "js"),
                let source = try? String(contentsOf: url, encoding: .utf8) {
                 content.addUserScript(WKUserScript(source: source, injectionTime: .atDocumentStart, forMainFrameOnly: true))
@@ -71,12 +79,11 @@ final class MakerWorldBrowser: NSObject, ObservableObject, WKNavigationDelegate,
         return view
     }
     func start(model: LibraryViewModel, location: BrowserLocation? = nil) {
-        guard AppIdentity.makerWorldIntegrationEnabled else { return }
         self.model = model
         if let location, location.id != lastLocationID {
             lastLocationID = location.id
             started = true
-            load(location.url)
+            if location.opensMyCollections { openMyCollections() } else { load(location.url) }
             return
         }
         guard !started else { return }
@@ -85,9 +92,51 @@ final class MakerWorldBrowser: NSObject, ObservableObject, WKNavigationDelegate,
         load(MakerWorldBrowserPolicy.isMakerWorld(restored) ? restored! : MakerWorldBrowserPolicy.home)
     }
     func load(_ url: URL) {
-        guard AppIdentity.makerWorldIntegrationEnabled, MakerWorldBrowserPolicy.isMakerWorld(url) else { return }
+        guard MakerWorldBrowserPolicy.isMakerWorld(url) else { return }
+        cancelCollectionsNavigation()
         pageError = nil
         webView.load(URLRequest(url: url))
+    }
+    func openMyCollections() {
+        cancelCollectionsNavigation()
+        collectionsRequestID = UUID()
+        collectionsMessage = L("browser.collectionsOpening")
+        pageError = nil
+        if MakerWorldBrowserPolicy.isMakerWorld(webView.url) {
+            if !webView.isLoading { resolveMyCollections() }
+        } else {
+            webView.load(URLRequest(url: MakerWorldBrowserPolicy.home))
+        }
+    }
+    func cancelCollectionsNavigation() {
+        collectionsRequestID = nil
+        collectionsResolutionID = nil
+        collectionsMessage = nil
+    }
+    private func resolveMyCollections() {
+        guard let requestID = collectionsRequestID, collectionsResolutionID == nil,
+              MakerWorldBrowserPolicy.isMakerWorld(webView.url), !webView.isLoading else { return }
+        let resolutionID = UUID()
+        collectionsResolutionID = resolutionID
+        guard let scriptURL = Bundle.main.url(forResource: "CollectionsNavigation", withExtension: "js"),
+              let script = try? String(contentsOf: scriptURL, encoding: .utf8) else {
+            collectionsMessage = L("browser.collectionsRetry")
+            return
+        }
+        // Resolve only the site's own account navigation, on demand. Never read cookies,
+        // tokens, private APIs, or another creator's collections link.
+        collectionsLookup(webView, script) { [weak self] result in
+            guard let self, self.collectionsRequestID == requestID,
+                  self.collectionsResolutionID == resolutionID else { return }
+            if case .success(let value) = result, let raw = value as? String,
+               let url = URL(string: raw), MakerWorldBrowserPolicy.isCollections(url) {
+                self.load(url)
+            } else {
+                self.collectionsMessage = L("browser.collectionsRetry")
+                // Keep this attempt latched until a navigation or an explicit retry.
+                // KVO updates on the same page must not repeatedly scan the document.
+            }
+        }
     }
     func navigate(_ text: String) {
         guard let url = MakerWorldBrowserPolicy.address(text) else {
@@ -95,10 +144,10 @@ final class MakerWorldBrowser: NSObject, ObservableObject, WKNavigationDelegate,
         }
         load(url)
     }
-    func back() { webView.goBack() }
-    func forward() { webView.goForward() }
+    func back() { cancelCollectionsNavigation(); webView.goBack() }
+    func forward() { cancelCollectionsNavigation(); webView.goForward() }
     func reload() { pageError = nil; webView.reload() }
-    func stop() { webView.stopLoading() }
+    func stop() { cancelCollectionsNavigation(); webView.stopLoading() }
     func openInBrowser() { if ["https", "http"].contains(currentURL.scheme ?? "") { NSWorkspace.shared.open(currentURL) } }
     func copyAddress() { NSPasteboard.general.clearContents(); NSPasteboard.general.setString(currentURL.absoluteString, forType: .string) }
     var canRetry: Bool { lastHandoff != nil && transferCount == 0 }
@@ -118,6 +167,7 @@ final class MakerWorldBrowser: NSObject, ObservableObject, WKNavigationDelegate,
             }
         }
         canGoBack = view.canGoBack; canGoForward = view.canGoForward
+        if !view.isLoading { resolveMyCollections() }
     }
     private func trusted(_ frame: WKFrameInfo) -> Bool {
         frame.isMainFrame && frame.securityOrigin.protocol == "https" &&
@@ -125,7 +175,7 @@ final class MakerWorldBrowser: NSObject, ObservableObject, WKNavigationDelegate,
         [0, 443].contains(frame.securityOrigin.port)
     }
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
-        guard trusted(message.frameInfo), let body = message.body as? [String: Any] else { return }
+        guard AppIdentity.makerWorldCaptureEnabled, trusted(message.frameInfo), let body = message.body as? [String: Any] else { return }
         if body["kind"] as? String == "handoff", let raw = body["url"] as? String, raw.utf8.count <= 65_536,
            let url = URL(string: raw), ["makerdock", "plateshelf"].contains(url.scheme ?? "") {
             receive(url)
@@ -141,7 +191,7 @@ final class MakerWorldBrowser: NSObject, ObservableObject, WKNavigationDelegate,
         }
     }
     private func receive(_ url: URL, force: Bool = false) {
-        guard let model else { return }
+        guard AppIdentity.makerWorldCaptureEnabled, let model else { return }
         do { _ = try MakerWorldLinkPolicy.parse(url) }
         catch { transferError = error.localizedDescription; return }
         let key = MakerWorldLinkPolicy.sha256(Data(url.absoluteString.utf8))
@@ -170,11 +220,16 @@ final class MakerWorldBrowser: NSObject, ObservableObject, WKNavigationDelegate,
         let scheme = url.scheme?.lowercased() ?? ""
         if ["makerdock", "plateshelf", "bambustudioopen", "bambustudio"].contains(scheme) {
             decisionHandler(.cancel)
-            if trusted(action.sourceFrame) { receive(url) }
+            if trusted(action.sourceFrame) {
+                if AppIdentity.makerWorldCaptureEnabled { receive(url) }
+                else if ["bambustudioopen", "bambustudio"].contains(scheme) {
+                    NSWorkspace.shared.open(url)
+                }
+            }
             return
         }
         if scheme == "https" || scheme == "http" {
-            if url.pathExtension.lowercased() == "3mf", trusted(action.sourceFrame),
+            if AppIdentity.makerWorldCaptureEnabled, url.pathExtension.lowercased() == "3mf", trusted(action.sourceFrame),
                let link = try? MakerWorldBrowserPolicy.handoff(remote: url, name: url.lastPathComponent, page: action.sourceFrame.request.url) {
                 decisionHandler(.cancel); receive(link); return
             }
@@ -194,8 +249,12 @@ final class MakerWorldBrowser: NSObject, ObservableObject, WKNavigationDelegate,
     func webView(_ webView: WKWebView, decidePolicyFor response: WKNavigationResponse, decisionHandler: @escaping (WKNavigationResponsePolicy) -> Void) {
         decisionHandler(response.canShowMIMEType ? .allow : .download)
     }
+    func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+        if webView === self.webView { collectionsResolutionID = nil }
+    }
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         if webView === self.webView { pageError = nil; updateNavigation(webView) }
+        else { resolveMyCollections() }
     }
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) { navigationFailed(webView, error) }
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) { navigationFailed(webView, error) }

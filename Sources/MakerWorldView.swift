@@ -10,6 +10,14 @@ struct MakerWorldView: View {
     var body: some View {
         VStack(spacing: 0) {
             navigationBar
+            if let message = browser.collectionsMessage {
+                HStack(spacing: Design.small) {
+                    Image(systemName: "square.stack").foregroundStyle(Design.accent)
+                    Text(message).font(Design.caption)
+                    Spacer()
+                    Button(L("다시 시도")) { browser.openMyCollections() }
+                }.padding(Design.medium).background(Design.surface)
+            }
             if let source = browser.context {
                 HStack(spacing: Design.medium) {
                     Image(systemName: saved == nil ? "cube" : "checkmark.circle.fill").foregroundStyle(Design.accent)
@@ -56,7 +64,7 @@ struct MakerWorldView: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             }
-            transferBar
+            if !browser.transferMessage.isEmpty || browser.transferError != nil { transferBar }
         }.background(Design.canvas)
         .onAppear {
             browser.start(model: model, location: model.browserRequest)
@@ -87,11 +95,15 @@ struct MakerWorldView: View {
             }.buttonStyle(.borderless)
             HStack {
                 Label("MakerWorld", systemImage: "globe").font(Design.heading)
-                Text(L("탐색 · 다운로드 · 내 보관함")).font(Design.caption).foregroundStyle(Design.secondary)
                 Spacer()
-                Label(L("자동 보관"), systemImage: "checkmark.shield").font(Design.caption).foregroundStyle(Design.accent)
-                Toggle(L("보관된 파일 우선"), isOn: $browser.preferStored).toggleStyle(.switch).controlSize(.small).font(Design.caption)
-                    .help(L("같은 출력 프로필을 이미 보관했다면 다운로드 없이 저장된 파일을 사용합니다. 최신 파일을 받으려면 끄세요."))
+                Button { model.showMyCollections() } label: {
+                    Label(L("browser.myCollections"), systemImage: "square.stack")
+                }.buttonStyle(.borderless)
+                if AppIdentity.makerWorldCaptureEnabled {
+                    Label(L("자동 보관"), systemImage: "checkmark.shield").font(Design.caption).foregroundStyle(Design.accent)
+                    Toggle(L("보관된 파일 우선"), isOn: $browser.preferStored).toggleStyle(.switch).controlSize(.small).font(Design.caption)
+                        .help(L("같은 출력 프로필을 이미 보관했다면 다운로드 없이 저장된 파일을 사용합니다. 최신 파일을 받으려면 끄세요."))
+                }
             }
         }.padding(.horizontal, Design.large).padding(.vertical, Design.medium)
     }
@@ -102,7 +114,7 @@ struct MakerWorldView: View {
                     Image(systemName: "exclamationmark.circle")
                     Text(error).fixedSize(horizontal: false, vertical: true)
                     Spacer()
-                    Button(L("다시 시도")) { browser.retryLatest() }.disabled(!browser.canRetry)
+                    if browser.canRetry { Button(L("다시 시도")) { browser.retryLatest() } }
                     Button { browser.transferError = nil } label: { Image(systemName: "xmark") }.buttonStyle(.plain)
                 }.foregroundStyle(Design.warning)
             }

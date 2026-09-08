@@ -11,6 +11,12 @@ enum MakerWorldBrowserPolicy {
               url.port == nil || url.port == 443 else { return false }
         return ["makerworld.com", "www.makerworld.com"].contains(url.host?.lowercased() ?? "")
     }
+    static func isCollections(_ url: URL) -> Bool {
+        guard isMakerWorld(url), url.query == nil, url.fragment == nil else { return false }
+        let parts = url.pathComponents.filter { $0 != "/" }
+        return parts.count == 3 && ["en", "ko", "ja", "zh"].contains(parts[0]) &&
+            parts[1].hasPrefix("@") && parts[1].count > 1 && parts[2] == "collections"
+    }
     static func address(_ text: String) -> URL? {
         let value = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !value.isEmpty, value.utf8.count <= 4096 else { return nil }

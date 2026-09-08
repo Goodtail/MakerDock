@@ -373,3 +373,8 @@
 "appearance.light" = "라이트";
 "appearance.dark" = "다크";
 "appearance.description" = "Mac의 화면 모드를 따르거나 MakerDock의 테마를 직접 고르세요.";
+
+// MakerWorld navigation
+"browser.myCollections" = "내 컬렉션";
+"browser.collectionsOpening" = "MakerWorld의 내 컬렉션을 여는 중…";
+"browser.collectionsRetry" = "MakerWorld에 로그인한 뒤 내 컬렉션을 다시 눌러 주세요. 이미 로그인했다면 페이지를 새로고침하고 다시 시도해 주세요.";
