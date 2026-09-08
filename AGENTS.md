@@ -23,3 +23,10 @@ The user requires local Git checkpoints so changes can be rolled back.
 - Development IDs append `.dev`; development display names append the exact suffix `-dev` and icons show a visible `DEV` badge.
 - MakerDock production: `MakerDock`, `com.ninepiece.app.mac.makerdock`, `AppIcon`.
 - MakerDock development: `MakerDock-dev`, `com.ninepiece.app.mac.makerdock.dev`, `AppIconDev`.
+
+# Version numbering
+
+- The user chose **0.1.0** as MakerDock's initial public version. The earlier 1.x numbering was premature and is retained only in historical checkpoints.
+- Routine development edits and small fixes keep `MARKETING_VERSION` unchanged. Increment `CURRENT_PROJECT_VERSION` to distinguish new builds.
+- Change the public version or publish another release only when the user requests a new public version/release. Do not turn each task or feature edit into a release.
+- Keep internal build numbers increasing; do not reset them when correcting the public version.

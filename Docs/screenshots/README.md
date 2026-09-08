@@ -1,6 +1,6 @@
 # Screenshot provenance and reproduction
 
-The four localized READMEs use actual window captures of MakerDock 1.5.1 Release. These library workflows are unchanged in 1.6.0; the guides keep one set of feature screenshots:
+The four localized READMEs use actual window captures of MakerDock 1.5.1 Release. The capture metadata retains its original pre-release version label. These library workflows are available in 0.1.0; the guides keep one set of feature screenshots:
 
 | Locale | Library | Enlarged plate | Print record | Multiple selection |
 | --- | --- | --- | --- | --- |
