@@ -34,7 +34,7 @@ export default async function Page({ params }: { params: Promise<{ lang: string 
         <a className="brand" href={localePath(lang)} aria-label="MakerDock"><Image src="/icon.png" alt="" width={42} height={42} /><span>MakerDock</span></a>
         <div className="nav-links"><a href="#tour">{c.nav.tour}</a><a href="#questions">{c.nav.faq}</a></div>
         <div className="nav-actions">
-          <details className="language dropdown"><summary aria-label={c.nav.language} title={c.nav.language}><GlobeIcon size={20} /><span className="language-label">{localeNames[lang]}</span><CaretDownIcon size={11} /></summary>
+          <details className="language dropdown"><summary aria-label={c.nav.language + ": " + localeNames[lang]} title={c.nav.language}><GlobeIcon size={20} /><span className="language-label">{localeNames[lang]}</span><CaretDownIcon size={11} /></summary>
             <div className="dropdown-panel">{locales.map(locale => <a key={locale} href={localePath(locale)} hrefLang={locale} lang={locale} aria-current={locale === lang ? "page" : undefined}>{localeNames[locale]}</a>)}</div>
           </details>
           <Appearance copy={c.nav} />
