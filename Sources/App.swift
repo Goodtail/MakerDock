@@ -29,11 +29,11 @@ struct PlateShelfApp: App {
                     if model.selectionMode { Task { _ = await model.applyBatch(.trash, ids: Set(model.selectedItems.map(\.id))) } }
                     else if let item = model.selected { Task { await model.trash(item) } }
                 }.keyboardShortcut(.delete, modifiers: .command)
-                    .disabled(model.isWorking || model.filter == .makerWorld || (model.selectionMode ? model.selectedItems.isEmpty : model.selected == nil) || model.filter == .trash)
+                    .disabled(model.isWorking || model.filter.isBrowser || (model.selectionMode ? model.selectedItems.isEmpty : model.selected == nil) || model.filter == .trash)
             }
             CommandGroup(after: .toolbar) {
                 Button(L("refresh")) {
-                    if model.filter == .makerWorld { model.browserReloadRequest += 1 }
+                    if model.filter.isBrowser { model.browserReloadRequest += 1 }
                     else { Task { await model.refresh() } }
                 }.keyboardShortcut("r")
             }

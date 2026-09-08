@@ -35,9 +35,11 @@ struct ShelfPreferences: Codable {
     }
 }
 enum ShelfFilter: Hashable {
-    case makerWorld, all, favorites, printed, unprinted, duplicates, uncategorized, trash, category(String), tag(String)
+    case makerWorld, makerWorldCollections, all, favorites, printed, unprinted, duplicates, uncategorized, trash, category(String), tag(String)
+    var isBrowser: Bool { self == .makerWorld || self == .makerWorldCollections }
     var title: String {
         switch self {
+        case .makerWorldCollections: return L("browser.myCollections")
         case .makerWorld: return "MakerWorld"
         case .all: return L("library.title")
         case .favorites: return L("filter.favorites")
@@ -169,7 +171,7 @@ final class LibraryViewModel: ObservableObject {
         (filter == .trash ? trashedItems : items).filter { item in
             let matches: Bool
             switch filter {
-            case .all, .makerWorld, .trash: matches = true
+            case .all, .makerWorld, .makerWorldCollections, .trash: matches = true
             case .uncategorized: matches = item.categoryID == nil
             case .category(let id): matches = item.categoryID == id
             case .favorites: matches = item.favorite
@@ -221,7 +223,7 @@ final class LibraryViewModel: ObservableObject {
     }
     func syncSelection() {
         pruneSelection()
-        guard filter != .makerWorld else { return }
+        guard !filter.isBrowser else { return }
         if !visibleItems.contains(where: { $0.id == selectionID }) { selectionID = visibleItems.first?.id }
     }
     func fileURL(_ item: ShelfItem) -> URL { rootURL.appendingPathComponent(item.filePath) }
@@ -439,15 +441,25 @@ final class LibraryViewModel: ObservableObject {
     func openSource(_ item: ShelfItem) {
         if let source = item.makerWorldSource, let url = URL(string: source.pageURL) { showMakerWorld(url); return }
         // Internal model IDs are not public page IDs. Search avoids fabricating a page URL.
-        var parts = URLComponents(string: "https://makerworld.com/en/search/models")!
+        var parts = URLComponents(string: MakerWorldBrowserPolicy.home.absoluteString + "/search/models")!
         parts.queryItems = [URLQueryItem(name: "keyword", value: item.title)]
         if let url = parts.url { showMakerWorld(url) }
     }
     func showMakerWorld(_ url: URL) {
         guard MakerWorldBrowserPolicy.isMakerWorld(url) else { return }
-        guard AppIdentity.makerWorldIntegrationEnabled else { NSWorkspace.shared.open(url); return }
         browserRequest = BrowserLocation(url: url)
         filter = .makerWorld
+    }
+    func showMyCollections() {
+        browserRequest = BrowserLocation(url: MakerWorldBrowserPolicy.home, opensMyCollections: true)
+        filter = .makerWorldCollections
+    }
+    func selectFilter(_ selection: ShelfFilter) {
+        switch selection {
+        case .makerWorld: showMakerWorld(MakerWorldBrowserPolicy.home)
+        case .makerWorldCollections: showMyCollections()
+        default: filter = selection
+        }
     }
     func showLibraryItem(_ id: String) { filter = .all; search = ""; selectionID = id }
     func savedProfile(_ profileURL: String?) -> ShelfItem? {
@@ -456,7 +468,7 @@ final class LibraryViewModel: ObservableObject {
             .sorted { ($0.makerWorldSource?.capturedAt ?? $0.importedAt) > ($1.makerWorldSource?.capturedAt ?? $1.importedAt) }.first
     }
     func receiveBrowserDownload(_ url: URL, preferStored: Bool, forceDownload: Bool = false) async throws -> BrowserImportResult {
-        guard AppIdentity.makerWorldIntegrationEnabled else { throw ShelfError.message(L("integration.unavailable")) }
+        guard AppIdentity.makerWorldCaptureEnabled else { throw ShelfError.message(L("integration.unavailable")) }
         await acquireWork(); defer { releaseWork() }
         let parsed = try MakerWorldLinkPolicy.parse(url)
         if preferStored, !forceDownload, let stored = savedProfile(parsed.provenance?.profileURL) {
@@ -488,7 +500,7 @@ final class LibraryViewModel: ObservableObject {
     }
     func handle(_ url: URL) async {
         if url.isFileURL { await importFiles([url]); return }
-        guard AppIdentity.makerWorldIntegrationEnabled else { errorMessage = L("integration.unavailable"); return }
+        guard AppIdentity.makerWorldCaptureEnabled else { errorMessage = L("integration.unavailable"); return }
         await acquireWork(); defer { releaseWork() }
         statusMessage = L("link.resolving")
         do {
@@ -519,7 +531,7 @@ final class LibraryViewModel: ObservableObject {
         if panel.runModal() == .OK, let url = panel.url { preferences.archivePath = url.path; archiveSignatures = [:]; savePreferences(); Task { await scanStudioInbox() } }
     }
     func registerLinks() {
-        guard AppIdentity.makerWorldIntegrationEnabled else { return }
+        guard AppIdentity.makerWorldCaptureEnabled else { return }
         NSWorkspace.shared.setDefaultApplication(at: Bundle.main.bundleURL, toOpenURLsWithScheme: "bambustudioopen") { [weak self] error in
             Task { @MainActor in if let error { self?.errorMessage = error.localizedDescription } else { self?.statusMessage = L("link.registered") } }
         }
@@ -538,4 +550,5 @@ enum ShelfError: LocalizedError {
 struct BrowserLocation: Identifiable, Equatable {
     let id = UUID()
     let url: URL
+    var opensMyCollections = false
 }

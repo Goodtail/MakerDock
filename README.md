@@ -53,7 +53,7 @@ Completion is **recorded by you**. MakerDock does not automatically detect a fin
 
 A **Chrome companion extension is coming soon**, to connect model and profile information with files already in your library.
 
-Embedded MakerWorld browsing and download capture are experimental and disabled in the public DMG while the service's permitted use is clarified. This release manages local files and opens source links in your browser. See [integration status](Docs/integration-status.md).
+Browse MakerWorld without leaving MakerDock. Open saved model and profile links in the app, or jump to **My Collections** after signing in to MakerWorld. Automatic download capture remains experimental and disabled in the public DMG. See [integration status](Docs/integration-status.md).
 
 ## Development and license
 

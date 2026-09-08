@@ -4,9 +4,9 @@ import XCTest
 final class PublicDistributionTests: XCTestCase {
     @MainActor func testBuildSeparatesPublicAndDevelopmentIntegration() async throws {
         #if MAKERWORLD_INTEGRATION
-        XCTAssertTrue(AppIdentity.makerWorldIntegrationEnabled)
+        XCTAssertTrue(AppIdentity.makerWorldCaptureEnabled)
         #else
-        XCTAssertFalse(AppIdentity.makerWorldIntegrationEnabled)
+        XCTAssertFalse(AppIdentity.makerWorldCaptureEnabled)
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
         let model = LibraryViewModel(rootOverride: root)
@@ -19,10 +19,14 @@ final class PublicDistributionTests: XCTestCase {
             XCTFail("Public builds must reject remote transfers before transport")
         } catch { XCTAssertEqual(error.localizedDescription, L("integration.unavailable")) }
         let browser = MakerWorldBrowser()
-        browser.start(model: model)
-        browser.load(URL(string: "https://makerworld.com/en")!)
-        XCTAssertNil(browser.webView.url)
         XCTAssertTrue(browser.webView.configuration.userContentController.userScripts.isEmpty)
+        let view = RecordingBrowserWebView()
+        browser.webView = view
+        model.showMakerWorld(URL(string: "https://makerworld.com/en/models/123-example")!)
+        browser.start(model: model, location: model.browserRequest)
+        XCTAssertEqual(view.requests.last, model.browserRequest?.url)
+        XCTAssertEqual(model.filter, .makerWorld)
+        XCTAssertTrue(browser.transferMessage.isEmpty)
         let types = Bundle.main.object(forInfoDictionaryKey: "CFBundleURLTypes") as? [[String: Any]]
         let schemes = types?.flatMap { $0["CFBundleURLSchemes"] as? [String] ?? [] } ?? []
         XCTAssertFalse(schemes.contains("bambustudioopen"))

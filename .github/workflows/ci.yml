@@ -34,4 +34,5 @@ jobs:
           -destination 'platform=macOS' -derivedDataPath /tmp/MakerDockReleaseTests
           CODE_SIGN_IDENTITY=- ENABLE_TESTABILITY=YES ENABLE_HARDENED_RUNTIME=NO
           ONLY_ACTIVE_ARCH=YES
-          -only-testing:PlateShelfTests/PublicDistributionTests test
+          -only-testing:PlateShelfTests/PublicDistributionTests
+          -only-testing:PlateShelfTests/BrowserNavigationTests test

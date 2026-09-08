@@ -373,3 +373,8 @@
 "appearance.light" = "浅色";
 "appearance.dark" = "深色";
 "appearance.description" = "跟随Mac的外观，或为MakerDock选择主题。";
+
+// MakerWorld navigation
+"browser.myCollections" = "我的收藏集";
+"browser.collectionsOpening" = "正在打开MakerWorld的我的收藏集…";
+"browser.collectionsRetry" = "请登录MakerWorld后再次选择我的收藏集。如果已经登录，请刷新页面后重试。";

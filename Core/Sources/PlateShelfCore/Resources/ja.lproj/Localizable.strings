@@ -373,3 +373,8 @@
 "appearance.light" = "ライト";
 "appearance.dark" = "ダーク";
 "appearance.description" = "Macの外観に合わせるか、MakerDockのテーマを選べます。";
+
+// MakerWorld navigation
+"browser.myCollections" = "マイコレクション";
+"browser.collectionsOpening" = "MakerWorldのマイコレクションを開いています…";
+"browser.collectionsRetry" = "MakerWorldにログインしてから、マイコレクションをもう一度選んでください。ログイン済みの場合はページを再読み込みしてお試しください。";

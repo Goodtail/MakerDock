@@ -31,8 +31,9 @@ Import your 3MF files or choose folders to watch. Open stored models in the
 separately installed official Bambu Studio. Track completed prints, time,
 filament, and notes. English, Korean, Japanese, and Simplified Chinese included.
 
-This public release manages local files. MakerWorld web automation and the
-Chrome companion extension are not included. Original links open in your browser.
+Browse MakerWorld and open source links inside the app. Sign in on MakerWorld
+to access My Collections. Automatic download capture and the Chrome companion
+extension are not included in this public release.
 
 Source, updates, documentation, and license:
 https://github.com/Goodtail/MakerDock

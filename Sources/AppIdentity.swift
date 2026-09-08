@@ -3,8 +3,8 @@ import PlateShelfCore
 
 enum AppIdentity {
     static let name = "MakerDock"
-    /// Public releases manage local files. Web automation awaits service authorization.
-    static var makerWorldIntegrationEnabled: Bool {
+    /// Automatic capture is experimental; ordinary embedded browsing is available in all builds.
+    static var makerWorldCaptureEnabled: Bool {
         #if MAKERWORLD_INTEGRATION
         true
         #else

@@ -373,3 +373,8 @@
 "appearance.light" = "Light";
 "appearance.dark" = "Dark";
 "appearance.description" = "Follow your Mac’s appearance or choose a theme for MakerDock.";
+
+// MakerWorld navigation
+"browser.myCollections" = "My Collections";
+"browser.collectionsOpening" = "Opening your MakerWorld collections…";
+"browser.collectionsRetry" = "Sign in to MakerWorld, then choose My Collections again. If you are already signed in, reload the page and retry.";
