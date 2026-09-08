@@ -2,7 +2,7 @@
 <h1 align="center">MakerDock</h1>
 <p align="center">3MFファイルとプリント記録を整理するmacOSアプリ<br>公式Bambu Studioと一緒に使えます。</p>
 <p align="center"><a href="README.md">English</a> · <a href="README.ko.md">한국어</a> · <a href="README.zh-CN.md">简体中文</a> · 日本語</p>
-<p align="center"><a href="https://github.com/Goodtail/MakerDock/releases">ダウンロード</a> · <a href="#makerdockを作った理由">開発のきっかけ</a> · <a href="#今後の予定">今後の予定</a> · <a href="Docs/development.md">ソースからビルド</a></p>
+<p align="center"><a href="https://makerdock.goodtail.app/ja">ウェブサイト</a> · <a href="https://github.com/Goodtail/MakerDock/releases">ダウンロード</a> · <a href="#makerdockを作った理由">開発のきっかけ</a> · <a href="#今後の予定">今後の予定</a> · <a href="Docs/development.md">ソースからビルド</a></p>
 <p align="center">macOS 13以降 · Apple Silicon / Intel · 無料・オープンソース · MIT</p>
 
 ![日本語で実行したMakerDockのモデルライブラリ](Docs/screenshots/ja/library.png)
