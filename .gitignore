@@ -13,3 +13,5 @@ DerivedData/
 .env.*
 .notary-*.json
 __pycache__/
+.vercel
+.env*
