@@ -1,6 +1,5 @@
-**
-!website/
-!website/**
+/*
+!website
 website/node_modules/**
 website/.next/**
 website/.vercel/**
