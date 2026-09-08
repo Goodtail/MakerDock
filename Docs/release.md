@@ -2,6 +2,12 @@
 
 Official MakerDock releases belong only to **CHANWOO KOO (D523TSBMWR)**. Verify the active personal team before any Apple Developer or App Store Connect mutation. Do not use a company certificate, provider, API key, or provisioning profile.
 
+## Version numbering
+
+The initial public version is **0.1.0**. Routine development changes increment the internal build number, not the public version. Keep `MARKETING_VERSION` unchanged until the user requests a new public version or release. The internal `CURRENT_PROJECT_VERSION` remains monotonically increasing, including when public version labels are corrected.
+
+The former 1.6.x releases used premature version numbers and have been withdrawn from public downloads. Their Git refs and local checkpoints remain available for rollback.
+
 ## Build and package
 
 1. Commit the verified implementation and update `Config/Version.xcconfig`.

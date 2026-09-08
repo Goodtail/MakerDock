@@ -46,7 +46,7 @@ final class MakerWorldBrowser: NSObject, ObservableObject, WKNavigationDelegate,
     private func makeWebView() -> WKWebView {
         let configuration = WKWebViewConfiguration()
         configuration.websiteDataStore = .default()
-        configuration.applicationNameForUserAgent = "MakerDock/" + (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.4.0")
+        configuration.applicationNameForUserAgent = "MakerDock/" + (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "development")
         let content = configuration.userContentController
         if AppIdentity.makerWorldCaptureEnabled {
             content.add(WeakBrowserMessageHandler(self), name: "plateShelf")
