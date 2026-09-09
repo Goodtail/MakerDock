@@ -57,7 +57,7 @@ extension LibraryRepositoryTests {
         let a = try await repo.importFile(at: fixture()).item
         let b = try await repo.importFile(at: fixture("B.3mf", changes: ["Metadata/plate_1.gcode": Data("G28\nG1 X2".utf8)])).item
         try await repo.enqueue(itemIDs: [a.id, b.id])
-        let start = Date().addingTimeInterval(-600)
+        let start = Date(timeIntervalSince1970: floor(Date().timeIntervalSince1970) - 600)
         try await repo.startQueuePrint(itemID: b.id, at: start, estimatedSeconds: 1200)
         try await repo.reorderQueue(itemIDs: [a.id, b.id])
         let reopened = try LibraryRepository(rootURL: repo.rootURL)
