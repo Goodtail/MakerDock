@@ -49,7 +49,12 @@ Developer ID: MakerDock maintainer (YOUR_PERSONAL_TEAM_ID)
 EOF
 cp "$makerdock_repo/LICENSE" "$makerdock_work/stage/LICENSE.txt"
 makerdock_dmg="$makerdock_output/MakerDock-$makerdock_version-universal.dmg"
-hdiutil create -volname "MakerDock $makerdock_version" -srcfolder "$makerdock_work/stage" -ov -format UDZO -fs HFS+ "$makerdock_dmg"
+# Verify the filesystem image before compression. Direct HFS+ UDZO creation can
+# produce invalid chunk offsets on the current macOS image writer.
+makerdock_raw="$makerdock_work/MakerDock-uncompressed.dmg"
+hdiutil create -volname "MakerDock $makerdock_version" -srcfolder "$makerdock_work/stage" -format UDRO -fs APFS "$makerdock_raw"
+hdiutil verify "$makerdock_raw"
+hdiutil convert "$makerdock_raw" -format UDZO -ov -o "$makerdock_dmg"
 codesign --force --sign "$makerdock_identity" --timestamp "$makerdock_dmg"
 codesign --verify --verbose=2 "$makerdock_dmg"
 hdiutil verify "$makerdock_dmg"
