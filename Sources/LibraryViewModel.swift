@@ -386,14 +386,19 @@ final class LibraryViewModel: ObservableObject {
         }
     }
     @discardableResult func recordPrint(_ item: ShelfItem, status: String, note: String, moveFiles: Bool = false,
-                                       sourceURL: URL? = nil, directoryURL: URL? = nil, durationSeconds: Double? = nil, durationSource: String? = nil, filaments: [FilamentRecord]? = nil) async -> Bool {
+                                       sourceURL: URL? = nil, directoryURL: URL? = nil, durationSeconds: Double? = nil, durationSource: String? = nil, filaments: [FilamentRecord]? = nil, startedAt: Date? = nil, completedAt: Date? = nil) async -> Bool {
         await acquireWork(); defer { releaseWork() }
         guard let repository else { errorMessage = L("library.unavailable"); return false }
+        let start = startedAt ?? queueEntry(item)?.startedAt
+        let end = completedAt ?? Date()
+        let useElapsed = start != nil && !["manual", "elapsed", "printer"].contains(durationSource ?? "")
+        let seconds = useElapsed ? end.timeIntervalSince(start!) : durationSeconds
+        let timeSource = useElapsed ? "elapsed" : durationSource
         do {
             if status == "completed", moveFiles {
-                _ = try await repository.completePrint(itemID: item.id, note: note, sourceURL: sourceURL, directoryURL: directoryURL, durationSeconds: durationSeconds, durationSource: durationSource, filaments: filaments)
+                _ = try await repository.completePrint(itemID: item.id, note: note, sourceURL: sourceURL, directoryURL: directoryURL, durationSeconds: seconds, durationSource: timeSource, filaments: filaments, startedAt: start, completedAt: end)
             } else {
-                try await repository.appendRun(itemID: item.id, run: PrintRun(status: status, source: "manual", note: note, durationSeconds: durationSeconds, durationSource: durationSource, filaments: filaments))
+                try await repository.appendRun(itemID: item.id, run: PrintRun(date: end, status: status, source: "manual", note: note, durationSeconds: seconds, durationSource: timeSource, filaments: filaments, startedAt: start, completedAt: end))
             }
             await reload()
             statusMessage = status == "completed" && moveFiles ? L("출력 완료로 표시하고 파일을 이동했습니다.") : L("history.saved")

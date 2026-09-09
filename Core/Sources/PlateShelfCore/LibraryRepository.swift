@@ -230,13 +230,19 @@ public actor LibraryRepository {
     }
     public func appendRun(itemID: String, run: PrintRun) throws {
         try Self.validatePrintDetails(run.durationSeconds, run.filaments)
+        try Self.validatePrintDates(run.startedAt, run.completedAt)
         guard let offset = records.firstIndex(where: { $0.id == itemID }) else { throw LibraryError.itemNotFound }
         var candidate = records
         if let existing = candidate[offset].printRuns.firstIndex(where: { $0.id == run.id }) {
             candidate[offset].printRuns[existing] = run
         } else { candidate[offset].printRuns.append(run) }
-        let newlyCompleted = run.status == "completed" && !records[offset].printRuns.contains { $0.id == run.id && $0.status == "completed" }
-        try commit(candidate, queue: newlyCompleted ? queueRecords.filter { $0.id != itemID } : queueRecords)
+        let newlyEnded = ["completed", "failed"].contains(run.status) && !records[offset].printRuns.contains { $0.id == run.id && ["completed", "failed"].contains($0.status) }
+        try commit(candidate, queue: newlyEnded ? queueRecords.filter { $0.id != itemID } : queueRecords)
+    }
+
+    private static func validatePrintDates(_ start: Date?, _ end: Date?) throws {
+        guard [start, end].allSatisfy({ $0.map { $0.timeIntervalSince1970.isFinite && $0.timeIntervalSince1970 >= 0 && $0 <= Date().addingTimeInterval(60) } ?? true }),
+              start == nil || (end != nil && start! < end!) else { throw LibraryError.invalidSettings }
     }
 
     public func printQueue() -> [PrintQueueEntry] { queueRecords }
@@ -428,8 +434,9 @@ public actor LibraryRepository {
 
     /// Move the archived original and, when selected, one external source; preserve all other copies.
     /// The journal rolls incomplete moves back after interruption, before the library is used again.
-    public func completePrint(itemID: String, note: String, sourceURL: URL? = nil, directoryURL: URL? = nil, durationSeconds: Double? = nil, durationSource: String? = nil, filaments: [FilamentRecord]? = nil) throws -> PrintRun {
+    public func completePrint(itemID: String, note: String, sourceURL: URL? = nil, directoryURL: URL? = nil, durationSeconds: Double? = nil, durationSource: String? = nil, filaments: [FilamentRecord]? = nil, startedAt: Date? = nil, completedAt: Date? = nil) throws -> PrintRun {
         try Self.validatePrintDetails(durationSeconds, filaments)
+        try Self.validatePrintDates(startedAt, completedAt)
         try Self.recoverPrintMove(root: rootURL, records: records)
         guard let offset = records.firstIndex(where: { $0.id == itemID && !$0.isTrashed }) else { throw LibraryError.itemNotFound }
         let item = records[offset]
@@ -471,10 +478,10 @@ public actor LibraryRepository {
         for move in moves {
             guard !fileManager.fileExists(atPath: move.to) else { throw LibraryError.fileMove(CL("이동 위치에 파일이 이미 있습니다. 기존 파일은 보존했습니다.")) }
         }
-        let run = PrintRun(status: "completed", source: "manual", note: note,
+        let run = PrintRun(date: completedAt ?? Date(), status: "completed", source: "manual", note: note,
                            movedFrom: externalMove?.from ?? (archived == completed ? nil : archived.path),
                            movedTo: externalMove?.to ?? sourceURL?.path ?? completed.path,
-                           durationSeconds: durationSeconds, durationSource: durationSource, filaments: filaments)
+                           durationSeconds: durationSeconds, durationSource: durationSource, filaments: filaments, startedAt: startedAt, completedAt: completedAt)
         var candidate = records
         candidate[offset].filePath = completedRelative
         if let move = externalMove {

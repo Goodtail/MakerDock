@@ -56,10 +56,10 @@ extension LibraryViewModel {
                 let d = draft.details
                 if moveFiles {
                     _ = try await repository.completePrint(itemID: draft.id, note: note,
-                        durationSeconds: d.seconds, durationSource: d.durationSource, filaments: d.records)
+                        durationSeconds: d.seconds, durationSource: d.durationSource, filaments: d.records, startedAt: d.startedAt, completedAt: d.completedAt)
                 } else {
-                    try await repository.appendRun(itemID: draft.id, run: PrintRun(status: "completed", source: "manual", note: note,
-                        durationSeconds: d.seconds, durationSource: d.durationSource, filaments: d.records))
+                    try await repository.appendRun(itemID: draft.id, run: PrintRun(date: d.completedAt, status: "completed", source: "manual", note: note,
+                        durationSeconds: d.seconds, durationSource: d.durationSource, filaments: d.records, startedAt: d.startedAt, completedAt: d.completedAt))
                 }
                 result.succeeded.insert(draft.id)
             } catch { result.errors.append(draft.item.title + ": " + error.localizedDescription) }

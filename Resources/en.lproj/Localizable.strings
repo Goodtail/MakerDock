@@ -439,3 +439,15 @@
 "queue.startHint" = "Mark this after starting the print in Studio or on your printer. Adjust the start time if it is already running. This does not control your printer.";
 "queue.editStart" = "Edit start time";
 "queue.backToWaiting" = "Return to waiting";
+
+"record.startedAt" = "Print started";
+
+"record.completedAt" = "Print ended";
+
+"record.useElapsed" = "Recalculate from times";
+
+"record.elapsedHint" = "Calculated from the start and end times, including pauses. If the print finished earlier, edit the end time.";
+
+"record.elapsedEdited" = "You edited the duration. You can recalculate it from the start and end times.";
+
+"record.timeRange" = "%@ → %@";

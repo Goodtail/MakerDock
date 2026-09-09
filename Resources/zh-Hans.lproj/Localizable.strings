@@ -439,3 +439,15 @@
 "queue.startHint" = "在 Studio 或打印机上开始打印后进行标记。如果已经在打印，可以调整开始时间。此操作不会控制打印机。";
 "queue.editStart" = "修改开始时间";
 "queue.backToWaiting" = "恢复为等待";
+
+"record.startedAt" = "打印开始时间";
+
+"record.completedAt" = "打印结束时间";
+
+"record.useElapsed" = "按时间重新计算";
+
+"record.elapsedHint" = "根据开始和结束时间计算，包含暂停时间。如果打印更早结束，请修改结束时间。";
+
+"record.elapsedEdited" = "已手动修改耗时，也可以按开始和结束时间重新计算。";
+
+"record.timeRange" = "%@ → %@";

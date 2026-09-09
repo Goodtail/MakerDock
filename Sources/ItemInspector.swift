@@ -106,6 +106,9 @@ struct ItemInspector: View {
                         VStack(alignment: .leading, spacing: Design.tiny) {
                             HStack { Image(systemName: run.status == "completed" ? "checkmark.circle" : "clock"); Text(runTitle(run.status)).font(Design.value); Spacer() }
                             Text(dateText(run.date)).font(Design.caption).foregroundStyle(Design.secondary)
+                            if let start = run.startedAt, let end = run.completedAt {
+                                Text(String(format: L("record.timeRange"), dateText(start), dateText(end))).font(Design.caption).foregroundStyle(Design.secondary)
+                            }
                             if let seconds = run.durationSeconds { Label(timeText(seconds), systemImage: "clock").font(Design.value) }
                             ForEach(run.filaments ?? []) { filament in
                                 Text([filament.name, filament.material, filament.grams.map { weightText($0) } ?? ""].filter { !$0.isEmpty }.joined(separator: " · "))
@@ -287,7 +290,7 @@ struct PrintRecordSheet: View {
                     Task {
                         if await model.recordPrint(item, status: status, note: note, moveFiles: moveFiles,
                                                    sourceURL: source, directoryURL: directory ?? model.printDestination(for: source),
-                                                   durationSeconds: details.seconds, durationSource: details.durationSource, filaments: details.records) { dismiss() }
+                                                   durationSeconds: details.seconds, durationSource: details.durationSource, filaments: details.records, startedAt: details.startedAt, completedAt: details.completedAt) { dismiss() }
                         isSaving = false
                     }
                 }.buttonStyle(.borderedProminent).tint(Design.action).foregroundStyle(Color.white).keyboardShortcut(.defaultAction).disabled(isSaving || model.isWorking || !details.valid)

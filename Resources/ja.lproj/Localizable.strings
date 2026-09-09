@@ -439,3 +439,15 @@
 "queue.startHint" = "Studioやプリンターで開始した後に記録します。すでに進行中なら開始時刻を変更できます。プリンターの操作は行いません。";
 "queue.editStart" = "開始時刻を変更";
 "queue.backToWaiting" = "待機に戻す";
+
+"record.startedAt" = "印刷開始日時";
+
+"record.completedAt" = "印刷終了日時";
+
+"record.useElapsed" = "時刻から再計算";
+
+"record.elapsedHint" = "開始・終了時刻から計算しました。一時停止時間も含まれます。早く終了した場合は終了時刻を修正してください。";
+
+"record.elapsedEdited" = "所要時間を手動で修正しました。開始・終了時刻から再計算できます。";
+
+"record.timeRange" = "%@ → %@";

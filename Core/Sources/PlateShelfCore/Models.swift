@@ -39,13 +39,17 @@ public struct PrintRun: Codable, Sendable, Identifiable, Hashable {
     public var durationSeconds: Double?
     public var durationSource: String?
     public var filaments: [FilamentRecord]?
+    public var startedAt: Date?
+    public var completedAt: Date?
 
     public init(id: String = UUID().uuidString, date: Date = Date(), status: String,
                 source: String, note: String = "", movedFrom: String? = nil, movedTo: String? = nil,
-                durationSeconds: Double? = nil, durationSource: String? = nil, filaments: [FilamentRecord]? = nil) {
+                durationSeconds: Double? = nil, durationSource: String? = nil, filaments: [FilamentRecord]? = nil,
+                startedAt: Date? = nil, completedAt: Date? = nil) {
         self.id = id; self.date = date; self.status = status; self.source = source; self.note = note
         self.movedFrom = movedFrom; self.movedTo = movedTo
         self.durationSeconds = durationSeconds; self.durationSource = durationSource; self.filaments = filaments
+        self.startedAt = startedAt; self.completedAt = completedAt
     }
 }
 

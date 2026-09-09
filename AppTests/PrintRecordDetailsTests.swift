@@ -3,6 +3,46 @@ import PlateShelfCore
 @testable import PlateShelf
 
 final class PrintRecordDetailsTests: XCTestCase {
+    func testFourHourPrintUsesTimestampsInsteadOfShorterEstimateAndCanBeCorrected() {
+        let end = Date().addingTimeInterval(-60), start = end.addingTimeInterval(-4 * 3600)
+        var draft = PrintDetailsDraft(estimate: PrintEstimate(seconds: 2 * 3600 + 53 * 60, source: .file), startedAt: start, completedAt: end)
+        XCTAssertTrue(draft.valid)
+        XCTAssertEqual(draft.hours, "4"); XCTAssertEqual(draft.minutes, "0")
+        XCTAssertEqual(draft.seconds, 14_400); XCTAssertEqual(draft.durationSource, "elapsed")
+        draft.useEstimate()
+        XCTAssertEqual(draft.seconds, 14_400)
+        draft.completedAt = end.addingTimeInterval(-1800)
+        XCTAssertEqual(draft.seconds, 12_600)
+        draft.minutes = "20"
+        XCTAssertEqual(draft.seconds, 12_000); XCTAssertEqual(draft.durationSource, "manual")
+        draft.useElapsedTime()
+        XCTAssertEqual(draft.seconds, 12_600)
+        draft.completedAt = start.addingTimeInterval(-1)
+        XCTAssertFalse(draft.valid)
+    }
+    @MainActor func testQueueStartPrefillsCompletionAndSurvivesSaveReload() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let vm = LibraryViewModel(rootOverride: root)
+        let fixture = try XCTUnwrap(Bundle(for: IntegrationTests.self).url(forResource: "Fixture", withExtension: "3mf"))
+        await vm.importFiles([fixture])
+        let item = try XCTUnwrap(vm.items.first)
+        await vm.enqueue([item])
+        let end = Date().addingTimeInterval(-60), start = end.addingTimeInterval(-14_400)
+        let started = await vm.startQueuePrint(item, at: start)
+        XCTAssertTrue(started)
+        let draft = vm.printDetails(item, completedAt: end)
+        XCTAssertEqual(try XCTUnwrap(draft.seconds), 14_400, accuracy: 1)
+        let saved = await vm.recordPrint(item, status: "completed", note: "Four hours", durationSeconds: draft.seconds, durationSource: draft.durationSource, startedAt: draft.startedAt, completedAt: draft.completedAt)
+        XCTAssertTrue(saved)
+        let reopened = LibraryViewModel(rootOverride: root); await reopened.reload()
+        let run = try XCTUnwrap(reopened.items.first?.printRuns.last)
+        XCTAssertEqual(try XCTUnwrap(run.durationSeconds), 14_400, accuracy: 1)
+        XCTAssertEqual(try XCTUnwrap(run.startedAt).timeIntervalSince1970, start.timeIntervalSince1970, accuracy: 1)
+        XCTAssertEqual(try XCTUnwrap(run.completedAt).timeIntervalSince1970, end.timeIntervalSince1970, accuracy: 1)
+        XCTAssertEqual(run.durationSource, "elapsed"); XCTAssertEqual(run.note, "Four hours")
+        XCTAssertTrue(reopened.printQueue.isEmpty)
+    }
     func testPrefillPreservesExactEstimateAndManualEditsAreSeparateFromNotes() {
         var d = PrintDetailsDraft(estimate: PrintEstimate(seconds: 1627, source: .makerWorld))
         XCTAssertEqual(d.hours, "0"); XCTAssertEqual(d.minutes, "27")

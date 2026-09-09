@@ -31,19 +31,35 @@ struct PrintDetailsDraft {
     var minutes = ""
     var filaments: [FilamentDraft] = []
     var prefill: PrintEstimate?
+    var startedAt: Date? { didSet { if startedAt != oldValue { useElapsedTime() } } }
+    var completedAt: Date { didSet { if completedAt != oldValue, startedAt != nil { useElapsedTime() } } }
+    private var originalSeconds: Double?
+    private var originalSource: String?
     private var originalHours = "", originalMinutes = ""
-    init(estimate: PrintEstimate? = nil, filaments: [FilamentRecord] = []) {
+    init(estimate: PrintEstimate? = nil, filaments: [FilamentRecord] = [], startedAt: Date? = nil, completedAt: Date = Date()) {
         prefill = estimate
-        if let estimate {
-            let total = Int(min(6_000_000, max(1, (estimate.seconds / 60).rounded())))
-            hours = String(total / 60); minutes = String(total % 60)
-        }
-        originalHours = hours; originalMinutes = minutes
+        self.startedAt = startedAt; self.completedAt = completedAt
         self.filaments = filaments.map(FilamentDraft.init)
+        if startedAt != nil { useElapsedTime() }
+        else { useEstimate() }
+    }
+    private mutating func fillTime(_ seconds: Double?, source: String?) {
+        originalSeconds = seconds; originalSource = source
+        if let seconds, seconds.isFinite, seconds > 0 {
+            let total = Int(min(6_000_000, max(1, (seconds / 60).rounded())))
+            hours = String(total / 60); minutes = String(total % 60)
+        } else { hours = ""; minutes = "" }
+        originalHours = hours; originalMinutes = minutes
+    }
+    mutating func useElapsedTime() { fillTime(startedAt.map { completedAt.timeIntervalSince($0) }, source: "elapsed") }
+    mutating func useEstimate() {
+        // Once a start has been recorded, an estimate must never replace elapsed time.
+        guard startedAt == nil else { useElapsedTime(); return }
+        fillTime(prefill?.seconds, source: prefill.map { $0.source == .makerWorld ? "makerWorld" : $0.source == .file ? "file" : "myPrinter" })
     }
     var timeUnchanged: Bool { hours == originalHours && minutes == originalMinutes }
     var seconds: Double? {
-        if timeUnchanged, let prefill { return prefill.seconds }
+        if timeUnchanged, let originalSeconds { return originalSeconds > 0 ? originalSeconds : nil }
         let h = Int(hours.trimmingCharacters(in: .whitespaces)) ?? 0, m = Int(minutes.trimmingCharacters(in: .whitespaces)) ?? 0
         guard h >= 0, h <= 100_000, m >= 0, m < 60 else { return nil }
         let value = h * 3600 + m * 60
@@ -53,18 +69,20 @@ struct PrintDetailsDraft {
         let h = hours.trimmingCharacters(in: .whitespaces), m = minutes.trimmingCharacters(in: .whitespaces)
         let empty = h.isEmpty && m.isEmpty
         let validTime = empty || ((h.isEmpty || Int(h) != nil) && (m.isEmpty || Int(m) != nil) && seconds != nil)
-        return validTime && filaments.allSatisfy(\.valid)
+        let validDates = completedAt.timeIntervalSince1970.isFinite && completedAt <= Date().addingTimeInterval(60) &&
+            (startedAt.map { $0.timeIntervalSince1970.isFinite && $0.timeIntervalSince1970 >= 0 && $0 < completedAt } ?? true)
+        return validTime && validDates && filaments.allSatisfy(\.valid)
     }
     var durationSource: String? {
         guard seconds != nil else { return nil }
-        if timeUnchanged, let prefill { return prefill.source == .makerWorld ? "makerWorld" : prefill.source == .file ? "file" : "myPrinter" }
+        if timeUnchanged { return originalSource }
         return "manual"
     }
     var records: [FilamentRecord] { filaments.map(\.record).filter { !$0.name.isEmpty || !$0.material.isEmpty || $0.grams != nil } }
 }
 
 extension LibraryViewModel {
-    func printDetails(_ item: ShelfItem) -> PrintDetailsDraft {
+    func printDetails(_ item: ShelfItem, completedAt: Date = Date()) -> PrintDetailsDraft {
         let plates = savedEstimate(item)?.plates ?? item.plates
         var values: [FilamentRecord] = []
         let complete = !plates.isEmpty && plates.allSatisfy { !($0.filaments ?? []).isEmpty }
@@ -84,7 +102,7 @@ extension LibraryViewModel {
                 values[0].grams = plates.compactMap(\.weightGrams).reduce(0, +)
             }
         }
-        return PrintDetailsDraft(estimate: displayedEstimate(item), filaments: values)
+        return PrintDetailsDraft(estimate: displayedEstimate(item), filaments: values, startedAt: queueEntry(item)?.startedAt, completedAt: completedAt)
     }
 }
 
@@ -92,6 +110,10 @@ struct PrintDetailsFields: View {
     @Binding var draft: PrintDetailsDraft
     var body: some View {
         VStack(alignment: .leading, spacing: Design.small) {
+            if draft.startedAt != nil {
+                DatePicker(L("record.startedAt"), selection: Binding(get: { draft.startedAt ?? draft.completedAt }, set: { draft.startedAt = $0 }), displayedComponents: [.date, .hourAndMinute])
+                DatePicker(L("record.completedAt"), selection: $draft.completedAt, displayedComponents: [.date, .hourAndMinute])
+            }
             Text(L("record.duration")).font(Design.value)
             HStack {
                 TextField("0", text: $draft.hours).frame(width: 64).accessibilityLabel(L("record.hours"))
@@ -99,9 +121,12 @@ struct PrintDetailsFields: View {
                 TextField("0", text: $draft.minutes).frame(width: 64).accessibilityLabel(L("record.minutes"))
                 Text(L("record.minutes"))
                 Spacer()
-                if let estimate = draft.prefill { Button(L("record.useEstimate")) { let f = draft.filaments; draft = PrintDetailsDraft(estimate: estimate); draft.filaments = f }.buttonStyle(.link) }
+                if draft.startedAt != nil { Button(L("record.useElapsed")) { draft.useElapsedTime() }.buttonStyle(.link) }
+                else if draft.prefill != nil { Button(L("record.useEstimate")) { draft.useEstimate() }.buttonStyle(.link) }
             }.textFieldStyle(.roundedBorder)
-            if let estimate = draft.prefill {
+            if draft.startedAt != nil {
+                Text(L(draft.durationSource == "manual" ? "record.elapsedEdited" : "record.elapsedHint")).font(Design.caption).foregroundStyle(Design.secondary)
+            } else if let estimate = draft.prefill {
                 Text(String(format: L("record.prefill"), estimate.sourceLabel, timeText(estimate.seconds))).font(Design.caption).foregroundStyle(Design.secondary)
             } else { Text(L("record.optionalTime")).font(Design.caption).foregroundStyle(Design.secondary) }
             HStack { Text(L("record.filaments")).font(Design.value); Spacer(); Button { draft.filaments.append(FilamentDraft()) } label: { Label(L("record.addFilament"), systemImage: "plus") }.buttonStyle(.link) }
