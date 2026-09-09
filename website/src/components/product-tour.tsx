@@ -1,9 +1,9 @@
 "use client";
 import { useRef, useState } from "react";
-import { ArrowUpRightIcon, CheckSquareIcon, NotePencilIcon, StackIcon } from "@phosphor-icons/react";
+import { ArrowUpRightIcon, CheckSquareIcon, NotePencilIcon, StackIcon, ListNumbersIcon } from "@phosphor-icons/react";
 import { Screenshot } from "./screenshot";
 import { assetLocale, type Copy, type Locale } from "@/lib/content";
-const icons = [StackIcon, NotePencilIcon, CheckSquareIcon];
+const icons = [StackIcon, NotePencilIcon, CheckSquareIcon, ListNumbersIcon];
 export function ProductTour({ copy, locale }: { copy: Copy["tour"]; locale: Locale }) {
   const [active, setActive] = useState(0);
   const buttons = useRef<(HTMLButtonElement | null)[]>([]);

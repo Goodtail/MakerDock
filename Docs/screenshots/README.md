@@ -1,6 +1,6 @@
 # Screenshot provenance and reproduction
 
-The four localized READMEs use actual window captures of MakerDock 1.5.1 Release. The capture metadata retains its original pre-release version label. These library workflows are available in 0.1.0; the guides keep one set of feature screenshots:
+The four localized READMEs use actual window captures. The queue screenshots are from MakerDock 0.1.1 (build 15); the earlier screens are from MakerDock 1.5.1 Release. The capture metadata retains its original pre-release version label. These library workflows are available in 0.1.0; the guides keep one set of feature screenshots:
 
 | Locale | Library | Enlarged plate | Print record | Multiple selection |
 | --- | --- | --- | --- | --- |
@@ -30,3 +30,9 @@ open -n /path/to/MakerDock.app --args \
 Repeat with `ko`, `ja`, and `zh-Hans`, using a new folder for each. Capture the actual app window after selecting a model, opening a plate, opening the completion dialog, and selecting multiple cards. Exit only the demo instance when finished. Do not point the generator at Application Support or replace a user's library to take screenshots.
 
 Original example code, geometry, previews, and screenshots are part of this repository's MIT-licensed materials. The app icon was generated specifically for MakerDock; see [brand provenance](../../assets/brand/README.md).
+
+## Print Queue in 0.1.1
+
+[English](en/queue.png) · [Korean](ko/queue.png) · [Japanese](ja/queue.png) · [Simplified Chinese](zh-Hans/queue.png)
+
+The queue captures use four original examples, three available hours, and five minutes between prints. Launch the matching demo library, add its models to the queue, order shorter jobs first, and open Print Queue. Per-language `queue-capture.json` files identify the build and provenance.
