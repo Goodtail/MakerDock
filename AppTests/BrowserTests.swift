@@ -11,6 +11,31 @@ private actor BrowserTestTransport: MakerWorldHTTPTransport {
 }
 
 final class BrowserTests: XCTestCase {
+    func testNativeStudioTransferKeepsExactAssetAndObservedModelOnly() throws {
+        let remote = "https://public-cdn.bblmw.com/hook.3mf?Signature=A+B%2BC"
+        var incoming = URLComponents(string: "bambustudio://open")!
+        incoming.queryItems = [.init(name: "file", value: remote), .init(name: "name", value: "Hook.3mf")]
+        let handoff = try MakerWorldBrowserPolicy.studioHandoff(XCTUnwrap(incoming.url), page: URL(string: "https://makerworld.com/ko/models/123-hook#profileId-999"))
+        let parsed = try MakerWorldLinkPolicy.parse(handoff)
+        XCTAssertEqual(parsed.downloadURL.absoluteString, remote)
+        XCTAssertEqual(parsed.provenance?.pageURL, "https://makerworld.com/ko/models/123-hook")
+        XCTAssertNil(parsed.provenance?.profileURL)
+        XCTAssertTrue(parsed.openStudio)
+    }
+    @MainActor func testSavedBrowserFileAttachesPageEvenAfterWatcherImportedIt() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let model = LibraryViewModel(rootOverride: root)
+        let fixture = try XCTUnwrap(Bundle(for: IntegrationTests.self).url(forResource: "Fixture", withExtension: "3mf"))
+        await model.importFiles([fixture])
+        let original = try XCTUnwrap(model.items.first)
+        let id = try await model.importSavedBrowserFile(fixture, page: URL(string: "https://makerworld.com/en/models/123-hook?tracking=removed"))
+        XCTAssertEqual(id, original.id)
+        XCTAssertEqual(model.items.count, 1)
+        XCTAssertEqual(model.items.first?.makerWorldSource?.pageURL, "https://makerworld.com/en/models/123-hook")
+        XCTAssertEqual(try MakerWorldLinkPolicy.fileSHA256(model.fileURL(original)).hash, original.id)
+    }
+
     func testNavigationAndStableProfileIdentity() throws {
         XCTAssertTrue(MakerWorldBrowserPolicy.isMakerWorld(URL(string: "https://makerworld.com/ko")))
         for raw in ["https://makerworld.com.evil.test", "http://makerworld.com", "https://makerworld.com:8443", "https://user@makerworld.com"] {

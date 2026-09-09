@@ -485,6 +485,14 @@ final class LibraryViewModel: ObservableObject {
     }
     func receiveBrowserDownload(_ url: URL, preferStored: Bool, forceDownload: Bool = false) async throws -> BrowserImportResult {
         guard AppIdentity.makerWorldCaptureEnabled else { throw ShelfError.message(L("integration.unavailable")) }
+        return try await importBrowserTransfer(url, preferStored: preferStored, forceDownload: forceDownload)
+    }
+    // Called only for a navigation initiated inside our trusted MakerWorld web view.
+    // This saves the file the user requested, without enabling injected page scraping.
+    func receiveNativeBrowserDownload(_ url: URL) async throws -> BrowserImportResult {
+        try await importBrowserTransfer(url, preferStored: true, forceDownload: false)
+    }
+    private func importBrowserTransfer(_ url: URL, preferStored: Bool, forceDownload: Bool) async throws -> BrowserImportResult {
         await acquireWork(); defer { releaseWork() }
         let parsed = try MakerWorldLinkPolicy.parse(url)
         if preferStored, !forceDownload, let stored = savedProfile(parsed.provenance?.profileURL) {
@@ -506,6 +514,16 @@ final class LibraryViewModel: ObservableObject {
         statusMessage = result.reused ? L("link.reused") : L("link.downloaded")
         if result.openStudio { openInStudio(imported.item) }
         return BrowserImportResult(itemID: imported.item.id, name: imported.item.title, usedLibrary: false, openedStudio: result.openStudio)
+    }
+    func importSavedBrowserFile(_ file: URL, page: URL?) async throws -> String {
+        guard let repository else { throw ShelfError.message(L("library.unavailable")) }
+        await acquireWork(); defer { releaseWork() }
+        let imported = try await repository.importFile(at: file)
+        if let page, let canonical = try? MakerWorldLinkPolicy.canonicalPage(page.absoluteString, includeProfile: false) {
+            try await repository.updateSource(id: imported.item.id, source: MakerWorldSource(pageURL: canonical.absoluteString))
+        }
+        await reload()
+        return imported.item.id
     }
     func saveSource(_ item: ShelfItem, page: String, profile: String) async throws {
         guard let repository else { throw ShelfError.message(L("library.unavailable")) }

@@ -26,6 +26,9 @@ final class MakerWorldBrowser: NSObject, ObservableObject, WKNavigationDelegate,
     private var observations: [NSKeyValueObservation] = []
     private var popups: [ObjectIdentifier: (NSWindow, WKWebView)] = [:]
     private var downloadDestinations: [ObjectIdentifier: URL] = [:]
+    private var downloadPages: [ObjectIdentifier: URL] = [:]
+    private var navigationPages: [ObjectIdentifier: URL] = [:]
+    private var lastNativeHandoff = false
     private var activeLinks = Set<String>()
     private var lastHandoff: URL?
     private var started = false
@@ -151,7 +154,7 @@ final class MakerWorldBrowser: NSObject, ObservableObject, WKNavigationDelegate,
     func openInBrowser() { if ["https", "http"].contains(currentURL.scheme ?? "") { NSWorkspace.shared.open(currentURL) } }
     func copyAddress() { NSPasteboard.general.clearContents(); NSPasteboard.general.setString(currentURL.absoluteString, forType: .string) }
     var canRetry: Bool { lastHandoff != nil && transferCount == 0 }
-    func retryLatest() { if let lastHandoff { receive(lastHandoff, force: true) } }
+    func retryLatest() { if let lastHandoff { receive(lastHandoff, force: true, native: lastNativeHandoff) } }
     private func updateNavigation(_ view: WKWebView) {
         guard view === webView else { return }
         if let url = view.url {
@@ -190,12 +193,13 @@ final class MakerWorldBrowser: NSObject, ObservableObject, WKNavigationDelegate,
             } else { context = nil }
         }
     }
-    private func receive(_ url: URL, force: Bool = false) {
-        guard AppIdentity.makerWorldCaptureEnabled, let model else { return }
+    private func receive(_ url: URL, force: Bool = false, native: Bool = false) {
+        guard AppIdentity.makerWorldCaptureEnabled || native, let model else { return }
         do { _ = try MakerWorldLinkPolicy.parse(url) }
         catch { transferError = error.localizedDescription; return }
         let key = MakerWorldLinkPolicy.sha256(Data(url.absoluteString.utf8))
         guard activeLinks.insert(key).inserted else { return }
+        lastNativeHandoff = native
         lastHandoff = url // Session memory only; never persist signed asset URLs.
         transferCount += 1; transferError = nil
         transferMessage = force ? L("최신 파일을 확인하고 있습니다…") : L("선택한 프로필을 보관하고 있습니다…")
@@ -204,7 +208,7 @@ final class MakerWorldBrowser: NSObject, ObservableObject, WKNavigationDelegate,
             guard let self else { return }
             defer { self.activeLinks.remove(key); self.transferCount -= 1 }
             do {
-                let result = try await model.receiveBrowserDownload(url, preferStored: reuse, forceDownload: force)
+                let result = try await native ? model.receiveNativeBrowserDownload(url) : model.receiveBrowserDownload(url, preferStored: reuse, forceDownload: force)
                 self.lastItemID = result.itemID
                 self.transferMessage = result.usedLibrary
                     ? (result.openedStudio ? L("보관된 파일을 다운로드 없이 Studio에서 열었습니다.") : L("이미 보관한 프로필입니다. 저장된 파일을 사용합니다."))
@@ -223,15 +227,22 @@ final class MakerWorldBrowser: NSObject, ObservableObject, WKNavigationDelegate,
             if trusted(action.sourceFrame) {
                 if AppIdentity.makerWorldCaptureEnabled { receive(url) }
                 else if ["bambustudioopen", "bambustudio"].contains(scheme) {
-                    model?.openStudioLink(url)
+                    do {
+                        let link = try MakerWorldBrowserPolicy.studioHandoff(url, page: webView.url ?? action.sourceFrame.request.url)
+                        receive(link, native: true)
+                    } catch { transferError = error.localizedDescription }
                 }
             }
             return
         }
+        if action.targetFrame?.isMainFrame != false {
+            navigationPages[ObjectIdentifier(webView)] = trusted(action.sourceFrame)
+                ? (webView.url ?? action.sourceFrame.request.url).flatMap { try? MakerWorldLinkPolicy.canonicalPage($0.absoluteString, includeProfile: false) } : nil
+        }
         if scheme == "https" || scheme == "http" {
-            if AppIdentity.makerWorldCaptureEnabled, url.pathExtension.lowercased() == "3mf", trusted(action.sourceFrame),
-               let link = try? MakerWorldBrowserPolicy.handoff(remote: url, name: url.lastPathComponent, page: action.sourceFrame.request.url) {
-                decisionHandler(.cancel); receive(link); return
+            if url.pathExtension.lowercased() == "3mf", trusted(action.sourceFrame),
+               let link = try? MakerWorldBrowserPolicy.handoff(remote: url, name: url.lastPathComponent, page: webView.url ?? action.sourceFrame.request.url) {
+                decisionHandler(.cancel); receive(link, native: true); return
             }
             if action.shouldPerformDownload { decisionHandler(.download); return }
             // Auth redirects and embedded frames stay in WebKit. Ordinary outbound links use the system browser.
@@ -304,8 +315,17 @@ final class MakerWorldBrowser: NSObject, ObservableObject, WKNavigationDelegate,
         if let window = webView.window { panel.beginSheetModal(for: window) { completionHandler($0 == .OK ? panel.urls : nil) } }
         else { completionHandler(nil) }
     }
-    func webView(_ webView: WKWebView, navigationAction: WKNavigationAction, didBecome download: WKDownload) { download.delegate = self }
-    func webView(_ webView: WKWebView, navigationResponse: WKNavigationResponse, didBecome download: WKDownload) { download.delegate = self }
+    func webView(_ webView: WKWebView, navigationAction: WKNavigationAction, didBecome download: WKDownload) {
+        download.delegate = self
+        if trusted(navigationAction.sourceFrame) {
+            downloadPages[ObjectIdentifier(download)] = (webView.url ?? navigationAction.sourceFrame.request.url)
+                .flatMap { try? MakerWorldLinkPolicy.canonicalPage($0.absoluteString, includeProfile: false) }
+        }
+    }
+    func webView(_ webView: WKWebView, navigationResponse: WKNavigationResponse, didBecome download: WKDownload) {
+        download.delegate = self
+        downloadPages[ObjectIdentifier(download)] = navigationPages.removeValue(forKey: ObjectIdentifier(webView))
+    }
     func download(_ download: WKDownload, decideDestinationUsing response: URLResponse, suggestedFilename: String, completionHandler: @escaping (URL?) -> Void) {
         // Known 3MF handoffs use the bounded native importer. Other site files use an explicit Save dialog.
         let panel = NSSavePanel(); panel.nameFieldStringValue = URL(fileURLWithPath: suggestedFilename).lastPathComponent
@@ -318,12 +338,20 @@ final class MakerWorldBrowser: NSObject, ObservableObject, WKNavigationDelegate,
         }
     }
     func downloadDidFinish(_ download: WKDownload) {
+        let page = downloadPages.removeValue(forKey: ObjectIdentifier(download))
         if let file = downloadDestinations.removeValue(forKey: ObjectIdentifier(download)) {
+            if file.pathExtension.lowercased() == "3mf", let model {
+                Task {
+                    do { lastItemID = try await model.importSavedBrowserFile(file, page: page) }
+                    catch { transferError = error.localizedDescription }
+                }
+            }
             transferMessage = String(format: L("%@을 저장했습니다."), String(file.lastPathComponent))
         }
     }
     func download(_ download: WKDownload, didFailWithError error: Error, resumeData: Data?) {
         downloadDestinations.removeValue(forKey: ObjectIdentifier(download))
+        downloadPages.removeValue(forKey: ObjectIdentifier(download))
         if (error as NSError).code != NSURLErrorCancelled { transferError = L("다운로드가 중단되었습니다. 다시 시도해 주세요.") }
     }
 }

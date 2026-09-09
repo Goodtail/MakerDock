@@ -52,10 +52,14 @@ enum MakerWorldBrowserPolicy {
         if let profile = object["profileURL"] as? String { items.append(URLQueryItem(name: "profile", value: profile)) }
         return try MakerWorldLinkPolicy.parseProvenance(items)
     }
-    static func handoff(remote: URL, name: String, page: URL?) throws -> URL {
+    static func studioHandoff(_ incoming: URL, page: URL?) throws -> URL {
+        let source = try MakerWorldLinkPolicy.parse(incoming)
+        return try handoff(remote: source.downloadURL, name: source.displayName, page: page, openStudio: true)
+    }
+    static func handoff(remote: URL, name: String, page: URL?, openStudio: Bool = false) throws -> URL {
         var parts = URLComponents(string: "makerdock://open")!
         parts.queryItems = [URLQueryItem(name: "url", value: remote.absoluteString),
-                            URLQueryItem(name: "name", value: name), URLQueryItem(name: "action", value: "import")]
+                            URLQueryItem(name: "name", value: name), URLQueryItem(name: "action", value: openStudio ? "open" : "import")]
         // A fallback navigation has no request-time profile evidence; keep only the observed page.
         if let page, let canonical = try? MakerWorldLinkPolicy.canonicalPage(page.absoluteString, includeProfile: false) {
             parts.queryItems?.append(URLQueryItem(name: "source", value: canonical.absoluteString))
