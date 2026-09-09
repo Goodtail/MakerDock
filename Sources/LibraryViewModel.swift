@@ -132,6 +132,8 @@ final class LibraryViewModel: ObservableObject {
     var estimateTask: Task<Void, Never>?
     let estimateService = StudioEstimateService()
     private var terminationObserver: AnyCancellable?
+    let printerMonitor: PrinterMonitor
+    private var printerObserver: AnyCancellable?
     let rootURL: URL
     var repository: LibraryRepository?
     private var linkService: MakerWorldLinkService
@@ -157,6 +159,7 @@ final class LibraryViewModel: ObservableObject {
             rootURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
                 .appendingPathComponent(Bundle.main.bundleIdentifier ?? "com.ninepiece.app.mac.makerdock.dev")
         }
+        printerMonitor = PrinterMonitor(root: rootURL)
         linkService = linkServiceOverride ?? MakerWorldLinkService(cacheDirectory: rootURL.appendingPathComponent("Downloads"))
         identityUpgradeEnabled = usesDefaultRoot
         do {
@@ -180,7 +183,9 @@ final class LibraryViewModel: ObservableObject {
         } catch { errorMessage = error.localizedDescription }
         terminationObserver = NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification).sink { [weak self] _ in
             self?.estimateTask?.cancel(); self?.estimateService.stop()
+            self?.printerMonitor.stop()
         }
+        printerObserver = printerMonitor.objectWillChange.sink { [weak self] _ in self?.objectWillChange.send() }
     }
     var selected: ShelfItem? { visibleItems.first { $0.id == selectionID } }
     var filterTitle: String {
@@ -224,6 +229,7 @@ final class LibraryViewModel: ObservableObject {
             if let url = try? URL(resolvingBookmarkData: data, options: [.withSecurityScope], relativeTo: nil, bookmarkDataIsStale: &stale), url.startAccessingSecurityScopedResource() { grantedURLs.append(url) }
         }
         await reload()
+        printerMonitor.start(studioPath: preferences.studioPath)
         let args = ProcessInfo.processInfo.arguments
         if let i = args.firstIndex(of: "--import-folder"), args.indices.contains(i + 1) {
             let path = args[i + 1]
@@ -245,6 +251,9 @@ final class LibraryViewModel: ObservableObject {
         items = all.filter { !$0.isTrashed }; trashedItems = all.filter(\.isTrashed)
         categories = await repository.categories()
         printQueue = await repository.printQueue()
+        if let boundID = printerMonitor.session?.itemID, !printQueue.contains(where: { $0.id == boundID }) {
+            printerMonitor.markRecorded(itemID: boundID)
+        }
         scheduleQueueEstimates()
         if case .category(let id) = filter, !categories.contains(where: { $0.id == id }) { filter = .uncategorized }
         syncSelection()
@@ -401,6 +410,7 @@ final class LibraryViewModel: ObservableObject {
                 try await repository.appendRun(itemID: item.id, run: PrintRun(date: end, status: status, source: "manual", note: note, durationSeconds: seconds, durationSource: timeSource, filaments: filaments, startedAt: start, completedAt: end))
             }
             await reload()
+            printerMonitor.markRecorded(itemID: item.id)
             statusMessage = status == "completed" && moveFiles ? L("출력 완료로 표시하고 파일을 이동했습니다.") : L("history.saved")
             return true
         }

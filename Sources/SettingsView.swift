@@ -27,6 +27,10 @@ struct SettingsView: View {
                         }
                     }
                     Divider()
+                    section(L("printer.connectTitle")) {
+                        PrinterConnectionSettings(model: model, monitor: model.printerMonitor)
+                    }
+                    Divider()
                     section(L("내 프린터 · 예상 시간")) {
                         Picker(L("프린터 / 노즐"), selection: $model.preferences.printerPreset) {
                             Text(L("선택 안 함")).tag("")

@@ -15,8 +15,19 @@ extension LibraryViewModel {
     var queueJobs: [PrintQueueJob] { queueJobs(at: Date()) }
     func queueJobs(at now: Date) -> [PrintQueueJob] {
         queuedItems.map { item in
-            PrintQueueJob(id: item.id, seconds: queueEntry(item)?.remainingSeconds(at: now, estimate: displayedEstimate(item)?.seconds))
+            PrintQueueJob(id: item.id, seconds: remainingQueueSeconds(item, at: now))
         }
+    }
+    func remainingQueueSeconds(_ item: ShelfItem, at now: Date) -> Double? {
+        if printerMonitor.ownsLiveJob(itemID: item.id) { return printerMonitor.remaining(itemID: item.id, at: now) }
+        return queueEntry(item)?.remainingSeconds(at: now, estimate: displayedEstimate(item)?.seconds)
+    }
+    @discardableResult func bindPrinterJob(_ item: ShelfItem, startedAt: Date) async -> Bool {
+        guard printerMonitor.snapshot.fresh(at: Date()), printerMonitor.session?.recorded == false,
+              activePrint == nil || activePrint?.id == item.id else { return false }
+        guard await startQueuePrint(item, at: startedAt) else { return false }
+        do { try printerMonitor.bind(itemID: item.id, startedAt: startedAt); return true }
+        catch { errorMessage = (error as? PrinterConnectionError)?.message ?? error.localizedDescription; return false }
     }
     func fittingQueueOrder(at now: Date, budget: Double, gap: Double) -> [String] {
         let jobs = queueJobs(at: now)
@@ -35,7 +46,7 @@ extension LibraryViewModel {
     func returnQueuePrintToWaiting(_ item: ShelfItem) async {
         guard let repository else { return }
         await acquireWork(); defer { releaseWork() }
-        do { try await repository.returnQueuePrintToWaiting(itemID: item.id); await reload() }
+        do { try await repository.returnQueuePrintToWaiting(itemID: item.id); printerMonitor.unbind(itemID: item.id); await reload() }
         catch { errorMessage = error.localizedDescription }
     }
 
@@ -63,7 +74,7 @@ extension LibraryViewModel {
     func removeQueueItem(_ id: String) async {
         guard let repository else { return }
         await acquireWork(); defer { releaseWork() }
-        do { try await repository.removeFromQueue(itemIDs: [id]); await reload() }
+        do { try await repository.removeFromQueue(itemIDs: [id]); printerMonitor.unbind(itemID: id); await reload() }
         catch { errorMessage = error.localizedDescription }
     }
     @discardableResult func setQueueDuration(_ id: String, seconds: Double?) async -> Bool {

@@ -298,6 +298,7 @@ struct PrintRecordSheet: View {
         }.padding(Design.xlarge).frame(width: 600, height: 740)
             .onAppear {
                 details = model.printDetails(item)
+                if model.printerMonitor.completionSession(itemID: item.id)?.terminalState == .failed { status = "failed" }
                 sourcePath = model.preferences.completedMoveMode == "library" ? "" : sources.first?.path ?? ""
                 directory = source == nil ? model.rootURL.appendingPathComponent("Files/Printed") : model.printDestination(for: source)
             }

@@ -4,6 +4,32 @@ import PlateShelfCore
 @testable import PlateShelf
 
 final class LayoutTests: XCTestCase {
+    @MainActor func testCompletionTimingAndConnectionFieldsFit() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let model = LibraryViewModel(rootOverride: root)
+        let end = Date().addingTimeInterval(-60)
+        let draft = PrintDetailsDraft(estimate: PrintEstimate(seconds: 10380, source: .file), filaments: [FilamentRecord(name: "Bambu PLA Matte", material: "PLA", color: "000000FF", grams: 85.13)], startedAt: end.addingTimeInterval(-14_400), completedAt: end)
+        let views: [(String, AnyView, CGFloat)] = [
+            ("completion-timing", AnyView(PrintDetailsFields(draft: .constant(draft))), 430),
+            ("printer-connection", AnyView(PrinterConnectionSettings(model: model, monitor: model.printerMonitor)), 500)
+        ]
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent("MakerDock-LayoutQA.noindex")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        for (name, view, height) in views {
+            let host = NSHostingView(rootView: view.padding(24).frame(width: 620, height: height, alignment: .topLeading).background(Design.surface).foregroundStyle(Design.ink).font(Design.body).environment(\.locale, Locale(identifier: "ko")).preferredColorScheme(.dark))
+            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 620, height: height), styleMask: [.titled], backing: .buffered, defer: false)
+            window.isReleasedWhenClosed = false; window.contentView = host
+            host.layoutSubtreeIfNeeded()
+            try await Task.sleep(nanoseconds: 100_000_000)
+            host.layoutSubtreeIfNeeded()
+            XCTAssertLessThanOrEqual(host.fittingSize.width, 620)
+            let bitmap = try XCTUnwrap(host.bitmapImageRepForCachingDisplay(in: host.bounds))
+            host.cacheDisplay(in: host.bounds, to: bitmap)
+            try XCTUnwrap(bitmap.representation(using: .png, properties: [:])).write(to: folder.appendingPathComponent(name + ".png"))
+            window.close()
+        }
+    }
     @MainActor func testLibraryAndQueueFitNarrowWindows() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }

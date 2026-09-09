@@ -62,6 +62,7 @@ extension LibraryViewModel {
                         durationSeconds: d.seconds, durationSource: d.durationSource, filaments: d.records, startedAt: d.startedAt, completedAt: d.completedAt))
                 }
                 result.succeeded.insert(draft.id)
+                printerMonitor.markRecorded(itemID: draft.id)
             } catch { result.errors.append(draft.item.title + ": " + error.localizedDescription) }
         }
         await finishBatch(result)

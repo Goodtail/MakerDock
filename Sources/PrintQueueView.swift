@@ -25,6 +25,7 @@ struct PrintQueueView: View {
             VStack(alignment: .leading, spacing: 0) {
                 header
                 if model.printQueue.isEmpty {
+                    PrinterStatusCard(model: model, monitor: model.printerMonitor) { recordItem = $0 }.padding(.horizontal, Design.large)
                     Spacer()
                     VStack(spacing: Design.regular) {
                         Image(systemName: "list.number").font(.system(size: 40)).foregroundStyle(Design.accent)
@@ -37,6 +38,7 @@ struct PrintQueueView: View {
                     planningControls(start: start, now: context.date, schedule: schedule)
                     ScrollView {
                         LazyVStack(spacing: Design.medium) {
+                            PrinterStatusCard(model: model, monitor: model.printerMonitor) { recordItem = $0 }
                             ForEach(Array(model.queuedItems.enumerated()), id: \.element.id) { index, item in
                                 if let row = schedule.rows.first(where: { $0.id == item.id }) {
                                     queueRow(item, index: index, row: row, start: start, now: context.date)
@@ -162,11 +164,11 @@ struct PrintQueueView: View {
                     }
                     if let began = entry?.startedAt {
                         Text(String(format: L("queue.startedAt"), dateText(began))).font(Design.caption).foregroundStyle(Design.secondary)
-                        if let remaining = entry?.remainingSeconds(at: now, estimate: model.displayedEstimate(item)?.seconds) {
+                        if let remaining = model.remainingQueueSeconds(item, at: now) {
                             Text(String(format: L("queue.printRemaining"), timeText(remaining), dateText(now.addingTimeInterval(remaining))))
                                 .font(Design.value).foregroundStyle(Design.accent)
                         } else {
-                            Text(L(model.queueSeconds(item) == nil ? "queue.scheduleUnknown" : "queue.overdue"))
+                            Text(model.printerMonitor.ownsLiveJob(itemID: item.id) ? model.printerMonitor.label : L(model.queueSeconds(item) == nil ? "queue.scheduleUnknown" : "queue.overdue"))
                                 .font(Design.caption).foregroundStyle(Design.warning)
                         }
                     } else if let from = row.startOffset, let until = row.endOffset {

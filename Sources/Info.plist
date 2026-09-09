@@ -53,5 +53,7 @@
 	<string>public.app-category.utilities</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>13.0</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>MakerDock connects to the printer you select to show print status, progress and remaining time.</string>
 </dict>
 </plist>

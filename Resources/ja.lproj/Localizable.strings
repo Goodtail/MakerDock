@@ -82,7 +82,7 @@
 "history.distinction" = "送信記録と実際のプリント完了は区別して表示します。";
 "history.empty" = "プリント履歴はまだありません。";
 "history.manual" = "手動で記録";
-"history.manualExplanation" = "確認した結果を今日の日付で記録します。プリンターにコマンドは送りません。";
+"history.manualExplanation" = "確認した印刷結果と時刻を記録します。プリンターに指示は送りません。";
 "history.notePlaceholder" = "素材、品質、次回変えたい点";
 "history.result" = "結果";
 "history.saved" = "プリント結果を保存しました";
@@ -404,7 +404,7 @@
 "queue.reorderHint" = "ドラッグまたは矢印で順番を変更できます";
 "queue.fitOrder" = "時間内に収まるモデルを先頭へ";
 "queue.fitHint" = "優先順に確認して時間内に収まるモデルを前へ移動します。残りは後ろに残ります。";
-"queue.manualHint" = "予想時間がなければ自動計算します。プリント中・完了は手動で記録し、プリンターの操作は行いません。";
+"queue.manualHint" = "予想時間がない場合は自動計算します。接続したプリンターの状態を取得し、完了記録は確認後に保存します。";
 "queue.setTime" = "予定時間を設定";
 "queue.manualTime" = "手動入力";
 "queue.scheduleUnknown" = "未定の時間を入力すると時間帯が表示されます";
@@ -451,3 +451,101 @@
 "record.elapsedEdited" = "所要時間を手動で修正しました。開始・終了時刻から再計算できます。";
 
 "record.timeRange" = "%@ → %@";
+
+"printer.title" = "プリンターの状態";
+
+"printer.connectTitle" = "プリンター接続";
+
+"printer.setupHint" = "Macとプリンターを同じルーターに接続してください。状態の読み取りのみ行い、印刷指示は送信しません。";
+
+"printer.ip" = "プリンターのIPアドレス";
+
+"printer.serial" = "シリアル番号（SN）";
+
+"printer.serialPlaceholder" = "プリンターのシリアル番号";
+
+"printer.accessCode" = "LANアクセスコード";
+
+"printer.codePlaceholder" = "保存済みコードを使う場合は空欄";
+
+"printer.codeHint" = "コードはこのMacのキーチェーンに保存します。Bambuアカウントのパスワードは入力しないでください。";
+
+"printer.saveConnect" = "保存して接続テスト";
+
+"printer.disconnect" = "切断";
+
+"printer.forget" = "接続情報を削除";
+
+"printer.findSettings" = "設定の確認方法";
+
+"printer.whereSettings" = "IPはネットワーク設定、SNは本体情報またはStudio、アクセスコードはプリンターのLAN設定で確認できます。";
+
+"printer.modeHint" = "まず現在のネットワークモードで接続をお試しください。X2DにはLAN Only → Developer Modeがありますが、LAN OnlyではHandyやクラウド機能が制限されます。";
+
+"printer.manualLink" = "X2D公式マニュアルを開く";
+
+"printer.disconnected" = "未接続";
+
+"printer.connecting" = "プリンターに接続中…";
+
+"printer.waiting" = "接続済み · 状態の受信待ち";
+
+"printer.stale" = "最新の状態を受信できていません";
+
+"printer.state.RUNNING" = "印刷中";
+
+"printer.state.PAUSE" = "一時停止中";
+
+"printer.state.PREPARE" = "印刷準備中";
+
+"printer.state.FINISH" = "印刷終了 · 記録を保存してください";
+
+"printer.state.FAILED" = "印刷中断 · 結果を確認してください";
+
+"printer.state.IDLE" = "待機中";
+
+"printer.state.UNKNOWN" = "印刷状態を確認中";
+
+"printer.remaining" = "残り%@";
+
+"printer.bound" = "待機リスト: %@";
+
+"printer.unlink" = "関連付け解除";
+
+"printer.matchJob" = "現在の印刷を待機モデルに関連付け";
+
+"printer.matchHint" = "印刷中のモデルを選択してください。進捗、残り時間、終了時刻を連携します。";
+
+"printer.queueItem" = "待機中のモデル";
+
+"printer.chooseItem" = "モデルを選択";
+
+"printer.startHint" = "プリンターの開始時刻または既存の記録を使用します。どちらもない場合は実際の開始時刻を入力してください。";
+
+"printer.bind" = "この印刷に関連付け";
+
+"printer.liveHint" = "状態を受信すると、進捗と残り時間が表示されます。";
+
+"printer.connectHint" = "プリンターを接続すると、進捗と残り時間を待機リストの計画に反映できます。";
+
+"printer.endReview" = "実際の終了時刻は確認できていません。受信時刻を入力しているため、実際の終了時刻を確認してください。";
+
+"printer.filamentHint" = "接続中に確認できたフィラメントです。実際の使用量（g）は別途入力してください。";
+
+"printer.error.settings" = "プリンターのローカルIPv4アドレス、SN、アクセスコードを確認してください。";
+
+"printer.error.certificate" = "本体の証明書を確認できません。SNと公式Studioのバージョンを確認してください。";
+
+"printer.error.authority" = "公式Bambu Studioの公開証明書が必要です。下のStudioのパスを確認してください。";
+
+"printer.error.authentication" = "プリンターが認証を拒否しました。LANアクセスコードを確認してください。";
+
+"printer.error.subscription" = "状態の受信が許可されませんでした。SNと接続モードを確認してください。";
+
+"printer.error.network" = "プリンターに接続できません。IP、電源、同じネットワークかを確認してください。自動で再接続します。";
+
+"printer.error.timeout" = "プリンターの応答がタイムアウトしました。自動で再接続します。";
+
+"printer.error.protocolError" = "未対応の状態応答です。既存の待機リストの記録は保持されます。";
+
+"printer.error.keychain" = "キーチェーンのアクセスコードを読み書きできません。コードを再入力してください。";

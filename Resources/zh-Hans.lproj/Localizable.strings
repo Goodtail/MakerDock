@@ -82,7 +82,7 @@
 "history.distinction" = "发送记录与实际打印完成记录分别显示。";
 "history.empty" = "暂无打印记录。";
 "history.manual" = "手动记录";
-"history.manualExplanation" = "以今天的日期记录你确认的结果。不会向打印机发送命令。";
+"history.manualExplanation" = "记录您确认的打印结果和时间，不向打印机发送指令。";
 "history.notePlaceholder" = "材料、质量以及下次改进之处";
 "history.result" = "结果";
 "history.saved" = "已保存打印结果";
@@ -404,7 +404,7 @@
 "queue.reorderHint" = "拖动行或使用箭头调整顺序";
 "queue.fitOrder" = "将时间内可完成的模型移到前面";
 "queue.fitHint" = "按优先顺序检查，将能在时间内完成的模型前移，其余保留在后面。";
-"queue.manualHint" = "缺少预计时间时会自动计算。打印中和完成状态需手动标记，不会控制打印机。";
+"queue.manualHint" = "缺少预计时间时将自动计算。连接打印机后可获取状态，完成记录需确认后保存。";
 "queue.setTime" = "设置计划用时";
 "queue.manualTime" = "手动填写";
 "queue.scheduleUnknown" = "填写未知用时后显示时间段";
@@ -451,3 +451,101 @@
 "record.elapsedEdited" = "已手动修改耗时，也可以按开始和结束时间重新计算。";
 
 "record.timeRange" = "%@ → %@";
+
+"printer.title" = "打印机状态";
+
+"printer.connectTitle" = "连接打印机";
+
+"printer.setupHint" = "将 Mac 和打印机连接到同一路由器。MakerDock 仅读取状态，不发送打印指令。";
+
+"printer.ip" = "打印机 IP 地址";
+
+"printer.serial" = "序列号（SN）";
+
+"printer.serialPlaceholder" = "打印机序列号";
+
+"printer.accessCode" = "局域网访问码";
+
+"printer.codePlaceholder" = "留空以使用已保存的访问码";
+
+"printer.codeHint" = "访问码保存在此 Mac 的钥匙串中，请勿输入 Bambu 账号密码。";
+
+"printer.saveConnect" = "保存并测试连接";
+
+"printer.disconnect" = "断开连接";
+
+"printer.forget" = "删除连接信息";
+
+"printer.findSettings" = "在哪里查看这些信息？";
+
+"printer.whereSettings" = "IP 可在网络设置中查看，SN 在设备信息或 Studio 中查看，访问码在打印机的局域网设置中查看。";
+
+"printer.modeHint" = "请先尝试当前网络模式。X2D 提供 LAN Only → Developer Mode 选项，但启用 LAN Only 会限制 Handy 和云端功能。";
+
+"printer.manualLink" = "打开 X2D 官方手册";
+
+"printer.disconnected" = "未连接";
+
+"printer.connecting" = "正在连接打印机…";
+
+"printer.waiting" = "已连接 · 等待状态数据";
+
+"printer.stale" = "未收到最新状态";
+
+"printer.state.RUNNING" = "打印中";
+
+"printer.state.PAUSE" = "已暂停";
+
+"printer.state.PREPARE" = "准备打印";
+
+"printer.state.FINISH" = "打印已结束 · 请保存记录";
+
+"printer.state.FAILED" = "打印已中止 · 请确认结果";
+
+"printer.state.IDLE" = "空闲";
+
+"printer.state.UNKNOWN" = "正在获取打印状态";
+
+"printer.remaining" = "剩余 %@";
+
+"printer.bound" = "队列：%@";
+
+"printer.unlink" = "取消关联";
+
+"printer.matchJob" = "将当前打印关联到队列模型";
+
+"printer.matchHint" = "请选择正在打印的模型，之后将同步进度、剩余时间和结束时间。";
+
+"printer.queueItem" = "队列模型";
+
+"printer.chooseItem" = "选择模型";
+
+"printer.startHint" = "优先使用打印机提供的开始时间或已有记录。如果都没有，请输入实际开始时间。";
+
+"printer.bind" = "关联到此打印";
+
+"printer.liveHint" = "收到状态后，将在此显示打印进度和剩余时间。";
+
+"printer.connectHint" = "连接打印机后，可将进度和剩余时间用于队列计划。";
+
+"printer.endReview" = "未能观测到确切的结束时刻。已填入收到状态的时间，请核对实际结束时间。";
+
+"printer.filamentHint" = "以下是连接期间检测到的耗材，请另外输入实际用量（g）。";
+
+"printer.error.settings" = "请检查打印机的本地 IPv4 地址、SN 和访问码。";
+
+"printer.error.certificate" = "无法验证设备证书，请检查 SN 和官方 Studio 版本。";
+
+"printer.error.authority" = "需要官方 Bambu Studio 的公开证书，请检查下方 Studio 路径。";
+
+"printer.error.authentication" = "打印机拒绝了认证，请检查局域网访问码。";
+
+"printer.error.subscription" = "状态订阅被拒绝，请检查 SN 和打印机连接模式。";
+
+"printer.error.network" = "无法连接打印机，请检查 IP、电源和本地网络。将自动重连。";
+
+"printer.error.timeout" = "等待打印机响应超时，将自动重连。";
+
+"printer.error.protocolError" = "暂不支持此状态响应，已有队列记录将保留。";
+
+"printer.error.keychain" = "无法在钥匙串中读取或保存访问码，请重新输入。";

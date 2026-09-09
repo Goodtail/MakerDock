@@ -82,7 +82,7 @@
 "history.distinction" = "A submission record is separate from confirmation that a print finished.";
 "history.empty" = "No print records yet.";
 "history.manual" = "Manually Recorded";
-"history.manualExplanation" = "Record the result you confirmed with today’s date. No commands are sent to your printer.";
+"history.manualExplanation" = "Save the print result and times you confirmed. No commands are sent to the printer.";
 "history.notePlaceholder" = "Materials, quality, and changes for next time";
 "history.result" = "Result";
 "history.saved" = "Print result saved";
@@ -404,7 +404,7 @@
 "queue.reorderHint" = "Drag a row or use its arrows to change the order";
 "queue.fitOrder" = "Move fitting models first";
 "queue.fitHint" = "Checks your priority order and moves models that fit ahead of the rest. Nothing is removed.";
-"queue.manualHint" = "Missing estimates are calculated automatically. Mark printing and completion yourself; these actions do not control your printer.";
+"queue.manualHint" = "Missing estimates are calculated automatically. Connect a printer for live status, then review and save completed prints.";
 "queue.setTime" = "Set planned duration";
 "queue.manualTime" = "Manual";
 "queue.scheduleUnknown" = "Enter missing durations to see the time slot";
@@ -451,3 +451,101 @@
 "record.elapsedEdited" = "You edited the duration. You can recalculate it from the start and end times.";
 
 "record.timeRange" = "%@ → %@";
+
+"printer.title" = "Printer status";
+
+"printer.connectTitle" = "Printer connection";
+
+"printer.setupHint" = "Connect your Mac and printer to the same router. MakerDock reads status and does not send print commands.";
+
+"printer.ip" = "Printer IP address";
+
+"printer.serial" = "Serial number (SN)";
+
+"printer.serialPlaceholder" = "Printer serial number";
+
+"printer.accessCode" = "LAN access code";
+
+"printer.codePlaceholder" = "Leave blank to use the saved code";
+
+"printer.codeHint" = "The code is stored in this Mac’s Keychain. This is not your Bambu account password.";
+
+"printer.saveConnect" = "Save and test connection";
+
+"printer.disconnect" = "Disconnect";
+
+"printer.forget" = "Forget connection";
+
+"printer.findSettings" = "Where do I find these settings?";
+
+"printer.whereSettings" = "Find the IP in network settings, the SN in device information or Studio, and the access code in the printer’s LAN settings.";
+
+"printer.modeHint" = "Try connecting in your current network mode first. X2D offers LAN Only → Developer Mode; enabling LAN Only limits Handy and cloud features.";
+
+"printer.manualLink" = "Open the X2D manual";
+
+"printer.disconnected" = "Disconnected";
+
+"printer.connecting" = "Connecting to printer…";
+
+"printer.waiting" = "Connected · waiting for status";
+
+"printer.stale" = "No recent status received";
+
+"printer.state.RUNNING" = "Printing";
+
+"printer.state.PAUSE" = "Paused";
+
+"printer.state.PREPARE" = "Preparing print";
+
+"printer.state.FINISH" = "Print finished · save the record";
+
+"printer.state.FAILED" = "Print stopped · review the result";
+
+"printer.state.IDLE" = "Idle";
+
+"printer.state.UNKNOWN" = "Waiting for print status";
+
+"printer.remaining" = "%@ remaining";
+
+"printer.bound" = "Queue: %@";
+
+"printer.unlink" = "Unlink job";
+
+"printer.matchJob" = "Link this print to a queued model";
+
+"printer.matchHint" = "Choose the model being printed. Its progress, remaining time and end time will then be tracked together.";
+
+"printer.queueItem" = "Queued model";
+
+"printer.chooseItem" = "Choose a model";
+
+"printer.startHint" = "Uses the printer’s start time or your existing record. If neither was available, enter the actual start time.";
+
+"printer.bind" = "Link to this print";
+
+"printer.liveHint" = "Progress and remaining time appear here when the printer sends status.";
+
+"printer.connectHint" = "Connect a printer to use its progress and remaining time in your queue plan.";
+
+"printer.endReview" = "The exact finish was not observed. The received time is filled in; check the actual end time.";
+
+"printer.filamentHint" = "Filaments observed while connected to the printer. Enter actual usage in grams separately.";
+
+"printer.error.settings" = "Check the printer’s local IPv4 address, SN and access code.";
+
+"printer.error.certificate" = "Could not verify the printer certificate. Check the SN and your official Studio version.";
+
+"printer.error.authority" = "Public certificates from official Bambu Studio are required. Check the Studio path below.";
+
+"printer.error.authentication" = "The printer rejected authentication. Check the LAN access code.";
+
+"printer.error.subscription" = "Status subscription was refused. Check the SN and printer connection mode.";
+
+"printer.error.network" = "Cannot reach the printer. Check its IP, power and local network. Reconnecting automatically.";
+
+"printer.error.timeout" = "The printer response timed out. Reconnecting automatically.";
+
+"printer.error.protocolError" = "The status response is unsupported. Existing queue records are preserved.";
+
+"printer.error.keychain" = "Could not read or save the access code in Keychain. Enter the code again.";

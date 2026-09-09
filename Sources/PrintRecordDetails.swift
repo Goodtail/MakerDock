@@ -33,6 +33,8 @@ struct PrintDetailsDraft {
     var prefill: PrintEstimate?
     var startedAt: Date? { didSet { if startedAt != oldValue { useElapsedTime() } } }
     var completedAt: Date { didSet { if completedAt != oldValue, startedAt != nil { useElapsedTime() } } }
+    var printerEndNeedsReview = false
+    var observedFilaments = false
     private var originalSeconds: Double?
     private var originalSource: String?
     private var originalHours = "", originalMinutes = ""
@@ -71,7 +73,7 @@ struct PrintDetailsDraft {
         let validTime = empty || ((h.isEmpty || Int(h) != nil) && (m.isEmpty || Int(m) != nil) && seconds != nil)
         let validDates = completedAt.timeIntervalSince1970.isFinite && completedAt <= Date().addingTimeInterval(60) &&
             (startedAt.map { $0.timeIntervalSince1970.isFinite && $0.timeIntervalSince1970 >= 0 && $0 < completedAt } ?? true)
-        return validTime && validDates && filaments.allSatisfy(\.valid)
+        return validTime && validDates && (startedAt == nil || seconds != nil) && filaments.allSatisfy(\.valid)
     }
     var durationSource: String? {
         guard seconds != nil else { return nil }
@@ -102,7 +104,13 @@ extension LibraryViewModel {
                 values[0].grams = plates.compactMap(\.weightGrams).reduce(0, +)
             }
         }
-        return PrintDetailsDraft(estimate: displayedEstimate(item), filaments: values, startedAt: queueEntry(item)?.startedAt, completedAt: completedAt)
+        let session = printerMonitor.completionSession(itemID: item.id)
+        let observed = session?.filaments ?? []
+        var draft = PrintDetailsDraft(estimate: displayedEstimate(item), filaments: observed.isEmpty ? values : observed,
+                                      startedAt: queueEntry(item)?.startedAt ?? session?.startedAt, completedAt: session?.endedAt ?? completedAt)
+        draft.printerEndNeedsReview = session?.endNeedsReview == true
+        draft.observedFilaments = !observed.isEmpty
+        return draft
     }
 }
 
@@ -126,6 +134,7 @@ struct PrintDetailsFields: View {
             }.textFieldStyle(.roundedBorder)
             if draft.startedAt != nil {
                 Text(L(draft.durationSource == "manual" ? "record.elapsedEdited" : "record.elapsedHint")).font(Design.caption).foregroundStyle(Design.secondary)
+                if draft.printerEndNeedsReview { Text(L("printer.endReview")).font(Design.caption).foregroundStyle(Design.warning) }
             } else if let estimate = draft.prefill {
                 Text(String(format: L("record.prefill"), estimate.sourceLabel, timeText(estimate.seconds))).font(Design.caption).foregroundStyle(Design.secondary)
             } else { Text(L("record.optionalTime")).font(Design.caption).foregroundStyle(Design.secondary) }
@@ -141,7 +150,7 @@ struct PrintDetailsFields: View {
                     Button { draft.filaments.removeAll { $0.id == filament.id } } label: { Image(systemName: "minus.circle") }.buttonStyle(.borderless).help(L("record.removeFilament"))
                 }.textFieldStyle(.roundedBorder)
             }
-            Text(L("record.filamentHint")).font(Design.caption).foregroundStyle(Design.secondary)
+            Text(L(draft.observedFilaments ? "printer.filamentHint" : "record.filamentHint")).font(Design.caption).foregroundStyle(Design.secondary)
             if !draft.valid { Text(L("record.invalid")).font(Design.caption).foregroundStyle(Design.warning) }
         }
     }

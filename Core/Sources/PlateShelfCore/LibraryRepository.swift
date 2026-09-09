@@ -236,8 +236,14 @@ public actor LibraryRepository {
         if let existing = candidate[offset].printRuns.firstIndex(where: { $0.id == run.id }) {
             candidate[offset].printRuns[existing] = run
         } else { candidate[offset].printRuns.append(run) }
-        let newlyEnded = ["completed", "failed"].contains(run.status) && !records[offset].printRuns.contains { $0.id == run.id && ["completed", "failed"].contains($0.status) }
-        try commit(candidate, queue: newlyEnded ? queueRecords.filter { $0.id != itemID } : queueRecords)
+        let newlyEnded = ["completed", "failed"].contains(run.status) && !records[offset].printRuns.contains { $0.id == run.id && $0.status == run.status }
+        var queue = queueRecords
+        if newlyEnded, run.status == "completed" { queue.removeAll { $0.id == itemID } }
+        else if newlyEnded, run.status == "failed", let index = queue.firstIndex(where: { $0.id == itemID }) {
+            // Keep failed work in the plan for a retry, but it is no longer printing.
+            queue[index].startedAt = nil; queue[index].startedDurationSeconds = nil
+        }
+        try commit(candidate, queue: queue)
     }
 
     private static func validatePrintDates(_ start: Date?, _ end: Date?) throws {
