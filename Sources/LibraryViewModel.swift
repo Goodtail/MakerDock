@@ -113,9 +113,22 @@ final class LibraryViewModel: ObservableObject {
     @Published var browserRequest: BrowserLocation?
     @Published var browserReloadRequest = 0
     @Published var printerCatalog: StudioPresetCatalog?
-    @Published var estimateConfiguration: StudioEstimateConfiguration?
+    @Published var estimateConfiguration: StudioEstimateConfiguration? {
+        didSet {
+            if oldValue?.key != estimateConfiguration?.key {
+                pendingEstimateRequests.removeAll(); pendingEstimateIDs = []; estimateErrors = [:]
+                scheduleQueueEstimates()
+            }
+        }
+    }
     @Published var calculatedEstimates: [StudioEstimateRecord] = []
     @Published var calculatingItemID: String?
+    @Published var pendingEstimateIDs: [String] = []
+    @Published var estimateErrors: [String: String] = [:]
+    var pendingEstimateRequests: [EstimateRequest] = []
+    var failedEstimateKeys = Set<String>()
+    var activeEstimateKey: String?
+    var estimateRunnerOverride: ((ShelfItem, URL, URL, StudioEstimateConfiguration) async throws -> StudioEstimateRecord)?
     var estimateTask: Task<Void, Never>?
     let estimateService = StudioEstimateService()
     private var terminationObserver: AnyCancellable?
@@ -232,6 +245,7 @@ final class LibraryViewModel: ObservableObject {
         items = all.filter { !$0.isTrashed }; trashedItems = all.filter(\.isTrashed)
         categories = await repository.categories()
         printQueue = await repository.printQueue()
+        scheduleQueueEstimates()
         if case .category(let id) = filter, !categories.contains(where: { $0.id == id }) { filter = .uncategorized }
         syncSelection()
         if let lastTrashedID, !trashedItems.contains(where: { $0.id == lastTrashedID }) { self.lastTrashedID = nil }

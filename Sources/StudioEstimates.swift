@@ -210,23 +210,72 @@ actor StudioEstimateService {
         let value = plate == nil ? record.total : record.plates.first { $0.id == plate?.id }?.estimatedSeconds
         return PrintEstimate.valid(value).map { PrintEstimate(seconds: $0, source: .myPrinter) }
     }
+    func scheduleQueueEstimates() {
+        guard let configuration = estimateConfiguration else { return }
+        for item in queuedItems where displayedEstimate(item) == nil && !item.plates.isEmpty {
+            let request = EstimateRequest(itemID: item.id, configurationKey: configuration.key)
+            guard !failedEstimateKeys.contains(request.key) else { continue }
+            requestEstimate(request)
+        }
+        runNextEstimate()
+    }
     func calculateEstimate(_ item: ShelfItem) {
-        guard calculatingItemID == nil else { return }
         guard let configuration = estimateConfiguration else { showSettings = true; return }
-        let input = fileURL(item), studio = URL(fileURLWithPath: preferences.studioPath)
-        calculatingItemID = item.id
-        estimateTask = Task {
-            defer { calculatingItemID = nil; estimateTask = nil }
-            do {
-                let result = try await estimateService.calculate(item: item, inputURL: input, studioURL: studio, configuration: configuration)
-                try Task.checkCancellation()
-                var records = calculatedEstimates.filter { !($0.itemID == result.itemID && $0.configurationKey == result.configurationKey) }
-                records.append(result)
-                try JSONEncoder().encode(records).write(to: rootURL.appendingPathComponent("estimates.json"), options: .atomic)
-                calculatedEstimates = records
-                statusMessage = L("내 프린터 예상 시간을 저장했습니다.")
-            } catch is CancellationError { statusMessage = L("시간 계산을 취소했습니다.") }
-            catch { errorMessage = error.localizedDescription }
+        let request = EstimateRequest(itemID: item.id, configurationKey: configuration.key)
+        failedEstimateKeys.remove(request.key); estimateErrors[item.id] = nil
+        requestEstimate(request)
+        runNextEstimate()
+    }
+    private func requestEstimate(_ request: EstimateRequest) {
+        guard activeEstimateKey != request.key, !pendingEstimateRequests.contains(request) else { return }
+        pendingEstimateRequests.append(request)
+        pendingEstimateIDs = pendingEstimateRequests.map(\.itemID)
+    }
+    private func runNextEstimate() {
+        guard estimateTask == nil, !pendingEstimateRequests.isEmpty else { return }
+        estimateTask = Task { [weak self] in
+            guard let self else { return }
+            defer { self.calculatingItemID = nil; self.activeEstimateKey = nil; self.estimateTask = nil }
+            while !self.pendingEstimateRequests.isEmpty && !Task.isCancelled {
+                let request = self.pendingEstimateRequests.removeFirst()
+                self.pendingEstimateIDs = self.pendingEstimateRequests.map(\.itemID)
+                guard let configuration = self.estimateConfiguration, request.configurationKey == configuration.key,
+                      let item = self.items.first(where: { $0.id == request.itemID }) else { continue }
+                self.calculatingItemID = item.id; self.activeEstimateKey = request.key
+                let input = self.fileURL(item), studio = URL(fileURLWithPath: self.preferences.studioPath)
+                do {
+                    let result: StudioEstimateRecord
+                    if let runner = self.estimateRunnerOverride {
+                        result = try await runner(item, input, studio, configuration)
+                    } else {
+                        result = try await self.estimateService.calculate(item: item, inputURL: input, studioURL: studio, configuration: configuration)
+                    }
+                    try Task.checkCancellation()
+                    guard result.itemID == item.id, result.configurationKey == configuration.key, result.total != nil else {
+                        throw ShelfError.message(L("estimate.explanation"))
+                    }
+                    var records = self.calculatedEstimates.filter { !($0.itemID == result.itemID && $0.configurationKey == result.configurationKey) }
+                    records.append(result)
+                    try JSONEncoder().encode(records).write(to: self.rootURL.appendingPathComponent("estimates.json"), options: .atomic)
+                    self.calculatedEstimates = records
+                    if self.estimateConfiguration?.key == configuration.key { self.estimateErrors[item.id] = nil }
+                    self.statusMessage = L("내 프린터 예상 시간을 저장했습니다.")
+                } catch {
+                    // Folder refreshes must not retry a failed slice indefinitely.
+                    self.failedEstimateKeys.insert(request.key)
+                    if self.estimateConfiguration?.key == configuration.key {
+                        self.estimateErrors[item.id] = error is CancellationError ? L("시간 계산을 취소했습니다.") : error.localizedDescription
+                    }
+                }
+                self.calculatingItemID = nil; self.activeEstimateKey = nil
+            }
+            if Task.isCancelled { self.pendingEstimateRequests.removeAll(); self.pendingEstimateIDs = [] }
         }
     }
+}
+
+struct EstimateRequest: Equatable {
+    let itemID: String
+    let configurationKey: String
+    var key: String { itemID + ":" + configurationKey }
 }

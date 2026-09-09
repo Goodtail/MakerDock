@@ -149,8 +149,11 @@ struct ItemInspector: View {
                     Button(L("취소")) { model.estimateTask?.cancel() }.font(Design.caption)
                 } else {
                     Button(model.savedEstimate(item) == nil ? L("시간 계산") : L("다시 계산")) { model.calculateEstimate(item) }
-                        .disabled(model.calculatingItemID != nil || item.plates.isEmpty).font(Design.caption)
+                        .disabled(model.pendingEstimateIDs.contains(item.id) || item.plates.isEmpty).font(Design.caption)
                 }
+            }
+            if let error = model.estimateErrors[item.id] {
+                Text(error).font(Design.caption).foregroundStyle(Design.warning).fixedSize(horizontal: false, vertical: true)
             }
             if let configuration = model.estimateConfiguration {
                 HStack(alignment: .top) {
