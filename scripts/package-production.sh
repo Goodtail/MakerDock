@@ -33,11 +33,14 @@ filament, and notes. English, Korean, Japanese, and Simplified Chinese included.
 
 Add models to Print Queue, set their order, and plan around your available time.
 Record completion directly from the queue. Sort the library by print duration.
-Planning uses estimates; MakerDock does not monitor or control your printer.
+For an active print, completion uses editable start/end times to calculate elapsed
+time. Optional local printer status is available in Settings > Printer connection:
+enter the printer IP, serial number and LAN access code. Link its live job to a
+queued model to use reported remaining time. MakerDock sends no printer commands.
 
 Browse MakerWorld and open source links inside the app. Sign in on MakerWorld
-to access My Collections. Automatic download capture and the Chrome companion
-extension are not included in this public release.
+to access My Collections. Downloads started inside the app retain the observed
+source page. The Chrome companion extension is planned separately.
 
 Source, updates, documentation, and license:
 https://github.com/Goodtail/MakerDock
