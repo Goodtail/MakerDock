@@ -388,7 +388,7 @@
 "queue.emptyHint" = "보관함에서 모델을 골라 대기열에 추가하세요.\n여러 모델을 함께 선택해 추가할 수도 있습니다.";
 "queue.browse" = "보관함으로 이동";
 "queue.chooseModels" = "모델 추가";
-"queue.count" = "%d개 대기 중 · 순서를 정하고 출력 계획을 세우세요";
+"queue.count" = "%d개 계획 · 순서를 정하고 출력 시간을 확인하세요";
 "queue.start" = "시작 시각";
 "queue.startNow" = "지금부터";
 "queue.available" = "사용 가능한 시간";
@@ -404,7 +404,7 @@
 "queue.reorderHint" = "드래그하거나 화살표로 순서를 바꾸세요";
 "queue.fitOrder" = "시간 안에 가능한 모델을 앞으로";
 "queue.fitHint" = "우선순위대로 살펴보며 가능한 모델을 먼저 배치합니다. 나머지는 뒤에 유지합니다.";
-"queue.manualHint" = "직접 세우는 출력 계획입니다. 예상 시간은 모델 전체 기준이며, 프린터 상태를 자동으로 감지하지 않습니다.";
+"queue.manualHint" = "예상 시간이 없으면 자동으로 계산합니다. 출력 중·완료 상태는 직접 표시하며 프린터를 조작하지 않습니다.";
 "queue.setTime" = "계획 시간 설정";
 "queue.manualTime" = "직접 입력";
 "queue.scheduleUnknown" = "앞선 항목의 시간을 입력하면 시간대가 표시됩니다";
@@ -424,3 +424,18 @@
 "queue.plates" = "%d 플레이트";
 "sort.shortest" = "출력시간 짧은순";
 "sort.longest" = "출력시간 긴순";
+
+"queue.printing" = "출력 중";
+"queue.printingNow" = "출력 중인 작업부터 이어서 계산";
+"queue.startedAt" = "%@에 시작";
+"queue.printRemaining" = "약 %@ 남음 · %@ 완료 예상";
+"queue.overdue" = "예상 시간을 지났습니다. 출력이 끝나면 완료를 기록해 주세요.";
+"queue.calculating" = "예상 시간 계산 중 · 보관함에도 자동 저장";
+"queue.calculationWaiting" = "시간 계산 대기 중";
+"queue.retryEstimate" = "다시 계산";
+"queue.configureEstimate" = "프린터를 선택하면 예상 시간을 자동 계산합니다";
+"queue.markStarted" = "출력 중으로 표시";
+"queue.actualStart" = "출력 시작 시각";
+"queue.startHint" = "Studio나 프린터에서 출력을 시작한 뒤 표시해 주세요. 이미 출력 중이면 시작 시각을 바꿀 수 있습니다. 이 표시는 프린터를 조작하지 않습니다.";
+"queue.editStart" = "시작 시각 수정";
+"queue.backToWaiting" = "대기로 되돌리기";

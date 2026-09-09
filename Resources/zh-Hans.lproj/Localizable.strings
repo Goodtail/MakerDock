@@ -388,7 +388,7 @@
 "queue.emptyHint" = "从模型库选择模型加入队列。\n也可以一次选择多个模型。";
 "queue.browse" = "前往模型库";
 "queue.chooseModels" = "添加模型";
-"queue.count" = "%d项待打印。安排顺序，规划打印时间。";
+"queue.count" = "已计划 %d 项。安排顺序，查看打印时间。";
 "queue.start" = "开始时间";
 "queue.startNow" = "从现在开始";
 "queue.available" = "可用时间";
@@ -404,7 +404,7 @@
 "queue.reorderHint" = "拖动行或使用箭头调整顺序";
 "queue.fitOrder" = "将时间内可完成的模型移到前面";
 "queue.fitHint" = "按优先顺序检查，将能在时间内完成的模型前移，其余保留在后面。";
-"queue.manualHint" = "这是按整个模型制定的手动计划。时间为估算值，不会自动监控打印机状态。";
+"queue.manualHint" = "缺少预计时间时会自动计算。打印中和完成状态需手动标记，不会控制打印机。";
 "queue.setTime" = "设置计划用时";
 "queue.manualTime" = "手动填写";
 "queue.scheduleUnknown" = "填写未知用时后显示时间段";
@@ -424,3 +424,18 @@
 "queue.plates" = "%d块打印板";
 "sort.shortest" = "打印时间从短到长";
 "sort.longest" = "打印时间从长到短";
+
+"queue.printing" = "打印中";
+"queue.printingNow" = "从正在打印的任务继续计算";
+"queue.startedAt" = "开始于 %@";
+"queue.printRemaining" = "预计剩余 %@ · %@ 完成";
+"queue.overdue" = "已超过预计时间。打印结束后请记录完成。";
+"queue.calculating" = "正在计算时间 · 自动保存到模型库";
+"queue.calculationWaiting" = "等待计算时间";
+"queue.retryEstimate" = "重新计算";
+"queue.configureEstimate" = "选择打印机后自动计算预计时间";
+"queue.markStarted" = "标记为打印中";
+"queue.actualStart" = "打印开始时间";
+"queue.startHint" = "在 Studio 或打印机上开始打印后进行标记。如果已经在打印，可以调整开始时间。此操作不会控制打印机。";
+"queue.editStart" = "修改开始时间";
+"queue.backToWaiting" = "恢复为等待";

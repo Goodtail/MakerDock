@@ -5,8 +5,19 @@ public struct PrintQueueEntry: Codable, Hashable, Sendable, Identifiable {
     public let id: String
     public var addedAt: Date
     public var durationSeconds: Double?
-    public init(id: String, addedAt: Date = Date(), durationSeconds: Double? = nil) {
+    public var startedAt: Date?
+    public var startedDurationSeconds: Double?
+    public var isPrinting: Bool { startedAt != nil }
+    public func remainingSeconds(at now: Date, estimate: Double?) -> Double? {
+        guard let startedAt else { return PrintQueuePlan.duration(durationSeconds ?? estimate) }
+        guard let total = PrintQueuePlan.duration(startedDurationSeconds ?? durationSeconds ?? estimate) else { return nil }
+        let remaining = total - max(0, now.timeIntervalSince(startedAt))
+        // An overrun has no known finish time. Never auto-complete or schedule through it.
+        return remaining > 0 ? remaining : nil
+    }
+    public init(id: String, addedAt: Date = Date(), durationSeconds: Double? = nil, startedAt: Date? = nil, startedDurationSeconds: Double? = nil) {
         self.id = id; self.addedAt = addedAt; self.durationSeconds = durationSeconds
+        self.startedAt = startedAt; self.startedDurationSeconds = startedDurationSeconds
     }
 }
 

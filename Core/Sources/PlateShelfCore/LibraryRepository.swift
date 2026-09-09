@@ -252,21 +252,45 @@ public actor LibraryRepository {
     public func reorderQueue(itemIDs: [String]) throws {
         guard itemIDs.count == queueRecords.count, Set(itemIDs) == Set(queueRecords.map(\.id)) else { throw LibraryError.invalidSettings }
         let entries = Dictionary(uniqueKeysWithValues: queueRecords.map { ($0.id, $0) })
-        try commit(records, queue: itemIDs.compactMap { entries[$0] })
+        let active = queueRecords.first(where: \.isPrinting)?.id
+        let ordered = active.map { [$0] + itemIDs.filter { $0 != active } } ?? itemIDs
+        try commit(records, queue: ordered.compactMap { entries[$0] })
     }
     public func removeFromQueue(itemIDs: Set<String>) throws {
         try commit(records, queue: queueRecords.filter { !itemIDs.contains($0.id) })
+    }
+    public func startQueuePrint(itemID: String, at date: Date = Date(), estimatedSeconds: Double? = nil) throws {
+        guard date.timeIntervalSince1970.isFinite, date.timeIntervalSince1970 >= 0, date <= Date().addingTimeInterval(60),
+              estimatedSeconds == nil || PrintQueuePlan.duration(estimatedSeconds) != nil,
+              !queueRecords.contains(where: { $0.isPrinting && $0.id != itemID }),
+              let offset = queueRecords.firstIndex(where: { $0.id == itemID }) else { throw LibraryError.invalidSettings }
+        var queue = queueRecords
+        var entry = queue.remove(at: offset)
+        entry.startedAt = date; entry.startedDurationSeconds = entry.durationSeconds ?? estimatedSeconds
+        queue.insert(entry, at: 0)
+        try commit(records, queue: queue)
+    }
+    public func returnQueuePrintToWaiting(itemID: String) throws {
+        guard let offset = queueRecords.firstIndex(where: { $0.id == itemID }) else { throw LibraryError.itemNotFound }
+        var queue = queueRecords
+        queue[offset].startedAt = nil; queue[offset].startedDurationSeconds = nil
+        try commit(records, queue: queue)
     }
     public func setQueueDuration(itemID: String, seconds: Double?) throws {
         guard seconds == nil || PrintQueuePlan.duration(seconds) != nil else { throw LibraryError.invalidSettings }
         guard let offset = queueRecords.firstIndex(where: { $0.id == itemID }) else { throw LibraryError.itemNotFound }
         var queue = queueRecords; queue[offset].durationSeconds = seconds
+        if queue[offset].isPrinting { queue[offset].startedDurationSeconds = seconds }
         try commit(records, queue: queue)
     }
     private static func validQueue(_ queue: [PrintQueueEntry], items: [LibraryItem]) -> Bool {
         let ids = Set(items.filter { !$0.isTrashed }.map(\.id))
-        return queue.count <= 10_000 && Set(queue.map(\.id)).count == queue.count && queue.allSatisfy {
-            ids.contains($0.id) && ($0.durationSeconds == nil || PrintQueuePlan.duration($0.durationSeconds) != nil)
+        return queue.count <= 10_000 && queue.filter(\.isPrinting).count <= 1 &&
+            (!queue.contains(where: \.isPrinting) || queue.first?.isPrinting == true) &&
+            Set(queue.map(\.id)).count == queue.count && queue.allSatisfy {
+            ids.contains($0.id) && ($0.durationSeconds == nil || PrintQueuePlan.duration($0.durationSeconds) != nil) &&
+            ($0.startedAt.map { $0.timeIntervalSince1970.isFinite && $0.timeIntervalSince1970 >= 0 } ?? true) &&
+            ($0.startedDurationSeconds == nil || PrintQueuePlan.duration($0.startedDurationSeconds) != nil)
         }
     }
 

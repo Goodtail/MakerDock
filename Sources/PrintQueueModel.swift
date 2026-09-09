@@ -10,7 +10,35 @@ extension LibraryViewModel {
     func queueSeconds(_ item: ShelfItem) -> Double? {
         printQueue.first { $0.id == item.id }?.durationSeconds ?? displayedEstimate(item)?.seconds
     }
-    var queueJobs: [PrintQueueJob] { queuedItems.map { PrintQueueJob(id: $0.id, seconds: queueSeconds($0)) } }
+    func queueEntry(_ item: ShelfItem) -> PrintQueueEntry? { printQueue.first { $0.id == item.id } }
+    var activePrint: PrintQueueEntry? { printQueue.first(where: \.isPrinting) }
+    var queueJobs: [PrintQueueJob] { queueJobs(at: Date()) }
+    func queueJobs(at now: Date) -> [PrintQueueJob] {
+        queuedItems.map { item in
+            PrintQueueJob(id: item.id, seconds: queueEntry(item)?.remainingSeconds(at: now, estimate: displayedEstimate(item)?.seconds))
+        }
+    }
+    func fittingQueueOrder(at now: Date, budget: Double, gap: Double) -> [String] {
+        let jobs = queueJobs(at: now)
+        guard let active = activePrint else {
+            return PrintQueuePlan.fittingOrder(jobs: jobs, availableSeconds: budget, changeoverSeconds: gap)
+        }
+        guard let remaining = jobs.first?.seconds, remaining + gap <= budget else { return printQueue.map(\.id) }
+        return [active.id] + PrintQueuePlan.fittingOrder(jobs: Array(jobs.dropFirst()), availableSeconds: budget - remaining - gap, changeoverSeconds: gap)
+    }
+    @discardableResult func startQueuePrint(_ item: ShelfItem, at date: Date) async -> Bool {
+        guard let repository else { return false }
+        await acquireWork(); defer { releaseWork() }
+        do { try await repository.startQueuePrint(itemID: item.id, at: date, estimatedSeconds: queueSeconds(item)); await reload(); return true }
+        catch { errorMessage = error.localizedDescription; return false }
+    }
+    func returnQueuePrintToWaiting(_ item: ShelfItem) async {
+        guard let repository else { return }
+        await acquireWork(); defer { releaseWork() }
+        do { try await repository.returnQueuePrintToWaiting(itemID: item.id); await reload() }
+        catch { errorMessage = error.localizedDescription }
+    }
+
     @discardableResult func enqueue(_ selected: [ShelfItem]) async -> Int {
         guard let repository else { return 0 }
         await acquireWork(); defer { releaseWork() }

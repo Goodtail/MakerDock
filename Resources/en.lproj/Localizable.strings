@@ -388,7 +388,7 @@
 "queue.emptyHint" = "Choose models in your library and add them to the queue.\nYou can also select several models at once.";
 "queue.browse" = "Go to Library";
 "queue.chooseModels" = "Add Models";
-"queue.count" = "%d waiting. Set the order and plan your printing time.";
+"queue.count" = "%d planned. Arrange the order and check your printing time.";
 "queue.start" = "Start time";
 "queue.startNow" = "Start now";
 "queue.available" = "Available time";
@@ -404,7 +404,7 @@
 "queue.reorderHint" = "Drag a row or use its arrows to change the order";
 "queue.fitOrder" = "Move fitting models first";
 "queue.fitHint" = "Checks your priority order and moves models that fit ahead of the rest. Nothing is removed.";
-"queue.manualHint" = "A manual plan for whole models. Durations are estimates; printer status is not monitored.";
+"queue.manualHint" = "Missing estimates are calculated automatically. Mark printing and completion yourself; these actions do not control your printer.";
 "queue.setTime" = "Set planned duration";
 "queue.manualTime" = "Manual";
 "queue.scheduleUnknown" = "Enter missing durations to see the time slot";
@@ -424,3 +424,18 @@
 "queue.plates" = "Plates: %d";
 "sort.shortest" = "Shortest Print Time";
 "sort.longest" = "Longest Print Time";
+
+"queue.printing" = "Printing";
+"queue.printingNow" = "Continue from the print in progress";
+"queue.startedAt" = "Started %@";
+"queue.printRemaining" = "About %@ left · expected finish %@";
+"queue.overdue" = "Past the estimate. Record completion when the print finishes.";
+"queue.calculating" = "Calculating time · saved to your library automatically";
+"queue.calculationWaiting" = "Waiting to calculate time";
+"queue.retryEstimate" = "Retry calculation";
+"queue.configureEstimate" = "Choose a printer to calculate missing estimates";
+"queue.markStarted" = "Mark as printing";
+"queue.actualStart" = "Print started at";
+"queue.startHint" = "Mark this after starting the print in Studio or on your printer. Adjust the start time if it is already running. This does not control your printer.";
+"queue.editStart" = "Edit start time";
+"queue.backToWaiting" = "Return to waiting";

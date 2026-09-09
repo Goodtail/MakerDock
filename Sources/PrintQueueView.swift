@@ -9,15 +9,17 @@ struct PrintQueueView: View {
     @State private var startDate = Date()
     @State private var recordItem: ShelfItem?
     @State private var durationItem: ShelfItem?
+    @State private var startingItem: ShelfItem?
+    @State private var contentWidth: CGFloat = 1000
 
     private var budget: Double { Double(max(0, min(10_080, availableMinutes))) * 60 }
     private var gap: Double { Double(max(0, min(60, changeoverMinutes))) * 60 }
-    private var plan: PrintQueuePlan { PrintQueuePlan(jobs: model.queueJobs, availableSeconds: budget, changeoverSeconds: gap) }
+
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: 60)) { context in
-            let start = startNow ? context.date : startDate
-            let schedule = plan
+            let start = startNow || model.activePrint != nil ? context.date : startDate
+            let schedule = PrintQueuePlan(jobs: model.queueJobs(at: context.date), availableSeconds: budget, changeoverSeconds: gap)
             VStack(alignment: .leading, spacing: 0) {
                 header
                 if model.printQueue.isEmpty {
@@ -30,11 +32,11 @@ struct PrintQueueView: View {
                     }.frame(maxWidth: .infinity).padding(Design.large)
                     Spacer()
                 } else {
-                    planningControls(start: start, schedule: schedule)
+                    planningControls(start: start, now: context.date, schedule: schedule)
                     List {
                         ForEach(Array(model.queuedItems.enumerated()), id: \.element.id) { index, item in
                             if let row = schedule.rows.first(where: { $0.id == item.id }) {
-                                queueRow(item, index: index, row: row, start: start)
+                                queueRow(item, index: index, row: row, start: start, now: context.date)
                                     .listRowSeparator(.hidden)
                                     .listRowBackground(Design.canvas)
                             }
@@ -52,6 +54,10 @@ struct PrintQueueView: View {
                 }
             }.background(Design.canvas)
         }
+        .background(GeometryReader { proxy in
+            Color.clear.onAppear { contentWidth = proxy.size.width }.onChange(of: proxy.size.width) { contentWidth = $0 }
+        })
+        .sheet(item: $startingItem) { item in QueueStartSheet(model: model, item: item) }
         .sheet(item: $recordItem) { item in PrintRecordSheet(model: model, item: item) }
         .sheet(item: $durationItem) { item in QueueDurationSheet(model: model, item: item) }
     }
@@ -67,17 +73,19 @@ struct PrintQueueView: View {
         }.padding(Design.large)
     }
 
-    private func planningControls(start: Date, schedule: PrintQueuePlan) -> some View {
+    private func planningControls(start: Date, now: Date, schedule: PrintQueuePlan) -> some View {
         VStack(alignment: .leading, spacing: Design.regular) {
-            HStack(alignment: .center, spacing: Design.large) {
+            let controls = contentWidth < 720 ? AnyLayout(VStackLayout(alignment: .leading, spacing: Design.medium)) : AnyLayout(HStackLayout(alignment: .center, spacing: Design.large))
+            controls {
                 VStack(alignment: .leading, spacing: Design.small) {
                     Text(L("queue.start")).font(Design.value)
-                    Toggle(L("queue.startNow"), isOn: $startNow).toggleStyle(.checkbox)
-                    if !startNow {
+                    if model.activePrint != nil { Text(L("queue.printingNow")).foregroundStyle(Design.accent) }
+                    else { Toggle(L("queue.startNow"), isOn: $startNow).toggleStyle(.checkbox) }
+                    if !startNow && model.activePrint == nil {
                         DatePicker(L("queue.start"), selection: $startDate, displayedComponents: [.date, .hourAndMinute]).labelsHidden()
                     }
                 }
-                Divider().frame(height: 42)
+                if contentWidth >= 720 { Divider().frame(height: 42) }
                 VStack(alignment: .leading, spacing: Design.small) {
                     Text(L("queue.available")).font(Design.value)
                     HStack(spacing: Design.small) {
@@ -89,7 +97,7 @@ struct PrintQueueView: View {
                         Text(L("record.minutes"))
                     }.textFieldStyle(.roundedBorder)
                 }
-                Spacer(minLength: 0)
+                if contentWidth >= 720 { Spacer(minLength: 0) }
                 VStack(alignment: .leading, spacing: Design.small) {
                     Text(L("queue.changeover")).font(Design.value)
                     Stepper(value: $changeoverMinutes, in: 0...60) {
@@ -117,9 +125,9 @@ struct PrintQueueView: View {
                 } else { Text(L("queue.reorderHint")).font(Design.caption).foregroundStyle(Design.secondary) }
                 Spacer()
                 Button(L("queue.fitOrder")) {
-                    let ids = PrintQueuePlan.fittingOrder(jobs: model.queueJobs, availableSeconds: budget, changeoverSeconds: gap)
+                    let ids = model.fittingQueueOrder(at: now, budget: budget, gap: gap)
                     Task { await model.reorderQueue(ids) }
-                }.disabled(model.isWorking || PrintQueuePlan.fittingOrder(jobs: model.queueJobs, availableSeconds: budget, changeoverSeconds: gap) == model.printQueue.map(\.id))
+                }.disabled(model.isWorking || model.fittingQueueOrder(at: now, budget: budget, gap: gap) == model.printQueue.map(\.id))
                     .help(L("queue.fitHint"))
             }
         }.padding(Design.regular)
@@ -128,54 +136,98 @@ struct PrintQueueView: View {
             .padding(.horizontal, Design.large).padding(.bottom, Design.regular)
     }
 
-    private func queueRow(_ item: ShelfItem, index: Int, row: PrintQueuePlan.Row, start: Date) -> some View {
-        HStack(alignment: .center, spacing: Design.medium) {
-            Text(String(index + 1)).font(.system(size: 16, weight: .medium, design: .monospaced))
-                .foregroundStyle(Design.secondary).frame(width: 28)
-            ModelImage(url: model.imageURL(item)).frame(width: 68, height: 68)
-            VStack(alignment: .leading, spacing: Design.small) {
-                Button(item.title) { model.showLibraryItem(item.id) }.font(Design.heading).lineLimit(2).buttonStyle(.plain)
-                    .help(L("queue.viewModel"))
-                HStack(spacing: Design.small) {
-                    Button { durationItem = item } label: {
-                        Label(row.seconds.map { timeText($0) } ?? L("queue.setTime"), systemImage: "clock")
-                    }.buttonStyle(.link).font(Design.value).disabled(model.isWorking)
-                    Text(model.printQueue.first { $0.id == item.id }?.durationSeconds != nil ? L("queue.manualTime") : model.displayedEstimate(item)?.sourceLabel ?? "")
-                        .font(Design.caption).foregroundStyle(Design.secondary)
-                    Text(String(format: L("queue.plates"), item.plates.count)).font(Design.caption).foregroundStyle(Design.secondary)
-                }
-                if let from = row.startOffset, let until = row.endOffset {
-                    Text(String(format: L("queue.slot"), dateText(start.addingTimeInterval(from)), dateText(start.addingTimeInterval(until))))
-                        .font(Design.caption).foregroundStyle(Design.secondary).lineLimit(2)
-                } else { Text(L("queue.scheduleUnknown")).font(Design.caption).foregroundStyle(Design.secondary) }
-                Label(L(row.fits ? "queue.within" : row.seconds == nil || row.endOffset == nil ? "queue.needsTime" : "queue.over"), systemImage: row.fits ? "checkmark.circle" : "clock")
-                    .font(Design.caption).foregroundStyle(row.fits ? Design.accent : Design.secondary)
-            }.frame(maxWidth: .infinity, alignment: .leading)
-            VStack(alignment: .trailing, spacing: Design.medium) {
-                HStack(spacing: Design.medium) {
-                    Button { Task { await model.moveQueueItem(item.id, by: -1) } } label: { Image(systemName: "arrow.up") }
-                        .disabled(index == 0).help(L("queue.up")).accessibilityLabel(L("queue.up"))
-                    Button { Task { await model.moveQueueItem(item.id, by: 1) } } label: { Image(systemName: "arrow.down") }
-                        .disabled(index == model.printQueue.count - 1).help(L("queue.down")).accessibilityLabel(L("queue.down"))
-                    Button { Task { await model.removeQueueItem(item.id) } } label: { Image(systemName: "minus.circle") }
-                        .help(L("queue.remove")).accessibilityLabel(L("queue.remove"))
-                }.buttonStyle(.borderless).foregroundStyle(Design.secondary)
+    private func queueRow(_ item: ShelfItem, index: Int, row: PrintQueuePlan.Row, start: Date, now: Date) -> some View {
+        let entry = model.queueEntry(item)
+        let printing = entry?.isPrinting == true
+        return VStack(alignment: .leading, spacing: Design.medium) {
+            HStack(alignment: .top, spacing: Design.medium) {
+                ModelImage(url: model.imageURL(item)).frame(width: 64, height: 64)
+                VStack(alignment: .leading, spacing: Design.small) {
+                    HStack(alignment: .firstTextBaseline) {
+                        Text(printing ? L("queue.printing") : String(index + 1)).font(Design.caption).foregroundStyle(printing ? Design.accent : Design.secondary)
+                        Button(item.title) { model.showLibraryItem(item.id) }.font(Design.heading).lineLimit(2).buttonStyle(.plain)
+                    }
+                    HStack(spacing: Design.small) {
+                        Button { durationItem = item } label: {
+                            Label(model.queueSeconds(item).map { timeText($0) } ?? L("queue.setTime"), systemImage: "clock")
+                        }.buttonStyle(.link).font(Design.value).disabled(model.isWorking)
+                        Text(entry?.durationSeconds != nil ? L("queue.manualTime") : model.displayedEstimate(item)?.sourceLabel ?? "")
+                            .font(Design.caption).foregroundStyle(Design.secondary)
+                        Text(String(format: L("queue.plates"), item.plates.count)).font(Design.caption).foregroundStyle(Design.secondary)
+                    }
+                    if let began = entry?.startedAt {
+                        Text(String(format: L("queue.startedAt"), dateText(began))).font(Design.caption).foregroundStyle(Design.secondary)
+                        if let remaining = entry?.remainingSeconds(at: now, estimate: model.displayedEstimate(item)?.seconds) {
+                            Text(String(format: L("queue.printRemaining"), timeText(remaining), dateText(now.addingTimeInterval(remaining))))
+                                .font(Design.value).foregroundStyle(Design.accent)
+                        } else {
+                            Text(L(model.queueSeconds(item) == nil ? "queue.scheduleUnknown" : "queue.overdue"))
+                                .font(Design.caption).foregroundStyle(Design.warning)
+                        }
+                    } else if let from = row.startOffset, let until = row.endOffset {
+                        Text(String(format: L("queue.slot"), dateText(start.addingTimeInterval(from)), dateText(start.addingTimeInterval(until))))
+                            .font(Design.caption).foregroundStyle(Design.secondary)
+                    } else { Text(L("queue.scheduleUnknown")).font(Design.caption).foregroundStyle(Design.secondary) }
+                }.frame(maxWidth: .infinity, alignment: .leading)
+            }
+            if model.calculatingItemID == item.id || model.pendingEstimateIDs.contains(item.id) {
                 HStack {
-                    Button(L("queue.openStudio")) { model.openInStudio(item) }
-                    Button { recordItem = item } label: { Label(L("queue.complete"), systemImage: "checkmark") }
-                        .buttonStyle(.borderedProminent).tint(Design.action).foregroundStyle(.white)
+                    ProgressView().controlSize(.small)
+                    Text(L(model.calculatingItemID == item.id ? "queue.calculating" : "queue.calculationWaiting")).font(Design.caption).foregroundStyle(Design.secondary)
+                }
+            } else if let error = model.estimateErrors[item.id] {
+                HStack(alignment: .top) {
+                    Text(error).font(Design.caption).foregroundStyle(Design.warning).lineLimit(3).help(error)
+                    Spacer(minLength: Design.small)
+                    Button(L("queue.retryEstimate")) { model.calculateEstimate(item) }.font(Design.caption)
+                }
+            } else if model.displayedEstimate(item) == nil && model.estimateConfiguration == nil {
+                Button(L("queue.configureEstimate")) { model.showSettings = true }.buttonStyle(.link).font(Design.caption)
+            }
+            ViewThatFits(in: .horizontal) {
+                HStack { queueActions(item, printing: printing); Spacer(); orderActions(item, index: index, printing: printing) }
+                VStack(alignment: .leading, spacing: Design.small) {
+                    queueActions(item, printing: printing)
+                    orderActions(item, index: index, printing: printing)
                 }
             }.disabled(model.isWorking)
         }.padding(Design.regular)
             .background(Design.surface, in: RoundedRectangle(cornerRadius: Design.cardRadius))
-            .overlay(RoundedRectangle(cornerRadius: Design.cardRadius).stroke(row.fits ? Design.accent.opacity(0.32) : Design.divider))
+            .overlay(RoundedRectangle(cornerRadius: Design.cardRadius).stroke(printing ? Design.accent : Design.divider))
             .padding(.vertical, Design.tiny)
             .accessibilityElement(children: .contain)
             .contextMenu {
                 Button(L("queue.viewModel")) { model.showLibraryItem(item.id) }
                 Button(L("queue.setTime")) { durationItem = item }
-                Button(L("queue.remove")) { Task { await model.removeQueueItem(item.id) } }
+                if printing { Button(L("queue.backToWaiting")) { Task { await model.returnQueuePrintToWaiting(item) } } }
+                else { Button(L("queue.remove")) { Task { await model.removeQueueItem(item.id) } } }
             }
+    }
+    private func queueActions(_ item: ShelfItem, printing: Bool) -> some View {
+        HStack(spacing: Design.small) {
+            Button(L("queue.openStudio")) { model.openInStudio(item) }
+            if printing {
+                Menu {
+                    Button(L("queue.editStart")) { startingItem = item }
+                    Button(L("queue.backToWaiting")) { Task { await model.returnQueuePrintToWaiting(item) } }
+                } label: { Label(L("queue.printing"), systemImage: "printer.fill") }.menuStyle(.borderlessButton).fixedSize()
+            } else {
+                Button(L("queue.markStarted")) { startingItem = item }
+                    .disabled(model.activePrint != nil).help(L("queue.startHint"))
+            }
+            Button { recordItem = item } label: { Label(L("queue.complete"), systemImage: "checkmark") }
+                .buttonStyle(.borderedProminent).tint(Design.action).foregroundStyle(.white)
+        }
+    }
+    private func orderActions(_ item: ShelfItem, index: Int, printing: Bool) -> some View {
+        HStack(spacing: Design.medium) {
+            Button { Task { await model.moveQueueItem(item.id, by: -1) } } label: { Image(systemName: "arrow.up") }
+                .disabled(printing || index == 0 || (model.activePrint != nil && index == 1)).help(L("queue.up")).accessibilityLabel(L("queue.up"))
+            Button { Task { await model.moveQueueItem(item.id, by: 1) } } label: { Image(systemName: "arrow.down") }
+                .disabled(printing || index == model.printQueue.count - 1).help(L("queue.down")).accessibilityLabel(L("queue.down"))
+            Button { Task { await model.removeQueueItem(item.id) } } label: { Image(systemName: "minus.circle") }
+                .disabled(printing).help(L("queue.remove")).accessibilityLabel(L("queue.remove"))
+        }.buttonStyle(.borderless).foregroundStyle(Design.secondary)
     }
     private func durationText(_ seconds: Double) -> String { seconds > 0 ? timeText(seconds) : String(format: L("time.minutes"), 0) }
 }
@@ -223,5 +275,31 @@ struct QueueDurationSheet: View {
                 let total = Int((PrintQueuePlan.duration(model.queueSeconds(item)) ?? 0) / 60)
                 hours = String(total / 60); minutes = String(total % 60)
             }.interactiveDismissDisabled(saving)
+    }
+}
+
+struct QueueStartSheet: View {
+    @ObservedObject var model: LibraryViewModel
+    let item: ShelfItem
+    @Environment(\.dismiss) private var dismiss
+    @State private var startedAt = Date()
+    @State private var saving = false
+    var body: some View {
+        VStack(alignment: .leading, spacing: Design.regular) {
+            Text(L("queue.markStarted")).font(Design.detailTitle)
+            Text(item.title).foregroundStyle(Design.secondary).lineLimit(3)
+            DatePicker(L("queue.actualStart"), selection: $startedAt, in: ...Date(), displayedComponents: [.date, .hourAndMinute])
+            Text(L("queue.startHint")).font(Design.caption).foregroundStyle(Design.secondary).fixedSize(horizontal: false, vertical: true)
+            HStack {
+                Spacer()
+                Button(L("cancel")) { dismiss() }.keyboardShortcut(.cancelAction)
+                Button(L("queue.save")) {
+                    saving = true
+                    Task { if await model.startQueuePrint(item, at: startedAt) { dismiss() }; saving = false }
+                }.buttonStyle(.borderedProminent).tint(Design.action).foregroundStyle(.white).keyboardShortcut(.defaultAction)
+            }.disabled(saving || model.isWorking)
+        }.padding(Design.large).frame(width: 430)
+            .onAppear { startedAt = model.queueEntry(item)?.startedAt ?? Date() }
+            .interactiveDismissDisabled(saving)
     }
 }

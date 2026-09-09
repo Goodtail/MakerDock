@@ -388,7 +388,7 @@
 "queue.emptyHint" = "ライブラリからモデルを選んで追加してください。\n複数のモデルをまとめて追加することもできます。";
 "queue.browse" = "ライブラリへ";
 "queue.chooseModels" = "モデルを追加";
-"queue.count" = "%d件待機中。順番を決めてプリントを計画できます。";
+"queue.count" = "%d件の予定。順番を決めてプリント時間を確認できます。";
 "queue.start" = "開始時刻";
 "queue.startNow" = "今から";
 "queue.available" = "使える時間";
@@ -404,7 +404,7 @@
 "queue.reorderHint" = "ドラッグまたは矢印で順番を変更できます";
 "queue.fitOrder" = "時間内に収まるモデルを先頭へ";
 "queue.fitHint" = "優先順に確認して時間内に収まるモデルを前へ移動します。残りは後ろに残ります。";
-"queue.manualHint" = "モデル全体を対象にした手動の計画です。時間は予想値で、プリンターの状態は自動取得しません。";
+"queue.manualHint" = "予想時間がなければ自動計算します。プリント中・完了は手動で記録し、プリンターの操作は行いません。";
 "queue.setTime" = "予定時間を設定";
 "queue.manualTime" = "手動入力";
 "queue.scheduleUnknown" = "未定の時間を入力すると時間帯が表示されます";
@@ -424,3 +424,18 @@
 "queue.plates" = "%dプレート";
 "sort.shortest" = "プリント時間が短い順";
 "sort.longest" = "プリント時間が長い順";
+
+"queue.printing" = "プリント中";
+"queue.printingNow" = "進行中のプリントから計算";
+"queue.startedAt" = "%@に開始";
+"queue.printRemaining" = "残り約%@ · %@に完了予定";
+"queue.overdue" = "予想時間を過ぎました。プリントが終わったら完了を記録してください。";
+"queue.calculating" = "予想時間を計算中 · ライブラリにも自動保存";
+"queue.calculationWaiting" = "時間の計算待ち";
+"queue.retryEstimate" = "再計算";
+"queue.configureEstimate" = "プリンターを選ぶと予想時間を自動計算します";
+"queue.markStarted" = "プリント中にする";
+"queue.actualStart" = "プリント開始時刻";
+"queue.startHint" = "Studioやプリンターで開始した後に記録します。すでに進行中なら開始時刻を変更できます。プリンターの操作は行いません。";
+"queue.editStart" = "開始時刻を変更";
+"queue.backToWaiting" = "待機に戻す";

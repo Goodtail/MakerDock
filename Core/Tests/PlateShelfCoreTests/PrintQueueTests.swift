@@ -2,6 +2,17 @@ import XCTest
 @testable import PlateShelfCore
 
 final class PrintQueuePlanTests: XCTestCase {
+    func testPrintingUsesRemainingTimeAndOverrunsBlockThePlan() throws {
+        let start = Date(timeIntervalSince1970: 1000)
+        let entry = PrintQueueEntry(id: "a", startedAt: start, startedDurationSeconds: 1800)
+        XCTAssertEqual(entry.remainingSeconds(at: start.addingTimeInterval(600), estimate: 3000), 1200)
+        XCTAssertNil(entry.remainingSeconds(at: start.addingTimeInterval(1800), estimate: 3000))
+        XCTAssertTrue(entry.isPrinting)
+        let old = try JSONDecoder().decode(PrintQueueEntry.self, from: Data(#"{"id":"old","addedAt":0}"#.utf8))
+        XCTAssertFalse(old.isPrinting)
+        XCTAssertEqual(old.remainingSeconds(at: start, estimate: 900), 900)
+    }
+
     func jobs(_ values: [Double?]) -> [PrintQueueJob] {
         values.enumerated().map { PrintQueueJob(id: String($0.offset), seconds: $0.element) }
     }
@@ -41,6 +52,28 @@ final class PrintQueuePlanTests: XCTestCase {
 }
 
 extension LibraryRepositoryTests {
+    func testPrintingStatePersistsPinsFirstAndRequiresCompletion() async throws {
+        let repo = try repository()
+        let a = try await repo.importFile(at: fixture()).item
+        let b = try await repo.importFile(at: fixture("B.3mf", changes: ["Metadata/plate_1.gcode": Data("G28\nG1 X2".utf8)])).item
+        try await repo.enqueue(itemIDs: [a.id, b.id])
+        let start = Date().addingTimeInterval(-600)
+        try await repo.startQueuePrint(itemID: b.id, at: start, estimatedSeconds: 1200)
+        try await repo.reorderQueue(itemIDs: [a.id, b.id])
+        let reopened = try LibraryRepository(rootURL: repo.rootURL)
+        var queue = await reopened.printQueue()
+        XCTAssertEqual(queue.map(\.id), [b.id, a.id]); XCTAssertEqual(queue[0].startedAt, start)
+        XCTAssertEqual(queue[0].remainingSeconds(at: start.addingTimeInterval(600), estimate: nil), 600)
+        do { try await reopened.startQueuePrint(itemID: a.id); XCTFail("Two simultaneous prints accepted") } catch {}
+        XCTAssertNil(queue[0].remainingSeconds(at: start.addingTimeInterval(2000), estimate: nil))
+        queue = await reopened.printQueue(); XCTAssertTrue(queue[0].isPrinting)
+        try await reopened.returnQueuePrintToWaiting(itemID: b.id)
+        try await reopened.startQueuePrint(itemID: a.id, estimatedSeconds: 800)
+        _ = try await reopened.completePrint(itemID: a.id, note: "Finished", durationSeconds: 700)
+        queue = await reopened.printQueue()
+        XCTAssertEqual(queue.map(\.id), [b.id]); XCTAssertFalse(queue[0].isPrinting)
+    }
+
     func testQueuePersistenceDuplicatesOverridesAndRemovalKeepModels() async throws {
         let repo = try repository()
         let a = try await repo.importFile(at: fixture()).item
