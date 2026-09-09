@@ -35,12 +35,13 @@ struct ShelfPreferences: Codable {
     }
 }
 enum ShelfFilter: Hashable {
-    case makerWorld, makerWorldCollections, all, favorites, printed, unprinted, duplicates, uncategorized, trash, category(String), tag(String)
+    case makerWorld, makerWorldCollections, queue, all, favorites, printed, unprinted, duplicates, uncategorized, trash, category(String), tag(String)
     var isBrowser: Bool { self == .makerWorld || self == .makerWorldCollections }
     var title: String {
         switch self {
         case .makerWorldCollections: return L("browser.myCollections")
         case .makerWorld: return "MakerWorld"
+        case .queue: return L("queue.title")
         case .all: return L("library.title")
         case .favorites: return L("filter.favorites")
         case .printed: return L("filter.printed")
@@ -54,19 +55,30 @@ enum ShelfFilter: Hashable {
     }
 }
 enum ShelfSort: CaseIterable {
-    case recent, oldest, name
+    case recent, oldest, name, shortest, longest
     var title: String {
         switch self {
         case .recent: return L("sort.recent")
         case .oldest: return L("sort.oldest")
         case .name: return L("sort.name")
+        case .shortest: return L("sort.shortest")
+        case .longest: return L("sort.longest")
         }
     }
-    func precedes(_ lhs: ShelfItem, _ rhs: ShelfItem) -> Bool {
+    func precedes(_ lhs: ShelfItem, _ rhs: ShelfItem, estimate: (ShelfItem) -> Double? = { $0.preferredEstimate?.seconds }) -> Bool {
         let left = lhs.fileAddedAt ?? lhs.importedAt, right = rhs.fileAddedAt ?? rhs.importedAt
         switch self {
         case .recent: return left == right ? lhs.id > rhs.id : left > right
         case .oldest: return left == right ? lhs.id < rhs.id : left < right
+        case .shortest, .longest:
+            let a = PrintQueuePlan.duration(estimate(lhs)), b = PrintQueuePlan.duration(estimate(rhs))
+            if a != b {
+                guard let a else { return false }
+                guard let b else { return true }
+                return self == .shortest ? a < b : a > b
+            }
+            let comparison = lhs.title.localizedStandardCompare(rhs.title)
+            return comparison == .orderedSame ? lhs.id < rhs.id : comparison == .orderedAscending
         case .name:
             let comparison = lhs.title.localizedStandardCompare(rhs.title)
             return comparison == .orderedSame ? lhs.id < rhs.id : comparison == .orderedAscending
@@ -76,6 +88,7 @@ enum ShelfSort: CaseIterable {
 @MainActor
 final class LibraryViewModel: ObservableObject {
     @Published var items: [ShelfItem] = []
+    @Published var printQueue: [PrintQueueEntry] = []
     @Published var trashedItems: [ShelfItem] = []
     @Published var categories: [LibraryCategory] = []
     @Published var categoryEditor: CategoryEditRequest?
@@ -172,6 +185,7 @@ final class LibraryViewModel: ObservableObject {
             let matches: Bool
             switch filter {
             case .all, .makerWorld, .makerWorldCollections, .trash: matches = true
+            case .queue: matches = printQueue.contains { $0.id == item.id }
             case .uncategorized: matches = item.categoryID == nil
             case .category(let id): matches = item.categoryID == id
             case .favorites: matches = item.favorite
@@ -182,7 +196,7 @@ final class LibraryViewModel: ObservableObject {
             }
             let text = [item.title, item.filename, item.designer ?? "", item.profileTitle ?? "", item.note, categoryName(item), item.tags.joined(separator: " "), item.materials.joined(separator: " ")].joined(separator: " ")
             return matches && (search.isEmpty || text.localizedStandardContains(search))
-        }.sorted(by: sort.precedes)
+        }.sorted { sort.precedes($0, $1, estimate: { displayedEstimate($0)?.seconds }) }
     }
     func start() async {
         guard !started, repository != nil else { return }; started = true
@@ -217,11 +231,13 @@ final class LibraryViewModel: ObservableObject {
         let all = await repository.items(includeTrashed: true)
         items = all.filter { !$0.isTrashed }; trashedItems = all.filter(\.isTrashed)
         categories = await repository.categories()
+        printQueue = await repository.printQueue()
         if case .category(let id) = filter, !categories.contains(where: { $0.id == id }) { filter = .uncategorized }
         syncSelection()
         if let lastTrashedID, !trashedItems.contains(where: { $0.id == lastTrashedID }) { self.lastTrashedID = nil }
     }
     func syncSelection() {
+        if filter == .queue { selectionID = nil; return }
         pruneSelection()
         guard !filter.isBrowser else { return }
         if !visibleItems.contains(where: { $0.id == selectionID }) { selectionID = visibleItems.first?.id }

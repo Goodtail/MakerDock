@@ -34,6 +34,11 @@ struct ItemInspector: View {
                             .frame(maxWidth: .infinity).padding(.vertical, Design.tiny)
                     }.disabled(model.isWorking)
                 }
+                Button {
+                    if model.isQueued(item) { model.filter = .queue }
+                    else { Task { await model.enqueue([item]) } }
+                } label: { Label(model.isQueued(item) ? L("queue.show") : L("queue.add"), systemImage: "text.badge.plus").frame(maxWidth: .infinity).padding(.vertical, Design.tiny) }
+                    .disabled(model.isWorking)
                 HStack {
                     CategoryMenu(model: model, item: item)
                     Spacer()

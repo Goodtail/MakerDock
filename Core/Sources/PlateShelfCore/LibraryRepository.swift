@@ -5,6 +5,7 @@ public actor LibraryRepository {
     public nonisolated let rootURL: URL
     private var records: [LibraryItem]
     private var categoryRecords: [LibraryCategory]
+    private var queueRecords: [PrintQueueEntry]
     private var lastIndexData: Data?
     private let fileManager = FileManager.default
     private var indexURL: URL { rootURL.appendingPathComponent("index.json") }
@@ -13,6 +14,7 @@ public actor LibraryRepository {
         var schemaVersion: Int = 1
         var items: [LibraryItem]
         var categories: [LibraryCategory]?
+        var printQueue: [PrintQueueEntry]?
     }
 
     public init(rootURL: URL) throws {
@@ -24,9 +26,10 @@ public actor LibraryRepository {
                   (values.fileSize ?? Int.max) <= 64 * 1_024 * 1_024 else { throw LibraryError.corruptIndex }
             let data = try Data(contentsOf: indexURL)
             guard let index = try? Self.decoder().decode(Index.self, from: data), index.schemaVersion == 1,
-                  Self.valid(index.items), Self.validCategories(index.categories ?? [], items: index.items) else { throw LibraryError.corruptIndex }
-            self.records = index.items; self.categoryRecords = index.categories ?? []; self.lastIndexData = data
-        } else { self.records = []; self.categoryRecords = []; self.lastIndexData = nil }
+                  Self.valid(index.items), Self.validCategories(index.categories ?? [], items: index.items),
+                  Self.validQueue(index.printQueue ?? [], items: index.items) else { throw LibraryError.corruptIndex }
+            self.records = index.items; self.categoryRecords = index.categories ?? []; self.queueRecords = index.printQueue ?? []; self.lastIndexData = data
+        } else { self.records = []; self.categoryRecords = []; self.queueRecords = []; self.lastIndexData = nil }
         try FileManager.default.createDirectory(at: self.rootURL, withIntermediateDirectories: true)
         for directory in ["Files", "Previews", ".staging"] {
             let url = self.rootURL.appendingPathComponent(directory, isDirectory: true)
@@ -232,7 +235,39 @@ public actor LibraryRepository {
         if let existing = candidate[offset].printRuns.firstIndex(where: { $0.id == run.id }) {
             candidate[offset].printRuns[existing] = run
         } else { candidate[offset].printRuns.append(run) }
-        try commit(candidate)
+        let newlyCompleted = run.status == "completed" && !records[offset].printRuns.contains { $0.id == run.id && $0.status == "completed" }
+        try commit(candidate, queue: newlyCompleted ? queueRecords.filter { $0.id != itemID } : queueRecords)
+    }
+
+    public func printQueue() -> [PrintQueueEntry] { queueRecords }
+
+    @discardableResult public func enqueue(itemIDs: [String]) throws -> Int {
+        let validIDs = Set(records.filter { !$0.isTrashed }.map(\.id))
+        guard itemIDs.allSatisfy(validIDs.contains) else { throw LibraryError.itemNotFound }
+        var queue = queueRecords, seen = Set(queue.map(\.id)), added = 0
+        for id in itemIDs where seen.insert(id).inserted { queue.append(PrintQueueEntry(id: id)); added += 1 }
+        if added > 0 { try commit(records, queue: queue) }
+        return added
+    }
+    public func reorderQueue(itemIDs: [String]) throws {
+        guard itemIDs.count == queueRecords.count, Set(itemIDs) == Set(queueRecords.map(\.id)) else { throw LibraryError.invalidSettings }
+        let entries = Dictionary(uniqueKeysWithValues: queueRecords.map { ($0.id, $0) })
+        try commit(records, queue: itemIDs.compactMap { entries[$0] })
+    }
+    public func removeFromQueue(itemIDs: Set<String>) throws {
+        try commit(records, queue: queueRecords.filter { !itemIDs.contains($0.id) })
+    }
+    public func setQueueDuration(itemID: String, seconds: Double?) throws {
+        guard seconds == nil || PrintQueuePlan.duration(seconds) != nil else { throw LibraryError.invalidSettings }
+        guard let offset = queueRecords.firstIndex(where: { $0.id == itemID }) else { throw LibraryError.itemNotFound }
+        var queue = queueRecords; queue[offset].durationSeconds = seconds
+        try commit(records, queue: queue)
+    }
+    private static func validQueue(_ queue: [PrintQueueEntry], items: [LibraryItem]) -> Bool {
+        let ids = Set(items.filter { !$0.isTrashed }.map(\.id))
+        return queue.count <= 10_000 && Set(queue.map(\.id)).count == queue.count && queue.allSatisfy {
+            ids.contains($0.id) && ($0.durationSeconds == nil || PrintQueuePlan.duration($0.durationSeconds) != nil)
+        }
     }
 
     public func categories() -> [LibraryCategory] {
@@ -432,7 +467,7 @@ public actor LibraryRepository {
                 try fileManager.moveItem(at: from, to: to)
                 try Self.verifyMoveFile(to, id: itemID)
             }
-            try commit(candidate)
+            try commit(candidate, queue: queueRecords.filter { $0.id != itemID })
         } catch {
             do { try Self.recoverPrintMove(root: rootURL, records: records) }
             catch { throw LibraryError.fileMove(String(format: CL("파일 이동 복구를 완료하지 못했습니다. 파일을 삭제하지 말고 앱을 다시 열어 주세요. %@"), String(error.localizedDescription))) }
@@ -480,7 +515,7 @@ public actor LibraryRepository {
         try manager.removeItem(at: journalURL)
     }
 
-    private func commit(_ candidate: [LibraryItem], categories: [LibraryCategory]? = nil) throws {
+    private func commit(_ candidate: [LibraryItem], categories: [LibraryCategory]? = nil, queue: [PrintQueueEntry]? = nil) throws {
         // Preserve edits or corruption introduced after this repository opened.
         let existing: Data?
         if fileManager.fileExists(atPath: indexURL.path) {
@@ -493,9 +528,12 @@ public actor LibraryRepository {
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
-        let data = try encoder.encode(Index(items: candidate, categories: categories ?? categoryRecords))
+        let activeIDs = Set(candidate.filter { !$0.isTrashed }.map(\.id))
+        let pending = (queue ?? queueRecords).filter { activeIDs.contains($0.id) }
+        guard Self.validQueue(pending, items: candidate) else { throw LibraryError.invalidSettings }
+        let data = try encoder.encode(Index(items: candidate, categories: categories ?? categoryRecords, printQueue: pending))
         try data.write(to: indexURL, options: .atomic)
-        records = candidate; categoryRecords = categories ?? categoryRecords; lastIndexData = data
+        records = candidate; categoryRecords = categories ?? categoryRecords; queueRecords = pending; lastIndexData = data
     }
 
     static func hashFile(_ url: URL) throws -> String {

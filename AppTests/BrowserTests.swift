@@ -42,6 +42,7 @@ final class BrowserTests: XCTestCase {
         XCTAssertFalse(parsed.openStudio)
     }
     @MainActor func testStoredProfileReusesBytesWithoutNetworkAndMissingFileFallsBack() async throws {
+        guard AppIdentity.makerWorldCaptureEnabled else { throw XCTSkip("Automatic capture is a development-only feature; Release rejection is covered by PublicDistributionTests.") }
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
         let transport = BrowserTestTransport()
