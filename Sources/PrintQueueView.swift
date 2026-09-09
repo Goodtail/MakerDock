@@ -1,5 +1,6 @@
 import SwiftUI
 import PlateShelfCore
+import UniformTypeIdentifiers
 
 struct PrintQueueView: View {
     @ObservedObject var model: LibraryViewModel
@@ -10,6 +11,7 @@ struct PrintQueueView: View {
     @State private var recordItem: ShelfItem?
     @State private var durationItem: ShelfItem?
     @State private var startingItem: ShelfItem?
+    @State private var draggedItemID: String?
     @State private var contentWidth: CGFloat = 1000
 
     private var budget: Double { Double(max(0, min(10_080, availableMinutes))) * 60 }
@@ -33,24 +35,27 @@ struct PrintQueueView: View {
                     Spacer()
                 } else {
                     planningControls(start: start, now: context.date, schedule: schedule)
-                    List {
-                        ForEach(Array(model.queuedItems.enumerated()), id: \.element.id) { index, item in
-                            if let row = schedule.rows.first(where: { $0.id == item.id }) {
-                                queueRow(item, index: index, row: row, start: start, now: context.date)
-                                    .listRowSeparator(.hidden)
-                                    .listRowBackground(Design.canvas)
+                    ScrollView {
+                        LazyVStack(spacing: Design.medium) {
+                            ForEach(Array(model.queuedItems.enumerated()), id: \.element.id) { index, item in
+                                if let row = schedule.rows.first(where: { $0.id == item.id }) {
+                                    queueRow(item, index: index, row: row, start: start, now: context.date)
+                                        .onDrag {
+                                            guard !model.isWorking, model.queueEntry(item)?.isPrinting != true else { return NSItemProvider() }
+                                            draggedItemID = item.id
+                                            return NSItemProvider(object: item.id as NSString)
+                                        }
+                                        .onDrop(of: [UTType.plainText], delegate: QueueReorderDrop(model: model, targetID: item.id, draggedID: $draggedItemID))
+                                }
                             }
-                        }.onMove { indices, destination in
-                            var ids = model.printQueue.map(\.id)
-                            ids.move(fromOffsets: indices, toOffset: destination)
-                            Task { await model.reorderQueue(ids) }
-                        }.moveDisabled(model.isWorking)
-                    }.listStyle(.plain).scrollContentBackground(.hidden)
+                        }.padding(.horizontal, Design.large).padding(.bottom, Design.regular)
+                    }
+
                     HStack {
                         Text(L("queue.manualHint")).font(Design.caption).foregroundStyle(Design.secondary)
                         Spacer()
                         if model.isWorking { ProgressView().controlSize(.small) }
-                    }.padding(Design.regular)
+                    }.padding(.horizontal, Design.large).padding(.vertical, Design.regular)
                 }
             }.background(Design.canvas)
         }
@@ -194,7 +199,6 @@ struct PrintQueueView: View {
         }.padding(Design.regular)
             .background(Design.surface, in: RoundedRectangle(cornerRadius: Design.cardRadius))
             .overlay(RoundedRectangle(cornerRadius: Design.cardRadius).stroke(printing ? Design.accent : Design.divider))
-            .padding(.vertical, Design.tiny)
             .accessibilityElement(children: .contain)
             .contextMenu {
                 Button(L("queue.viewModel")) { model.showLibraryItem(item.id) }
@@ -301,5 +305,26 @@ struct QueueStartSheet: View {
         }.padding(Design.large).frame(width: 430)
             .onAppear { startedAt = model.queueEntry(item)?.startedAt ?? Date() }
             .interactiveDismissDisabled(saving)
+    }
+}
+
+@MainActor private struct QueueReorderDrop: DropDelegate {
+    let model: LibraryViewModel
+    let targetID: String
+    @Binding var draggedID: String?
+    func validateDrop(info: DropInfo) -> Bool {
+        guard let draggedID, !model.isWorking else { return false }
+        return model.printQueue.contains { $0.id == draggedID && !$0.isPrinting } &&
+            model.printQueue.contains { $0.id == targetID && !$0.isPrinting }
+    }
+    func dropUpdated(info: DropInfo) -> DropProposal? { DropProposal(operation: validateDrop(info: info) ? .move : .forbidden) }
+    func performDrop(info: DropInfo) -> Bool {
+        guard validateDrop(info: info), let source = draggedID else { return false }
+        draggedID = nil
+        var ids = model.printQueue.map(\.id)
+        guard let from = ids.firstIndex(of: source), let to = ids.firstIndex(of: targetID), from != to else { return false }
+        ids.remove(at: from); ids.insert(source, at: min(to, ids.count))
+        Task { await model.reorderQueue(ids) }
+        return true
     }
 }
