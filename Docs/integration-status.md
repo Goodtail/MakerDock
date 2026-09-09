@@ -1,6 +1,6 @@
 # MakerWorld integration status
 
-Status for public release 0.1.0, reviewed September 8, 2026.
+Source status for 0.1.1 build 16, September 9, 2026. The build 16 changes are local; the published 0.1.1 DMG is build 15.
 
 ## Available in the public DMG
 
@@ -8,16 +8,16 @@ Status for public release 0.1.0, reviewed September 8, 2026.
 - Consolidate byte-identical imports; reopen archived files through a separate Studio working copy.
 - Browse MakerWorld in the app, including original model/profile links.
 - Jump to the signed-in account's My Collections using the website's existing sidebar link. If signed out, sign in on MakerWorld and retry.
-- Save ordinary website downloads through a native save dialog; open Studio links with the official installed app.
+- Save website downloads with the observed model page. Explicit Studio links inside the embedded browser archive the requested 3MF and source page, then open the official installed app.
 - Preserve and display existing source metadata. Prefer already-saved MakerWorld estimates when present.
 - Read saved 3MF estimates and ask compatible, separately installed official Studio versions for local calculations.
 - Record completion, time, filament, notes, and file moves manually.
 
 ## Not enabled in the public DMG
 
-Automatic capture scripts, automated profile metadata capture, intercepted downloads, remote URL handoff downloads, stored-profile browser reuse, and registration as the Bambu Studio URL handler.
+Injected capture scripts, automated profile metadata capture, external remote URL handoff downloads, and registration as the Bambu Studio URL handler.
 
-Release builds enforce this at the UI and native ingress boundaries. The public configuration test asserts that blocked remote handoffs make no library imports and that embedded navigation remains available without automatic capture scripts. The collections shortcut performs a bounded, on-demand lookup of the website's own navigation link; it does not collect model metadata or enumerate collections. Development work is retained under `MAKERWORLD_INTEGRATION`; it is not a public service integration offering.
+Release builds enforce this at the UI and native ingress boundaries. The public configuration test asserts that external remote handoffs make no library imports and that embedded navigation remains available without automatic capture scripts. The collections shortcut performs a bounded, on-demand lookup of the website's own navigation link; it does not collect model metadata or enumerate collections. Native user-initiated downloads do not inject scripts or inspect authenticated API responses. Experimental profile capture is retained under `MAKERWORLD_INTEGRATION`.
 
 ## Chrome companion
 

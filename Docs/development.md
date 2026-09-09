@@ -1,6 +1,6 @@
 # Development
 
-MakerDock is a native SwiftUI/AppKit macOS application with a reusable Swift package in `Core`. All builds include ordinary MakerWorld browsing; automatic download capture is experimental and limited to development builds. `PlateShelf` and `PlateShelfCore` are retained internal module names from before the MakerDock rename.
+MakerDock is a native SwiftUI/AppKit macOS application with a reusable Swift package in `Core`. All builds include ordinary MakerWorld browsing; user-initiated downloads retain their observed source page. Injected profile-metadata capture remains experimental and limited to development builds. `PlateShelf` and `PlateShelfCore` are retained internal module names from before the MakerDock rename.
 
 ## Build locally
 
@@ -21,7 +21,7 @@ This uses local ad-hoc signing and does not require Apple portal registration. m
 | Debug | MakerDock-dev | `com.ninepiece.app.mac.makerdock.dev` | Visible DEV badge | Experimental code included |
 | Release | MakerDock | `com.ninepiece.app.mac.makerdock` | Production icon | Disabled |
 
-The public Release configuration does not set `MAKERWORLD_INTEGRATION`. Automatic remote imports are rejected before transport, and capture scripts are not injected. MakerWorld and saved source links open inside the app. Studio links explicitly target the separately installed official Bambu Studio. Neither build declares or claims Bambu Studio's schemes. Production uses `makerdock` and the legacy `plateshelf` scheme; development uses `makerdock-dev` and `plateshelf-dev`. On a normal launch, old MakerDock-owned Studio associations are restored to official Studio. See [integration status](integration-status.md).
+The public Release configuration does not set `MAKERWORLD_INTEGRATION`. External remote URL handoffs are rejected before transport, and capture scripts are not injected. Explicit downloads and Studio links from the trusted embedded MakerWorld main frame use the bounded importer and preserve the source page. Native Save-dialog downloads attach that page after completion. Profile IDs are not inferred from a page fragment or a 3MF internal ID. MakerWorld and saved source links open inside the app. Studio links explicitly target the separately installed official Bambu Studio. Neither build declares or claims Bambu Studio's schemes. Production uses `makerdock` and the legacy `plateshelf` scheme; development uses `makerdock-dev` and `plateshelf-dev`. On a normal launch, old MakerDock-owned Studio associations are restored to official Studio. See [integration status](integration-status.md).
 
 Put temporary builds in a `.noindex` directory and avoid keeping multiple exported `.app` bundles beside the installed app. Preserve release DMGs for rollback instead. A development build should never become the handler for production links.
 
@@ -63,3 +63,9 @@ See [screenshot reproduction](screenshots/README.md). Original example geometry 
 See [release instructions](release.md). This project's official signing identity belongs only to **MakerDock maintainer (YOUR_PERSONAL_TEAM_ID)**. Local contributor builds should use the ad-hoc command above. Never use the separate company account named in `AGENTS.md` for MakerDock resources.
 
 Version and build numbers are in `Config/Version.xcconfig`. Keep a local commit and annotated checkpoint for verified release changes. Preserve user library data during app replacement; a source rollback does not roll back a user's files or print history.
+
+## Queue estimates and printing state (build 16)
+
+Adding a model without a valid displayed estimate schedules an isolated official Studio calculation. Jobs run serially, reuse the cache, resume for queued models on launch, and wait for an explicit retry after failure. Results live in `estimates.json`, keyed by model content hash and printer/process/Studio configuration. Cards, the inspector, queue, and print forms share this cache; archive bytes stay unchanged.
+
+A queue entry can carry a manual start timestamp and the duration estimate at that point. Only one entry can be printing, and it stays first when reordering. Planning subtracts elapsed time. An overrun blocks later time slots until the user records completion or returns the item to waiting. These actions send no printer commands and do not claim live status.
