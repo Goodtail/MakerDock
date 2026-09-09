@@ -55,9 +55,17 @@ enum AppIdentity {
         return owner == legacy
     }
 
+    static func linkSchemes(for identifier: String) -> [String] {
+        identifier.hasSuffix(".dev") ? ["makerdock-dev", "plateshelf-dev"] : ["makerdock", "plateshelf"]
+    }
+    static func shouldRestoreStudioLink(owner: String?) -> Bool {
+        ["com.ninepiece.app.mac.makerdock", "com.ninepiece.app.mac.makerdock.dev",
+         "com.ninepiece.app.mac.plateshelf", "com.ninepiece.app.mac.plateshelf.dev"].contains(owner ?? "")
+    }
+
     @MainActor static func migrateLegacyLinks() async -> String? {
         guard let identifier = Bundle.main.bundleIdentifier else { return nil }
-        for scheme in ["plateshelf", "bambustudioopen", "bambustudio"] {
+        for scheme in linkSchemes(for: identifier) {
             let url = URL(string: scheme + "://open")!
             let owner = NSWorkspace.shared.urlForApplication(toOpen: url).flatMap { Bundle(url: $0)?.bundleIdentifier }
             // Transfer only the old app's registrations; preserve official Studio and the other variant.
@@ -68,6 +76,20 @@ enum AppIdentity {
                 }
             }
             if let error { return L("MakerDock 링크 연결을 옮기지 못했습니다: ") + error.localizedDescription }
+        }
+        // Older experimental builds claimed Studio URLs. Restore only registrations we own.
+        if let studio = NSWorkspace.shared.urlForApplication(withBundleIdentifier: OfficialStudioHandoff.bundleIdentifier) {
+            for scheme in OfficialStudioHandoff.schemes {
+                let url = URL(string: scheme + "://open")!
+                let owner = NSWorkspace.shared.urlForApplication(toOpen: url).flatMap { Bundle(url: $0)?.bundleIdentifier }
+                guard shouldRestoreStudioLink(owner: owner) else { continue }
+                let error: Error? = await withCheckedContinuation { continuation in
+                    NSWorkspace.shared.setDefaultApplication(at: studio, toOpenURLsWithScheme: scheme) {
+                        continuation.resume(returning: $0)
+                    }
+                }
+                if let error { return error.localizedDescription }
+            }
         }
         return nil
     }

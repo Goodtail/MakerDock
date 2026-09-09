@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		00FFEBAF61A38E344624C93D /* StudioHandoffTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30554A0ACA78D5EC0BE7B2A1 /* StudioHandoffTests.swift */; };
 		04EFB7B2E40201C17E5E1EE1 /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = 4795ADE1F1C93E0ED14E1C05 /* LICENSE */; };
 		0EA1C0653AFB2C105322CFC3 /* LibrarySelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BAE057D71492E493F1E5A71 /* LibrarySelection.swift */; };
 		14A11BA3EC05816A288BF7AA /* LibraryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D7E5BBEACB35BD9069E520B /* LibraryViewModel.swift */; };
@@ -17,6 +18,7 @@
 		44C93B9DE2F974916059F614 /* OrganizationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B313A67B78DB07113A762F11 /* OrganizationTests.swift */; };
 		4792A61947E02CECA70BFB96 /* MakerWorldLinkService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2D572E16C6D3C1DF7006365 /* MakerWorldLinkService.swift */; };
 		4F8C67E19C6F6FFD1B24ED60 /* IntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21E13070826C218972F73FA2 /* IntegrationTests.swift */; };
+		54E51F5267664401F338AC12 /* OfficialStudioHandoff.swift in Sources */ = {isa = PBXBuildFile; fileRef = 538179850127F502EF30343C /* OfficialStudioHandoff.swift */; };
 		5C8B3EC59FC65E63AA5EAA17 /* PrintRecordDetails.swift in Sources */ = {isa = PBXBuildFile; fileRef = C09604ADF31F1648937305A4 /* PrintRecordDetails.swift */; };
 		5F9A9CAE7729DCE8CC093A0F /* Fixture.3mf in Resources */ = {isa = PBXBuildFile; fileRef = 5C8A3349CFAEB9160CB03C65 /* Fixture.3mf */; };
 		66FA069C992BF7BF59036768 /* PlateZoomView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26AAC67ABCC7F618C8866222 /* PlateZoomView.swift */; };
@@ -68,10 +70,12 @@
 		21E13070826C218972F73FA2 /* IntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntegrationTests.swift; sourceTree = "<group>"; };
 		268FCF9FABC0FCA19DAD0233 /* MakerWorldBrowser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MakerWorldBrowser.swift; sourceTree = "<group>"; };
 		26AAC67ABCC7F618C8866222 /* PlateZoomView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlateZoomView.swift; sourceTree = "<group>"; };
+		30554A0ACA78D5EC0BE7B2A1 /* StudioHandoffTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StudioHandoffTests.swift; sourceTree = "<group>"; };
 		444ACEEC24D9E6EFF19FDF45 /* PublicDistributionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublicDistributionTests.swift; sourceTree = "<group>"; };
 		4795ADE1F1C93E0ED14E1C05 /* LICENSE */ = {isa = PBXFileReference; path = LICENSE; sourceTree = "<group>"; };
 		4BAE057D71492E493F1E5A71 /* LibrarySelection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibrarySelection.swift; sourceTree = "<group>"; };
 		4D7E5BBEACB35BD9069E520B /* LibraryViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryViewModel.swift; sourceTree = "<group>"; };
+		538179850127F502EF30343C /* OfficialStudioHandoff.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfficialStudioHandoff.swift; sourceTree = "<group>"; };
 		5489D5512F32027D58C93EBE /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/Localizable.strings; sourceTree = "<group>"; };
 		5C8A3349CFAEB9160CB03C65 /* Fixture.3mf */ = {isa = PBXFileReference; path = Fixture.3mf; sourceTree = "<group>"; };
 		5FBB8D82D2374F1C3116ECEF /* ItemInspector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemInspector.swift; sourceTree = "<group>"; };
@@ -155,6 +159,7 @@
 				F0599DCA36EFEE4901D0A750 /* PrintRecordDetailsTests.swift */,
 				444ACEEC24D9E6EFF19FDF45 /* PublicDistributionTests.swift */,
 				A8676AE12C380FC99DE2B27E /* StudioEstimateTests.swift */,
+				30554A0ACA78D5EC0BE7B2A1 /* StudioHandoffTests.swift */,
 				CEA39355CC2E66A834B196FF /* Fixtures */,
 			);
 			path = AppTests;
@@ -250,6 +255,7 @@
 			children = (
 				9C6E008E07A75A84CA356930 /* MakerWorldBrowserPolicy.swift */,
 				E2D572E16C6D3C1DF7006365 /* MakerWorldLinkService.swift */,
+				538179850127F502EF30343C /* OfficialStudioHandoff.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -386,6 +392,7 @@
 				DC7BC93656E60F628EEE577C /* PrintRecordDetailsTests.swift in Sources */,
 				6806582B3506700753BDB71F /* PublicDistributionTests.swift in Sources */,
 				C0CBA620CBCCC39F635CF48C /* StudioEstimateTests.swift in Sources */,
+				00FFEBAF61A38E344624C93D /* StudioHandoffTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -404,6 +411,7 @@
 				C8CD7A9CC9B71E65B45A9E08 /* MakerWorldBrowserPolicy.swift in Sources */,
 				4792A61947E02CECA70BFB96 /* MakerWorldLinkService.swift in Sources */,
 				1848E7E720E963CAE75864A8 /* MakerWorldView.swift in Sources */,
+				54E51F5267664401F338AC12 /* OfficialStudioHandoff.swift in Sources */,
 				8BA0C07886782E158DB687C1 /* OrganizationViews.swift in Sources */,
 				66FA069C992BF7BF59036768 /* PlateZoomView.swift in Sources */,
 				695244DCF60F8E3673B27467 /* PrintEstimate.swift in Sources */,

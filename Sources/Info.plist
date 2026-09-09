@@ -42,8 +42,8 @@
 			<string>MakerDock model links</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>makerdock</string>
-				<string>plateshelf</string>
+				<string>$(APP_URL_SCHEME)</string>
+				<string>$(LEGACY_URL_SCHEME)</string>
 			</array>
 		</dict>
 	</array>

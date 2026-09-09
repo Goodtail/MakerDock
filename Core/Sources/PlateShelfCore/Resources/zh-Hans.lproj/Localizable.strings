@@ -105,7 +105,7 @@
 "library.unavailable" = "无法打开模型库。请检查保存位置。";
 "link.downloaded" = "已下载并归档模型";
 "link.register" = "关联到 MakerDock";
-"link.registered" = "已将 MakerWorld 链接关联到 MakerDock";
+"link.registered" = "已恢复MakerDock专用链接关联";
 "link.resolving" = "正在检查已保存的下载和最新文件…";
 "link.restore" = "恢复 Bambu Studio";
 "link.restored" = "已将 MakerWorld 链接恢复为 Bambu Studio";

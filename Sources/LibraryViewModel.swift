@@ -498,7 +498,13 @@ final class LibraryViewModel: ObservableObject {
         try await repository.updateSource(id: item.id, source: source)
         await reload()
     }
+    func openStudioLink(_ url: URL) {
+        OfficialStudioHandoff.open(url, preferredPath: preferences.studioPath) { [weak self] error in
+            Task { @MainActor in if let error { self?.errorMessage = error.localizedDescription } }
+        }
+    }
     func handle(_ url: URL) async {
+        if OfficialStudioHandoff.accepts(url) { openStudioLink(url); return }
         if url.isFileURL { await importFiles([url]); return }
         guard AppIdentity.makerWorldCaptureEnabled else { errorMessage = L("integration.unavailable"); return }
         await acquireWork(); defer { releaseWork() }
@@ -531,15 +537,19 @@ final class LibraryViewModel: ObservableObject {
         if panel.runModal() == .OK, let url = panel.url { preferences.archivePath = url.path; archiveSignatures = [:]; savePreferences(); Task { await scanStudioInbox() } }
     }
     func registerLinks() {
-        guard AppIdentity.makerWorldCaptureEnabled else { return }
-        NSWorkspace.shared.setDefaultApplication(at: Bundle.main.bundleURL, toOpenURLsWithScheme: "bambustudioopen") { [weak self] error in
-            Task { @MainActor in if let error { self?.errorMessage = error.localizedDescription } else { self?.statusMessage = L("link.registered") } }
+        for scheme in AppIdentity.linkSchemes(for: Bundle.main.bundleIdentifier ?? "") {
+            NSWorkspace.shared.setDefaultApplication(at: Bundle.main.bundleURL, toOpenURLsWithScheme: scheme) { [weak self] error in
+                Task { @MainActor in if let error { self?.errorMessage = error.localizedDescription } else { self?.statusMessage = L("link.registered") } }
+            }
         }
     }
     func restoreStudioLinks() {
-        guard let officialStudio = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.bambulab.bambu-studio") else { errorMessage = L("studio.missing"); return }
-        NSWorkspace.shared.setDefaultApplication(at: officialStudio, toOpenURLsWithScheme: "bambustudioopen") { [weak self] error in
-            Task { @MainActor in if let error { self?.errorMessage = error.localizedDescription } else { self?.statusMessage = L("link.restored") } }
+        guard let studio = NSWorkspace.shared.urlForApplication(withBundleIdentifier: OfficialStudioHandoff.bundleIdentifier),
+              Bundle(url: studio)?.bundleIdentifier == OfficialStudioHandoff.bundleIdentifier else { errorMessage = L("studio.missing"); return }
+        for scheme in OfficialStudioHandoff.schemes {
+            NSWorkspace.shared.setDefaultApplication(at: studio, toOpenURLsWithScheme: scheme) { [weak self] error in
+                Task { @MainActor in if let error { self?.errorMessage = error.localizedDescription } else { self?.statusMessage = L("link.restored") } }
+            }
         }
     }
 }
