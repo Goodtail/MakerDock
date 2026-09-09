@@ -26,6 +26,12 @@ Mark a model complete and save the prefilled duration, or adjust it. Add filamen
 
 ![Print completion with separate duration, filament, and notes](Docs/screenshots/en/print-record.png)
 
+### Plan the next prints
+
+Add models to **Print Queue**, drag them into order, and set a start time, available hours, and changeover time. See which prints fit, or move the models that fit to the front. Saved estimates fill the schedule; enter your own time when needed. Record a completed print right from the queue to remove it and keep its history. The library also sorts by shortest or longest print time.
+
+This is a plan you manage yourself, based on whole-model estimates. MakerDock does not monitor the printer or start jobs automatically.
+
 ### Organize a whole batch
 
 Select several models in grid or list view to categorize, favorite, mark complete, or move to Trash. Restore them with their notes and records intact. Bulk completion keeps each model's own time and filament suggestions; you can add a shared note.
