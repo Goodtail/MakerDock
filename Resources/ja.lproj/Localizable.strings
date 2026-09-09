@@ -105,7 +105,7 @@
 "library.unavailable" = "ライブラリを開けませんでした。保存先を確認してください。";
 "link.downloaded" = "モデルをダウンロードして保管しました";
 "link.register" = "MakerDockに接続";
-"link.registered" = "MakerWorldのリンクをMakerDockに接続しました";
+"link.registered" = "MakerDock専用リンクの関連付けを復元しました";
 "link.resolving" = "保存済みダウンロードと最新ファイルを確認中…";
 "link.restore" = "Bambu Studioに戻す";
 "link.restored" = "MakerWorldのリンクをBambu Studioに戻しました";

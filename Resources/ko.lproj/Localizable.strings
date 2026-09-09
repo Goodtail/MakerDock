@@ -105,7 +105,7 @@
 "library.unavailable" = "보관함을 열지 못했습니다. 저장 위치를 확인해주세요.";
 "link.downloaded" = "모델을 다운로드해 보관했습니다";
 "link.register" = "MakerDock으로 연결";
-"link.registered" = "MakerWorld 열기 링크를 MakerDock으로 연결했습니다";
+"link.registered" = "MakerDock 전용 링크 연결을 복구했습니다";
 "link.resolving" = "보관한 다운로드와 최신 파일 확인 중…";
 "link.restore" = "Bambu Studio로 되돌리기";
 "link.restored" = "MakerWorld 열기 링크를 Bambu Studio로 되돌렸습니다";

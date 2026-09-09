@@ -105,7 +105,7 @@
 "library.unavailable" = "Couldn’t open the library. Check its location.";
 "link.downloaded" = "Downloaded and archived the model";
 "link.register" = "Connect to MakerDock";
-"link.registered" = "MakerWorld links now open in MakerDock";
+"link.registered" = "MakerDock app links have been restored";
 "link.resolving" = "Checking saved downloads and the latest file…";
 "link.restore" = "Restore Bambu Studio";
 "link.restored" = "MakerWorld links now open in Bambu Studio";

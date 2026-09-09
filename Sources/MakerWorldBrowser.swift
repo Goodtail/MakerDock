@@ -223,7 +223,7 @@ final class MakerWorldBrowser: NSObject, ObservableObject, WKNavigationDelegate,
             if trusted(action.sourceFrame) {
                 if AppIdentity.makerWorldCaptureEnabled { receive(url) }
                 else if ["bambustudioopen", "bambustudio"].contains(scheme) {
-                    NSWorkspace.shared.open(url)
+                    model?.openStudioLink(url)
                 }
             }
             return
