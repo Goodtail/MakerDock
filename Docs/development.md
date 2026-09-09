@@ -69,3 +69,9 @@ Version and build numbers are in `Config/Version.xcconfig`. Keep a local commit 
 Adding a model without a valid displayed estimate schedules an isolated official Studio calculation. Jobs run serially, reuse the cache, resume for queued models on launch, and wait for an explicit retry after failure. Results live in `estimates.json`, keyed by model content hash and printer/process/Studio configuration. Cards, the inspector, queue, and print forms share this cache; archive bytes stay unchanged.
 
 A queue entry can carry a manual start timestamp and the duration estimate at that point. Only one entry can be printing, and it stays first when reordering. Planning subtracts elapsed time. An overrun blocks later time slots until the user records completion or returns the item to waiting. These actions send no printer commands and do not claim live status.
+
+## Elapsed time and optional printer status (build 17)
+
+Completion uses the recorded start and editable end timestamp, with both timestamps persisted alongside duration. A shorter estimate cannot replace elapsed time for an active print. Failed work returns to waiting for a retry.
+
+An optional native TLS/MQTT subscriber can receive local printer status after the user supplies an IP, serial, and LAN access code in Settings. It reads public trust anchors from official Studio and stores the code in Keychain. Queue association is explicit, stale or paused jobs block scheduling, and completion still requires confirmation. See [printer connection](printer-connection.md) for setup, data boundaries, firmware caveats, and test coverage.

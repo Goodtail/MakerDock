@@ -1,6 +1,8 @@
 # MakerWorld integration status
 
-Source status for 0.1.1 build 16, September 9, 2026. The build 16 changes are local; the published 0.1.1 DMG is build 15.
+Source status for 0.1.1 build 17, September 9, 2026. Build 16 and 17 changes are local; the published 0.1.1 DMG is build 15.
+
+Build 17 adds elapsed-time completion records and an optional local printer status connection. It uses a user-entered local address, serial and LAN access code, requires no Bambu cloud account, and sends no printer commands. Actual-device compatibility remains to be tested with the user's connection details. See [printer setup and limitations](printer-connection.md).
 
 ## Available in the public DMG
 
