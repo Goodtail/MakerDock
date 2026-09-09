@@ -27,7 +27,7 @@ struct ItemInspector: View {
                 VStack(alignment: .leading, spacing: Design.small) {
                     Button { model.openInStudio(item) } label: { Label(L("studio.open"), systemImage: "arrow.up.forward.app").frame(maxWidth: .infinity).padding(.vertical, Design.tiny) }
                     .buttonStyle(.borderedProminent).tint(Design.action).foregroundStyle(Color.white)
-                HStack {
+                VStack(alignment: .leading, spacing: Design.small) {
                     if model.isPrinted(item) { Label(L("출력 완료"), systemImage: "checkmark.circle.fill").foregroundStyle(Design.accent).font(Design.value) }
                     Button { showRecord = true } label: {
                         Label(model.isPrinted(item) ? L("출력 기록 추가") : L("출력 완료로 표시"), systemImage: model.isPrinted(item) ? "plus" : "checkmark.circle")
@@ -49,9 +49,8 @@ struct ItemInspector: View {
                 Divider()
                 sourceSection
                 Divider()
-                HStack(alignment: .firstTextBaseline) {
+                VStack(alignment: .leading, spacing: Design.small) {
                     Text(L("예상 출력 시간")).font(Design.value)
-                    Spacer()
                     EstimateLabel(estimate: model.displayedEstimate(item))
                 }
                 printerEstimateSection
@@ -61,7 +60,7 @@ struct ItemInspector: View {
                     ForEach(Array(item.plates.enumerated()), id: \.element.id) { index, plate in
                         Button { zoomPlate = plate } label: {
                             HStack(spacing: Design.medium) {
-                                ModelImage(url: model.imageURL(item, plate: plate)).frame(width: Design.plateThumbnail, height: Design.plateThumbnail)
+                                ModelImage(url: model.imageURL(item, plate: plate)).frame(width: 64, height: 64)
                                 VStack(alignment: .leading, spacing: Design.tiny) {
                                     Text(plateTitle(plate)).font(Design.value).lineLimit(2)
                                     EstimateLabel(estimate: model.displayedEstimate(item, plate: plate), missing: L("개별 시간 미제공"))

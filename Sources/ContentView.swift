@@ -12,21 +12,24 @@ struct ContentView: View {
     var body: some View {
         NavigationSplitView {
             sidebar
-                .navigationSplitViewColumnWidth(min: Design.sidebar, ideal: Design.sidebar)
+                .navigationSplitViewColumnWidth(min: Design.sidebar, ideal: Design.sidebar, max: 260)
         } detail: {
             if model.filter.isBrowser {
                 MakerWorldView(model: model, browser: browser)
             } else if model.filter == .queue {
                 PrintQueueView(model: model)
             } else {
-                HSplitView {
-                    library.frame(minWidth: Design.cardMin * 2)
-                    if !model.selectionMode, let item = model.selected {
-                        Group {
-                            if item.isTrashed { TrashInspector(model: model, item: item) }
-                            else { ItemInspector(model: model, item: item).id(item.id) }
-                        }.frame(minWidth: Design.inspector, idealWidth: Design.inspector, maxWidth: Design.inspector + Design.hero)
-                    }
+                GeometryReader { geometry in
+                    HStack(spacing: 0) {
+                        library.frame(maxWidth: .infinity, maxHeight: .infinity)
+                        if !model.selectionMode, let item = model.selected {
+                            Divider()
+                            Group {
+                                if item.isTrashed { TrashInspector(model: model, item: item) }
+                                else { ItemInspector(model: model, item: item).id(item.id) }
+                            }.frame(width: min(360, max(280, geometry.size.width * 0.36)))
+                        }
+                    }.frame(width: geometry.size.width, height: geometry.size.height)
                 }
             }
         }
@@ -142,28 +145,37 @@ struct ContentView: View {
             }
         }.tag(filter).padding(.vertical, Design.tiny)
     }
+    private var libraryTitle: some View {
+        VStack(alignment: .leading, spacing: Design.small) {
+            Text(model.filterTitle).font(Design.title)
+            Text(String(format: L("library.count"), model.visibleItems.count)).font(Design.body).foregroundStyle(Design.secondary)
+        }.fixedSize(horizontal: false, vertical: true)
+    }
+    private var libraryTools: some View {
+        HStack(spacing: Design.small) {
+            Button(model.selectionMode ? L("done") : L("batch.select")) {
+                if model.selectionMode { model.endSelection() } else { model.selectionMode = true }
+            }.disabled(model.isWorking)
+            Menu {
+                Picker(L("sort"), selection: $model.sort) {
+                    ForEach(ShelfSort.allCases, id: \.self) { order in Text(order.title).tag(order) }
+                }
+            } label: { Label(model.sort.title, systemImage: "arrow.up.arrow.down") }.menuStyle(.borderlessButton)
+            Spacer(minLength: 0)
+            Picker(L("view.mode"), selection: $model.listMode) {
+                Image(systemName: "square.grid.2x2").tag(false)
+                Image(systemName: "list.bullet").tag(true)
+            }.pickerStyle(.segmented).labelsHidden().frame(width: 76)
+        }
+    }
     private var library: some View {
         VStack(spacing: 0) {
             VStack(alignment: .leading, spacing: Design.regular) {
-                HStack(alignment: .top) {
-                    VStack(alignment: .leading, spacing: Design.small) {
-                        Text(model.filterTitle).font(Design.title)
-                        Text(String(format: L("library.count"), model.visibleItems.count)).font(Design.body).foregroundStyle(Design.secondary)
-                    }
-                    Spacer()
-                    Button(model.selectionMode ? L("done") : L("batch.select")) {
-                        if model.selectionMode { model.endSelection() } else { model.selectionMode = true }
-                    }.disabled(model.isWorking)
-                    Menu {
-                        Picker(L("sort"), selection: $model.sort) {
-                            ForEach(ShelfSort.allCases, id: \.self) { order in Text(order.title).tag(order) }
-                        }
-                    } label: { Label(model.sort.title, systemImage: "arrow.up.arrow.down") }.menuStyle(.borderlessButton).fixedSize()
-                    Picker(L("view.mode"), selection: $model.listMode) {
-                        Image(systemName: "square.grid.2x2").tag(false)
-                        Image(systemName: "list.bullet").tag(true)
-                    }.pickerStyle(.segmented).labelsHidden().frame(width: Design.hero + Design.large)
+                ViewThatFits(in: .horizontal) {
+                    HStack(alignment: .top, spacing: Design.regular) { libraryTitle; Spacer(minLength: Design.small); libraryTools }
+                    VStack(alignment: .leading, spacing: Design.medium) { libraryTitle; libraryTools }
                 }
+
                 if model.filter == .trash {
                     Text(L("MakerDock 보관 파일을 휴지통에 보관합니다. 복원하면 분류·메모·출력 기록도 돌아옵니다. 외부 원본은 유지됩니다."))
                         .font(Design.caption).foregroundStyle(Design.secondary)

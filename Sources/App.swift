@@ -18,6 +18,7 @@ struct PlateShelfApp: App {
                 .onChange(of: appearance) { ShelfAppearance.apply($0) }
                 .onOpenURL { url in Task { await model.handle(url) } }
         }
+        .windowResizability(.contentMinSize)
         .defaultSize(width: Design.windowWidth, height: Design.windowHeight)
         .commands {
             CommandGroup(replacing: .newItem) {

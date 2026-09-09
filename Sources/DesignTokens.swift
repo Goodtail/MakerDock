@@ -35,7 +35,7 @@ enum Design {
     static let tiny: CGFloat = 4, small: CGFloat = 8, medium: CGFloat = 12, regular: CGFloat = 16, large: CGFloat = 24, xlarge: CGFloat = 32, jumbo: CGFloat = 48, hero: CGFloat = 64
     static let cardRadius: CGFloat = 12, imageRadius: CGFloat = 8, controlRadius: CGFloat = 6
     static let sidebar: CGFloat = 216, inspector: CGFloat = 320, imageHeight: CGFloat = 160, cardMin: CGFloat = 208, cardMax: CGFloat = 280
-    static let windowMinWidth: CGFloat = 1040, windowMinHeight: CGFloat = 680, windowWidth: CGFloat = 1320, windowHeight: CGFloat = 860
+    static let windowMinWidth: CGFloat = 860, windowMinHeight: CGFloat = 620, windowWidth: CGFloat = 1320, windowHeight: CGFloat = 860
     static let plateThumbnail: CGFloat = 80, zoomWidth: CGFloat = 800, zoomHeight: CGFloat = 660
 }
 func timeText(_ seconds: Double?) -> String {
