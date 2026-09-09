@@ -16,6 +16,8 @@ struct ContentView: View {
         } detail: {
             if model.filter.isBrowser {
                 MakerWorldView(model: model, browser: browser)
+            } else if model.filter == .queue {
+                PrintQueueView(model: model)
             } else {
                 HSplitView {
                     library.frame(minWidth: Design.cardMin * 2)
@@ -95,6 +97,7 @@ struct ContentView: View {
                     sideRow(.makerWorldCollections, icon: "square.stack")
                 }
                 Section(L("sidebar.library")) {
+                    sideRow(.queue, icon: "list.number", count: model.printQueue.count)
                     sideRow(.all, icon: "square.grid.2x2", count: model.items.count)
                     sideRow(.favorites, icon: "star", count: model.items.filter(\.favorite).count)
                     sideRow(.printed, icon: "checkmark.circle", count: model.printedCount)
@@ -235,6 +238,10 @@ struct ContentView: View {
         } else {
         CategoryMenu(model: model, item: item)
         Divider()
+        Button(model.isQueued(item) ? L("queue.show") : L("queue.add")) {
+            if model.isQueued(item) { model.filter = .queue }
+            else { Task { await model.enqueue([item]) } }
+        }.disabled(model.isWorking)
         Button(L("studio.open")) { model.openInStudio(item) }
         Button(model.isPrinted(item) ? L("출력 기록 추가…") : L("출력 완료로 표시…")) { recordItem = item }.disabled(model.isWorking)
         Button(item.favorite ? L("favorite.remove") : L("favorite.add")) { model.toggleFavorite(item) }

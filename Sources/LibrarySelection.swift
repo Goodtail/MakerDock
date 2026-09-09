@@ -95,6 +95,7 @@ struct LibrarySelectionBar: View {
                         Button(L("batch.uncategorized")) { run(.category(nil)) }
                         ForEach(model.categories) { category in Button(category.name) { run(.category(category.id)) } }
                     } label: { Label(L("batch.move"), systemImage: "folder") }
+                    Button { Task { await model.enqueue(model.selectedItems) } } label: { Label(L("queue.add"), systemImage: "text.badge.plus") }
                     Button { showPrint = true } label: { Label(L("batch.complete"), systemImage: "checkmark.circle") }
                     Menu {
                         Button(L("favorite.add")) { run(.favorite(true)) }

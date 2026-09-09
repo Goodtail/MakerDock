@@ -29,7 +29,7 @@ struct PlateShelfApp: App {
                     if model.selectionMode { Task { _ = await model.applyBatch(.trash, ids: Set(model.selectedItems.map(\.id))) } }
                     else if let item = model.selected { Task { await model.trash(item) } }
                 }.keyboardShortcut(.delete, modifiers: .command)
-                    .disabled(model.isWorking || model.filter.isBrowser || (model.selectionMode ? model.selectedItems.isEmpty : model.selected == nil) || model.filter == .trash)
+                    .disabled(model.isWorking || model.filter.isBrowser || (model.selectionMode ? model.selectedItems.isEmpty : model.selected == nil) || model.filter == .trash || model.filter == .queue)
             }
             CommandGroup(after: .toolbar) {
                 Button(L("refresh")) {
