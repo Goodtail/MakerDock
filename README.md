@@ -32,6 +32,8 @@ Add models to **Print Queue**, drag them into order, and set a start time, avail
 
 This is a plan you manage yourself, based on whole-model estimates. MakerDock does not monitor the printer or start jobs automatically.
 
+![Print planning with available time and ordered models](Docs/screenshots/en/queue.png)
+
 ### Organize a whole batch
 
 Select several models in grid or list view to categorize, favorite, mark complete, or move to Trash. Restore them with their notes and records intact. Bulk completion keeps each model's own time and filament suggestions; you can add a shared note.

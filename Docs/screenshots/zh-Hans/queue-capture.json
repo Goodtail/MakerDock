@@ -1,0 +1,10 @@
+{
+  "appVersion": "0.1.1",
+  "build": "15",
+  "sourceCommit": "17cb47c",
+  "locale": "zh-Hans",
+  "screen": "queue",
+  "capture": "Native MakerDock window via CUA",
+  "data": "Isolated original demo library; illustrative estimates",
+  "capturedOn": "2026-09-09"
+}

@@ -5,7 +5,7 @@ import { ArrowDownIcon, ArrowUpRightIcon, CaretDownIcon, GithubLogoIcon, GlobeIc
 import { Appearance } from "@/components/preferences";
 import { ProductTour } from "@/components/product-tour";
 import { Screenshot } from "@/components/screenshot";
-import { assetLocale, content, downloadUrl, isLocale, localeNames, localePath, locales, siteUrl, sourceUrl } from "@/lib/content";
+import { assetLocale, content, downloadUrl, isLocale, localeNames, localePath, locales, siteUrl, sourceUrl, releaseVersion } from "@/lib/content";
 export const dynamicParams = false;
 export function generateStaticParams() { return locales.map(lang => ({ lang })); }
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
@@ -24,7 +24,7 @@ export default async function Page({ params }: { params: Promise<{ lang: string 
   const { lang } = await params;
   if (!isLocale(lang)) notFound();
   const c = content[lang];
-  const schema = { "@context": "https://schema.org", "@type": "SoftwareApplication", name: "MakerDock", applicationCategory: "UtilitiesApplication", operatingSystem: "macOS 13 or later", softwareVersion: "0.1.0", description: c.description, url: siteUrl, downloadUrl, license: sourceUrl + "/blob/main/LICENSE", offers: { "@type": "Offer", price: "0", priceCurrency: "USD" }, author: { "@type": "Organization", name: "Goodtail", url: "https://goodtail.app" } };
+  const schema = { "@context": "https://schema.org", "@type": "SoftwareApplication", name: "MakerDock", applicationCategory: "UtilitiesApplication", operatingSystem: "macOS 13 or later", softwareVersion: releaseVersion, description: c.description, url: siteUrl, downloadUrl, license: sourceUrl + "/blob/main/LICENSE", offers: { "@type": "Offer", price: "0", priceCurrency: "USD" }, author: { "@type": "Organization", name: "Goodtail", url: "https://goodtail.app" } };
   const download = <><span>{c.nav.download}</span><ArrowDownIcon size={19} weight="bold" /></>;
   return <>
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema).replace(/</g, "\\u003c") }} />
@@ -74,7 +74,7 @@ export default async function Page({ params }: { params: Promise<{ lang: string 
         <h2 id="download-title">{c.ending.title}</h2><p>{c.ending.body}</p>
         <a className="button" href={downloadUrl}>{download}</a>
         <small>{c.ending.compatibility}</small>
-        <a className="release-link" href={sourceUrl + "/releases/tag/v0.1.0"}>{c.ending.release}<ArrowUpRightIcon size={14} /></a>
+        <a className="release-link" href={sourceUrl + "/releases/tag/v" + releaseVersion}>{c.ending.release}<ArrowUpRightIcon size={14} /></a>
       </section>
     </main>
     <footer className="site-footer container">

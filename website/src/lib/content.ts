@@ -6,14 +6,15 @@ export const assetLocale = (locale: Locale) => locale === "zh-CN" ? "zh-Hans" : 
 export function isLocale(value: string): value is Locale { return locales.includes(value as Locale); }
 export const siteUrl = "https://makerdock.goodtail.app";
 export const sourceUrl = "https://github.com/Goodtail/MakerDock";
-export const downloadUrl = sourceUrl + "/releases/download/v0.1.0/MakerDock-0.1.0-universal.dmg";
+export const releaseVersion = "0.1.1";
+export const downloadUrl = `${sourceUrl}/releases/download/v${releaseVersion}/MakerDock-${releaseVersion}-universal.dmg`;
 
 export type Copy = {
   title: string; description: string; skip: string;
   nav: { tour: string; faq: string; download: string; source: string; language: string; theme: string; light: string; dark: string; system: string };
   hero: { line1: string; line2: string; body: string; alt: string; caption: string; enlarge: string };
   intro: { title: string; items: { title: string; body: string }[] };
-  tour: { title: string; body: string; label: string; enlarge: string; close: string; demo: string; tabs: { id: "plates" | "print-record" | "selection"; label: string; title: string; body: string; detail: string; alt: string }[] };
+  tour: { title: string; body: string; label: string; enlarge: string; close: string; demo: string; tabs: { id: "plates" | "print-record" | "selection" | "queue"; label: string; title: string; body: string; detail: string; alt: string }[] };
   local: { label: string; title: string; body: string; items: { title: string; body: string }[] };
   faq: { title: string; items: { question: string; answer: string }[] };
   ending: { title: string; body: string; compatibility: string; release: string };
@@ -36,6 +37,7 @@ export const content: Record<Locale, Copy> = {
       { id: "plates", label: "See every plate", title: "The whole project, at a glance.", body: "Three plates or thirteen, see them together. Open a preview for a closer look, with saved time and material estimates beside it.", detail: "Saved MakerWorld estimates are shown first when available. Stored 3MF estimates fill in the gaps.", alt: "MakerDock displaying multiple plates and a large preview of a modular desk tray" },
       { id: "print-record", label: "Keep a print record", title: "A little note goes a long way.", body: "Mark a print complete and keep its duration, filament, and notes. The saved estimate is filled in, ready to accept or adjust.", detail: "Choose to move the file to your completed folder when you save the record.", alt: "Print record form with duration, filament weight, notes, and an option to move the completed file" },
       { id: "selection", label: "Tidy up in batches", title: "A growing collection. Still in order.", body: "Select several models to categorize, mark complete, or move to Trash together. Use favorites and tags to find them again.", detail: "Changed your mind? Restore models and their records from the in-app Trash.", alt: "Multiple 3D models selected in MakerDock with batch organization actions" },
+      { id: "queue", label: "Plan the next prints", title: "What fits before you head out?", body: "Queue your models, set their order, and enter the time you have. Include a pause between prints, then see what fits. Record each finished print from the same list.", detail: "Use saved estimates or enter a planning time yourself. The queue stays on your Mac; it does not monitor or control your printer.", alt: "MakerDock print queue with ordered models, available time, estimated time slots, and completion buttons" },
     ] },
     local: { label: "Your files, on your Mac", title: "A library you can keep.", body: "No MakerDock account to set up. No library to upload. Just your files and the history you add to them.", items: [
       { title: "Made for your existing workflow", body: "Open an archived model as a working copy in the official Bambu Studio. Your saved original stays in your library." },
@@ -66,6 +68,7 @@ export const content: Record<Locale, Copy> = {
       { id: "plates", label: "플레이트 한눈에 보기", title: "여러 판이어도, 한눈에.", body: "세 판이든 열세 판이든 함께 확인하세요. 미리보기를 누르면 크게 볼 수 있고, 저장된 시간과 재료 예상치도 살펴볼 수 있어요.", detail: "저장된 MakerWorld 예상치가 있으면 먼저 보여주고, 없으면 3MF에 담긴 정보를 사용합니다.", alt: "여러 플레이트와 확대 미리보기를 보여주는 MakerDock" },
       { id: "print-record", label: "출력 기록 남기기", title: "다음 출력을 돕는 짧은 메모.", body: "출력 완료를 표시하면서 시간과 필라멘트, 메모를 남기세요. 예상 시간은 미리 채워두니 그대로 저장하거나 수정하면 됩니다.", detail: "기록을 저장할 때 파일을 출력 완료 폴더로 옮길 수도 있어요.", alt: "출력시간, 필라멘트 사용량, 메모와 완료 폴더 이동 옵션이 있는 기록 화면" },
       { id: "selection", label: "여러 모델 함께 정리", title: "파일이 늘어도, 정리는 가볍게.", body: "그리드에서 여러 모델을 골라 한 번에 분류하고, 완료 처리하거나 휴지통으로 옮기세요. 즐겨찾기와 태그로 다시 찾기도 쉬워져요.", detail: "잘못 지웠다면 앱 안의 휴지통에서 모델과 기록을 함께 복원하세요.", alt: "모델 여러 개를 선택해 일괄 정리하는 MakerDock 화면" },
+      { id: "queue", label: "출력 계획 세우기", title: "나가기 전까지, 뭐부터 출력할까?", body: "출력할 모델을 줄 세우고 사용 가능한 시간을 넣어보세요. 출력 사이의 준비 시간까지 계산해 어디까지 가능한지 보여줍니다. 끝난 출력은 같은 목록에서 바로 기록하세요.", detail: "저장된 예상 시간을 쓰거나 계획용 시간을 직접 넣을 수 있습니다. 대기열은 Mac에 저장되며 프린터를 감지하거나 제어하지 않습니다.", alt: "가용 시간과 모델별 예상 일정, 완료 기록 버튼이 보이는 MakerDock 출력 대기열" },
     ] },
     local: { label: "내 파일은 내 Mac에", title: "오래 곁에 둘 보관함.", body: "MakerDock 계정을 만들거나 보관함을 업로드할 필요 없어요. 내 파일과 직접 남긴 기록을 Mac에 보관합니다.", items: [
       { title: "쓰던 방식 그대로 이어서", body: "보관한 모델을 공식 Bambu Studio에서 작업용 사본으로 열 수 있어요. 원본은 보관함에 그대로 남습니다." },
@@ -96,6 +99,7 @@ export const content: Record<Locale, Copy> = {
       { id: "plates", label: "プレートを一覧で", title: "プロジェクト全体を、ひと目で。", body: "3枚でも13枚でも、プレートをまとめて確認。プレビューを拡大して、保存済みの時間や素材の見積もりも確認できます。", detail: "保存済みのMakerWorld予想値があれば優先し、なければ3MF内の情報を使います。", alt: "複数のプレートと拡大プレビューを表示したMakerDock" },
       { id: "print-record", label: "プリントを記録", title: "小さなメモが、次のヒントに。", body: "プリントを完了にして、時間、フィラメント、メモを保存。予想時間は入力済みなので、そのまま保存することも修正することもできます。", detail: "記録の保存時に、ファイルをプリント済みフォルダへ移動することもできます。", alt: "時間、フィラメント、メモ、フォルダへの移動を設定するプリント記録画面" },
       { id: "selection", label: "まとめて整理", title: "コレクションが増えても、すっきり。", body: "複数のモデルを選び、分類、完了の記録、ゴミ箱への移動をまとめて。お気に入りやタグで、後から探すのも簡単です。", detail: "間違えて消しても、アプリ内のゴミ箱からモデルと記録を一緒に戻せます。", alt: "複数のモデルを選択してまとめて整理するMakerDock" },
+      { id: "queue", label: "次のプリントを計画", title: "出かけるまでに、何が作れる？", body: "モデルをキューに並べ、使える時間を入力。プリント間の準備時間も含めて、どこまで収まるか確認できます。完了したプリントは、その場で記録できます。", detail: "保存済みの予想時間を使うほか、計画用の時間を手入力できます。キューはMacに保存され、プリンターの監視や操作は行いません。", alt: "順序、使える時間、モデルごとの予定、完了記録ボタンが並ぶMakerDockのプリントキュー" },
     ] },
     local: { label: "ファイルは、自分のMacに", title: "手元に残るライブラリ。", body: "MakerDockのアカウント作成も、ライブラリのアップロードも不要。ファイルと記録をMacに保存します。", items: [
       { title: "いつもの作業を、そのまま", body: "保存したモデルを作業用コピーとして公式Bambu Studioで開けます。元のファイルはライブラリに残ります。" },
@@ -126,6 +130,7 @@ export const content: Record<Locale, Copy> = {
       { id: "plates", label: "看清每块打印板", title: "整个项目，一眼看清。", body: "三板也好，十三板也好，都能一起查看。点击预览即可放大，还能查看已保存的时间和材料估算。", detail: "优先显示已保存的MakerWorld预计值，没有时则读取3MF内的信息。", alt: "展示多块打印板和放大预览的MakerDock" },
       { id: "print-record", label: "记下打印结果", title: "一条备注，下次就用得上。", body: "标记打印完成，记录用时、耗材和备注。预计时间已经填好，可以直接保存，也可以修改。", detail: "保存记录时，还可以将文件移至已完成文件夹。", alt: "包含打印用时、耗材重量、备注及文件移动选项的记录界面" },
       { id: "selection", label: "多个模型一起整理", title: "收藏多了，也能井井有条。", body: "多选模型，批量分类、标记完成或移至废纸篓。收藏和标签让下次查找更方便。", detail: "误删了？可以从应用内的废纸篓恢复模型和相关记录。", alt: "在MakerDock网格中多选模型并批量整理" },
+      { id: "queue", label: "安排打印计划", title: "出门之前，还能打印什么？", body: "将模型排好顺序，输入可用时间。加上每次打印之间的准备时间，看看哪些模型能按时完成。打印结束后，直接在队列中记录。", detail: "使用已保存的预估时间，也可以手动输入计划时长。队列保存在Mac上，不会监控或控制打印机。", alt: "MakerDock打印队列，显示模型顺序、可用时间、预估时段和完成记录按钮" },
     ] },
     local: { label: "你的文件，留在你的Mac", title: "一直留在手边的模型库。", body: "不用注册MakerDock账号，也不用上传模型库。文件和你添加的记录，都保存在Mac上。", items: [
       { title: "接着用你熟悉的工具", body: "在官方Bambu Studio中打开已归档模型的工作副本。原始文件仍保留在模型库中。" },
