@@ -421,6 +421,6 @@
 "queue.timeHint" = "This estimate is used only in the queue. Saved MakerWorld and 3MF information stays as it is.";
 "queue.useSaved" = "Use saved estimate: %@";
 "queue.save" = "Save Duration";
-"queue.plates" = "%d plates";
+"queue.plates" = "Plates: %d";
 "sort.shortest" = "Shortest Print Time";
 "sort.longest" = "Longest Print Time";
