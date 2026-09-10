@@ -549,3 +549,18 @@
 "printer.error.protocolError" = "暂不支持此状态响应，已有队列记录将保留。";
 
 "printer.error.keychain" = "无法在钥匙串中读取或保存访问码，请重新输入。";
+
+/* Fusion handoff */
+"fusion.open" = "在 Fusion 中打开";
+"fusion.preparing" = "正在准备 Fusion 模型…";
+"fusion.hint" = "将几何形状作为 STL 网格打开，不包含颜色、打印设置或设计历史。保管的原文件会保留。";
+"fusion.choose" = "选择要在 Fusion 中编辑的模型";
+"fusion.missing" = "未找到 Autodesk Fusion。请安装并启动一次 Fusion，然后重试。";
+"fusion.studioMissing" = "请在设置中选择官方 Bambu Studio 应用，以生成 Fusion 网格。";
+"fusion.invalidMesh" = "无法读取 Fusion 网格文件。请在 Bambu Studio 中检查模型。";
+"fusion.sourceChanged" = "准备网格时文件发生了变化。请重试。";
+"fusion.timeout" = "模型准备超过了三分钟。请从 Bambu Studio 仅导出所需模型的 STL 文件。";
+"fusion.exportFailed" = "无法将此文件转换为 Fusion 模型。请在 Bambu Studio 中检查模型。";
+"fusion.noGeometry" = "此文件不包含可编辑的模型几何形状。请导入原始项目 3MF，而非切片文件。";
+"fusion.tooLarge" = "模型数量过多。请从 Bambu Studio 仅导出所需模型的 STL 文件。";
+"fusion.sent" = "已请求在 Fusion 中打开。几何形状将作为网格导入。";

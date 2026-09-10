@@ -75,3 +75,11 @@ A queue entry can carry a manual start timestamp and the duration estimate at th
 Completion uses the recorded start and editable end timestamp, with both timestamps persisted alongside duration. A shorter estimate cannot replace elapsed time for an active print. Failed work returns to waiting for a retry.
 
 An optional native TLS/MQTT subscriber can receive local printer status after the user supplies an IP, serial, and LAN access code in Settings. It reads public trust anchors from official Studio and stores the code in Keychain. Queue association is explicit, stale or paused jobs block scheduling, and completion still requires confirmation. See [printer connection](printer-connection.md) for setup, data boundaries, firmware caveats, and test coverage.
+
+## Fusion handoff (build 18)
+
+`FusionMeshExporter` runs the installed official Studio's `--export-stl` operation with isolated `--datadir` and output folders. It sends no printer command and does not slice. Validated binary STL outputs are cached under `FusionExports`, keyed by the original bytes and Studio build. A manifest verifies all parts and their hashes before reuse. The original archive and Studio working copy are never edited.
+
+`FusionHandoff` locates the real `com.autodesk.fusion360` app, including Autodesk webdeploy installations, and requests an independent design using the [documented open protocol](https://help.autodesk.com/cloudhelp/ENU/Fusion-360-API/files/OpeningFilesFromWebPage_UM.htm). STL is a documented protocol input; 3MF is not. Filament assignments, colors, print settings and CAD history are not transferred. Fusion controls the import and save process; a successful macOS handoff confirms delivery, not completion of Fusion's import. Finish an active Fusion command or dismiss its modal dialog if it is preventing a new document from opening.
+
+The actual installed Studio is used by the optional mesh-export integration test; it skips when Studio is absent. Temporary test libraries and original cube fixtures do not touch the user's library or Fusion designs.

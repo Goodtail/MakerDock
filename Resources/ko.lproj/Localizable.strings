@@ -549,3 +549,18 @@
 "printer.error.protocolError" = "지원하지 않는 상태 응답입니다. 기존 대기열 기록은 유지됩니다.";
 
 "printer.error.keychain" = "저장된 액세스 코드를 읽거나 저장하지 못했습니다. 코드를 다시 입력해 주세요.";
+
+/* Fusion handoff */
+"fusion.open" = "Fusion으로 열기";
+"fusion.preparing" = "Fusion용 모델 준비 중…";
+"fusion.hint" = "형상을 STL 메시로 열며 색상·출력 설정·설계 이력은 포함하지 않습니다. 보관한 원본은 유지됩니다.";
+"fusion.choose" = "Fusion에서 편집할 모델 선택";
+"fusion.missing" = "Autodesk Fusion을 찾지 못했습니다. Fusion을 설치하고 한 번 실행한 뒤 다시 눌러 주세요.";
+"fusion.studioMissing" = "Fusion용 메시를 만들려면 설정에서 공식 Bambu Studio 앱을 선택해 주세요.";
+"fusion.invalidMesh" = "Fusion용 메시 파일을 읽을 수 없습니다. Bambu Studio에서 모델을 확인해 주세요.";
+"fusion.sourceChanged" = "준비하는 동안 파일이 변경되었습니다. 다시 시도해 주세요.";
+"fusion.timeout" = "모델 준비가 3분을 넘었습니다. Bambu Studio에서 필요한 모델만 STL로 내보내 주세요.";
+"fusion.exportFailed" = "이 파일에서 Fusion용 모델을 만들지 못했습니다. Bambu Studio에서 모델을 확인해 주세요.";
+"fusion.noGeometry" = "이 파일에는 편집할 모델 형상이 없습니다. 슬라이싱 파일 대신 원본 프로젝트 3MF를 가져와 주세요.";
+"fusion.tooLarge" = "모델 수가 너무 많습니다. Bambu Studio에서 필요한 모델만 STL로 내보내 주세요.";
+"fusion.sent" = "Fusion에 열기를 요청했습니다. 형상은 메시로 가져옵니다.";

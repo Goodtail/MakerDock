@@ -549,3 +549,18 @@
 "printer.error.protocolError" = "未対応の状態応答です。既存の待機リストの記録は保持されます。";
 
 "printer.error.keychain" = "キーチェーンのアクセスコードを読み書きできません。コードを再入力してください。";
+
+/* Fusion handoff */
+"fusion.open" = "Fusionで開く";
+"fusion.preparing" = "Fusion用モデルを準備中…";
+"fusion.hint" = "形状をSTLメッシュとして開きます。色・印刷設定・設計履歴は含まれません。保存した元のファイルは保持されます。";
+"fusion.choose" = "Fusionで編集するモデルを選択";
+"fusion.missing" = "Autodesk Fusionが見つかりません。インストールして一度起動してから、もう一度お試しください。";
+"fusion.studioMissing" = "Fusion用メッシュを作成するには、設定で公式Bambu Studioアプリを選択してください。";
+"fusion.invalidMesh" = "Fusion用メッシュを読み込めません。Bambu Studioでモデルを確認してください。";
+"fusion.sourceChanged" = "準備中にファイルが変更されました。もう一度お試しください。";
+"fusion.timeout" = "モデルの準備に3分以上かかりました。Bambu Studioで必要なモデルだけをSTLに書き出してください。";
+"fusion.exportFailed" = "このファイルをFusion用に変換できませんでした。Bambu Studioでモデルを確認してください。";
+"fusion.noGeometry" = "編集できるモデル形状がありません。スライス済みファイルではなく、元のプロジェクト3MFを取り込んでください。";
+"fusion.tooLarge" = "モデル数が多すぎます。Bambu Studioで必要なモデルだけをSTLに書き出してください。";
+"fusion.sent" = "Fusionに開くよう要求しました。形状はメッシュとして読み込まれます。";

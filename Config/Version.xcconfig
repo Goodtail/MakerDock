@@ -3,4 +3,4 @@
 // Increment only the internal build number for local rebuilds and small fixes.
 // Change MARKETING_VERSION when the user requests a new public version/release.
 MARKETING_VERSION = 0.1.1
-CURRENT_PROJECT_VERSION = 17
+CURRENT_PROJECT_VERSION = 18

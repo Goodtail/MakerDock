@@ -56,6 +56,7 @@ struct ContentView: View {
         }
         .sheet(isPresented: $model.showSettings) { SettingsView(model: model) }
         .sheet(item: $model.categoryEditor) { request in CategoryEditorSheet(model: model, request: request) }
+        .sheet(item: $model.fusionSelection) { selection in FusionSelectionSheet(model: model, selection: selection) }
         .onChange(of: model.filter) { filter in
             model.endSelection(); model.syncSelection()
             if !filter.isBrowser { browser.cancelCollectionsNavigation() }
@@ -255,6 +256,7 @@ struct ContentView: View {
             else { Task { await model.enqueue([item]) } }
         }.disabled(model.isWorking)
         Button(L("studio.open")) { model.openInStudio(item) }
+        Button(L("fusion.open")) { model.openInFusion(item) }.disabled(model.fusionOpeningID != nil || model.isWorking)
         Button(model.isPrinted(item) ? L("출력 기록 추가…") : L("출력 완료로 표시…")) { recordItem = item }.disabled(model.isWorking)
         Button(item.favorite ? L("favorite.remove") : L("favorite.add")) { model.toggleFavorite(item) }
         Button(L("finder.reveal")) { model.reveal(item) }

@@ -549,3 +549,18 @@
 "printer.error.protocolError" = "The status response is unsupported. Existing queue records are preserved.";
 
 "printer.error.keychain" = "Could not read or save the access code in Keychain. Enter the code again.";
+
+/* Fusion handoff */
+"fusion.open" = "Open in Fusion";
+"fusion.preparing" = "Preparing model for Fusion…";
+"fusion.hint" = "Opens geometry as an STL mesh, without colors, print settings or design history. Your archived original is preserved.";
+"fusion.choose" = "Choose a model to edit in Fusion";
+"fusion.missing" = "Autodesk Fusion was not found. Install and launch Fusion once, then try again.";
+"fusion.studioMissing" = "Select the official Bambu Studio app in Settings to prepare the mesh for Fusion.";
+"fusion.invalidMesh" = "The mesh for Fusion could not be read. Check the model in Bambu Studio.";
+"fusion.sourceChanged" = "The file changed while preparing the mesh. Please try again.";
+"fusion.timeout" = "Preparing the model took more than three minutes. Export the needed model as STL from Bambu Studio.";
+"fusion.exportFailed" = "Could not prepare this file for Fusion. Check the model in Bambu Studio.";
+"fusion.noGeometry" = "This file contains no editable model geometry. Import the original project 3MF instead of a sliced file.";
+"fusion.tooLarge" = "There are too many models. Export only the needed models as STL from Bambu Studio.";
+"fusion.sent" = "Requested opening in Fusion. Geometry is imported as a mesh.";

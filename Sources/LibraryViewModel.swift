@@ -101,6 +101,10 @@ final class LibraryViewModel: ObservableObject {
     @Published var search = ""
     @Published var isBusy = false
     @Published var isScanning = false
+    @Published var fusionOpeningID: String?
+    @Published var fusionSelection: FusionSelection?
+    var fusionTask: Task<Void, Never>?
+    let fusionExporter = FusionMeshExporter()
     var isWorking: Bool { isBusy || isScanning || isBatchWorking }
     private var grantedURLs: [URL] = []
     @Published var errorMessage: String?
@@ -183,6 +187,7 @@ final class LibraryViewModel: ObservableObject {
         } catch { errorMessage = error.localizedDescription }
         terminationObserver = NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification).sink { [weak self] _ in
             self?.estimateTask?.cancel(); self?.estimateService.stop()
+            self?.fusionTask?.cancel(); self?.fusionExporter.stop()
             self?.printerMonitor.stop()
         }
         printerObserver = printerMonitor.objectWillChange.sink { [weak self] _ in self?.objectWillChange.send() }

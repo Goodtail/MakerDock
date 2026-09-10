@@ -27,6 +27,10 @@ struct ItemInspector: View {
                 VStack(alignment: .leading, spacing: Design.small) {
                     Button { model.openInStudio(item) } label: { Label(L("studio.open"), systemImage: "arrow.up.forward.app").frame(maxWidth: .infinity).padding(.vertical, Design.tiny) }
                     .buttonStyle(.borderedProminent).tint(Design.action).foregroundStyle(Color.white)
+                    Button { model.openInFusion(item) } label: {
+                        Label(L(model.fusionOpeningID == item.id ? "fusion.preparing" : "fusion.open"), systemImage: "cube.transparent")
+                            .frame(maxWidth: .infinity).padding(.vertical, Design.tiny)
+                    }.disabled(model.fusionOpeningID != nil || model.isWorking).help(L("fusion.hint"))
                 VStack(alignment: .leading, spacing: Design.small) {
                     if model.isPrinted(item) { Label(L("출력 완료"), systemImage: "checkmark.circle.fill").foregroundStyle(Design.accent).font(Design.value) }
                     Button { showRecord = true } label: {

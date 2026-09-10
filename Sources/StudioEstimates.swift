@@ -103,7 +103,7 @@ struct StudioEstimateRecord: Codable, Equatable {
     }
 }
 
-private final class StudioProcessSlot: @unchecked Sendable {
+final class StudioProcessSlot: @unchecked Sendable {
     private let lock = NSLock()
     private var process: Process?
     func set(_ value: Process?) { lock.lock(); defer { lock.unlock() }; process = value }
