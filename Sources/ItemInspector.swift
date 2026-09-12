@@ -189,11 +189,17 @@ struct ItemInspector: View {
         VStack(alignment: .leading, spacing: Design.small) {
             HStack { Text(L("source.title")).font(Design.heading); Spacer(); Button { showSourceEditor = true } label: { Image(systemName: "link.badge.plus") }.buttonStyle(.borderless).help(L("source.edit")) }
             if let source = item.makerWorldSource {
-                HStack(spacing: Design.medium) {
-                Button { model.openSource(item) } label: { Label(L("모델 페이지"), systemImage: "arrow.up.right") }.buttonStyle(.link)
+                Button { model.openSource(item) } label: {
+                    HStack {
+                        Image(systemName: "globe")
+                        Text(L("browser.viewModel")).font(Design.value)
+                        Spacer(minLength: 0)
+                        Image(systemName: "arrow.up.right")
+                    }.frame(maxWidth: .infinity).padding(.vertical, 5)
+                }.buttonStyle(.bordered).tint(Design.accent).controlSize(.large)
                 if let profile = source.profileURL, let url = URL(string: profile) {
-                    Button(L("출력 프로필")) { model.showMakerWorld(url) }.buttonStyle(.link)
-                }
+                    Button { model.showMakerWorld(url) } label: { Label(L("출력 프로필"), systemImage: "square.stack") }
+                        .buttonStyle(.bordered)
                 }
                 if let title = source.profileTitle, !title.isEmpty { Text(title).font(Design.caption).foregroundStyle(Design.secondary).lineLimit(2) }
                 if source.estimatedSeconds != nil || source.plates?.isEmpty == false {
@@ -213,7 +219,10 @@ struct ItemInspector: View {
                 }
             } else {
                 Text(L("source.missing")).font(Design.caption).foregroundStyle(Design.secondary)
-                Button(L("source.edit")) { showSourceEditor = true }.buttonStyle(.link)
+                HStack {
+                    Button { model.openSource(item) } label: { Label(L("browser.findModel"), systemImage: "magnifyingglass") }.buttonStyle(.bordered)
+                    Button(L("source.edit")) { showSourceEditor = true }.buttonStyle(.bordered)
+                }
             }
         }
     }

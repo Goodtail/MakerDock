@@ -564,3 +564,20 @@
 "fusion.noGeometry" = "This file contains no editable model geometry. Import the original project 3MF instead of a sliced file.";
 "fusion.tooLarge" = "There are too many models. Export only the needed models as STL from Bambu Studio.";
 "fusion.sent" = "Requested opening in Fusion. Geometry is imported as a mesh.";
+
+/* Browser tabs and download controls */
+"browser.savedOpened" = "Saved to your library and opened in Studio.";
+"browser.saved" = "Saved to your library.";
+"browser.sidebarHelp" = "Return to your tabs. Click the selected section again to go to its home page.";
+"browser.newTab" = "New tab";
+"browser.closeTab" = "Close tab";
+"browser.reopenTab" = "Reopen closed tab";
+"browser.nextTab" = "Next tab";
+"browser.previousTab" = "Previous tab";
+"browser.tabMenu" = "Tab menu";
+"browser.freshDownload" = "Get a fresh copy";
+"browser.freshHint" = "Click Download or Open in Studio on the page. This time, a fresh copy will be used. Notes and print history are kept.";
+"browser.reuseHelp" = "Reuse an archived copy of the same profile or download. Get a fresh copy bypasses it for the next file.";
+"browser.viewModel" = "View model on MakerWorld";
+"browser.findModel" = "Find on MakerWorld";
+"browser.openClean" = "Open a clean archived copy";

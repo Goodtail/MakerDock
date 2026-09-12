@@ -1,6 +1,6 @@
 # MakerWorld integration status
 
-Source status for 0.1.1 build 17, September 9, 2026. Build 16 and 17 changes are local; the published 0.1.1 DMG is build 15.
+Source status for 0.1.1 build 19, September 13, 2026. Builds 16–19 are local; the published 0.1.1 DMG is build 15.
 
 Build 17 adds elapsed-time completion records and an optional local printer status connection. It uses a user-entered local address, serial and LAN access code, requires no Bambu cloud account, and sends no printer commands. Actual-device compatibility remains to be tested with the user's connection details. See [printer setup and limitations](printer-connection.md).
 
@@ -17,9 +17,9 @@ Build 17 adds elapsed-time completion records and an optional local printer stat
 
 ## Not enabled in the public DMG
 
-Injected capture scripts, automated profile metadata capture, external remote URL handoff downloads, and registration as the Bambu Studio URL handler.
+Network interception scripts, automated profile metadata capture, external remote URL handoff downloads, and registration as the Bambu Studio URL handler.
 
-Release builds enforce this at the UI and native ingress boundaries. The public configuration test asserts that external remote handoffs make no library imports and that embedded navigation remains available without automatic capture scripts. The collections shortcut performs a bounded, on-demand lookup of the website's own navigation link; it does not collect model metadata or enumerate collections. Native user-initiated downloads do not inject scripts or inspect authenticated API responses. Experimental profile capture is retained under `MAKERWORLD_INTEGRATION`.
+Release builds enforce this at the UI and native ingress boundaries. The public configuration test asserts that external remote handoffs make no library imports and that embedded navigation remains available without automatic capture scripts. The collections shortcut performs a bounded, on-demand lookup of the website's own navigation link; it does not collect model metadata or enumerate collections. Build 19 adds a small user-gesture script for Command-click tabs and the public model link in a clicked dialog. It does not read cookies, intercept network traffic, or inspect authenticated API responses. Native downloads carry this public page through redirects and completion. Experimental profile capture is retained under `MAKERWORLD_INTEGRATION`.
 
 ## Chrome companion
 

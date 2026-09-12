@@ -447,21 +447,28 @@ final class LibraryViewModel: ObservableObject {
         preferences.completedFolder = url.path; preferences.completedMoveMode = "custom"; savePreferences()
         return url
     }
-    func workingCopy(for item: ShelfItem) throws -> URL {
-        let folder = rootURL.appendingPathComponent("WorkingCopies").appendingPathComponent(item.id)
+    func workingCopy(for item: ShelfItem, fresh: Bool = false) throws -> URL {
+        let base = rootURL.appendingPathComponent("WorkingCopies").appendingPathComponent(item.id)
+        // Keep edited copies intact. A fresh download opens a clean, separate Studio project.
+        let pointer = base.appendingPathComponent("active-copy.txt")
+        let previous = (try? String(contentsOf: pointer, encoding: .utf8)) ?? ""
+        let validPrevious = previous.hasPrefix("Fresh-") && UUID(uuidString: String(previous.dropFirst(6))) != nil
+        let component = fresh ? "Fresh-" + UUID().uuidString : (validPrevious ? previous : "")
+        let folder = component.isEmpty ? base : base.appendingPathComponent(component)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         let working = folder.appendingPathComponent(URL(fileURLWithPath: item.filename).lastPathComponent)
         if !FileManager.default.fileExists(atPath: working.path) {
             try FileManager.default.copyItem(at: fileURL(item), to: working)
             try FileManager.default.setAttributes([.posixPermissions: 0o644], ofItemAtPath: working.path)
         }
+        if fresh { try component.write(to: pointer, atomically: true, encoding: .utf8) }
         return working
     }
-    func openInStudio(_ item: ShelfItem) {
+    func openInStudio(_ item: ShelfItem, fresh: Bool = false) {
         do {
             let studioURL = URL(fileURLWithPath: preferences.studioPath)
             guard FileManager.default.fileExists(atPath: studioURL.path) else { throw ShelfError.message(L("studio.missing")) }
-            let working = try workingCopy(for: item)
+            let working = try workingCopy(for: item, fresh: fresh)
             let configuration = NSWorkspace.OpenConfiguration()
             configuration.allowsRunningApplicationSubstitution = false
             let isShelfStudio = Bundle(url: studioURL)?.bundleIdentifier?.hasPrefix("com.ninepiece.app.mac.plateshelfstudio") == true
@@ -497,7 +504,7 @@ final class LibraryViewModel: ObservableObject {
     }
     func showMakerWorld(_ url: URL) {
         guard MakerWorldBrowserPolicy.isMakerWorld(url) else { return }
-        browserRequest = BrowserLocation(url: url)
+        browserRequest = BrowserLocation(url: url, opensNewTab: true)
         filter = .makerWorld
     }
     func showMyCollections() {
@@ -506,8 +513,12 @@ final class LibraryViewModel: ObservableObject {
     }
     func selectFilter(_ selection: ShelfFilter) {
         switch selection {
-        case .makerWorld: showMakerWorld(MakerWorldBrowserPolicy.home)
-        case .makerWorldCollections: showMyCollections()
+        case .makerWorld, .makerWorldCollections:
+            let returning = filter != selection
+            browserRequest = BrowserLocation(url: MakerWorldBrowserPolicy.home,
+                                             opensMyCollections: selection == .makerWorldCollections,
+                                             restoresSession: returning)
+            filter = selection
         default: filter = selection
         }
     }
@@ -523,17 +534,20 @@ final class LibraryViewModel: ObservableObject {
     }
     // Called only for a navigation initiated inside our trusted MakerWorld web view.
     // This saves the file the user requested, without enabling injected page scraping.
-    func receiveNativeBrowserDownload(_ url: URL) async throws -> BrowserImportResult {
-        try await importBrowserTransfer(url, preferStored: true, forceDownload: false)
+    func receiveNativeBrowserDownload(_ url: URL, preferStored: Bool = true, forceDownload: Bool = false) async throws -> BrowserImportResult {
+        try await importBrowserTransfer(url, preferStored: preferStored, forceDownload: forceDownload)
     }
     private func importBrowserTransfer(_ url: URL, preferStored: Bool, forceDownload: Bool) async throws -> BrowserImportResult {
         await acquireWork(); defer { releaseWork() }
         let parsed = try MakerWorldLinkPolicy.parse(url)
-        if preferStored, !forceDownload, let stored = savedProfile(parsed.provenance?.profileURL) {
+        let cachedID = preferStored && !forceDownload ? await linkService.cachedContentHash(for: url) : nil
+        if preferStored, !forceDownload,
+           let stored = savedProfile(parsed.provenance?.profileURL) ?? items.first(where: { $0.id == cachedID }) {
             let original = fileURL(stored)
             // Reuse only an intact archived file, never a same-name or different-profile guess.
             let actual = await Task.detached { try? MakerWorldLinkPolicy.fileSHA256(original).hash }.value
             if actual == stored.id {
+                if let source = parsed.provenance { try await applyCapturedSource(source, itemID: stored.id); await reload() }
                 selectionID = stored.id
                 if parsed.openStudio { openInStudio(stored) }
                 return BrowserImportResult(itemID: stored.id, name: stored.title, usedLibrary: true, openedStudio: parsed.openStudio)
@@ -546,16 +560,17 @@ final class LibraryViewModel: ObservableObject {
         if let source = result.source { try await applyCapturedSource(source, itemID: imported.item.id) }
         await reload(); selectionID = imported.item.id
         statusMessage = result.reused ? L("link.reused") : L("link.downloaded")
-        if result.openStudio { openInStudio(imported.item) }
+        if result.openStudio { openInStudio(imported.item, fresh: forceDownload || !preferStored) }
         return BrowserImportResult(itemID: imported.item.id, name: imported.item.title, usedLibrary: false, openedStudio: result.openStudio)
     }
-    func importSavedBrowserFile(_ file: URL, page: URL?) async throws -> String {
+    func importSavedBrowserFile(_ file: URL, page: URL?, freshCopy: Bool = false) async throws -> String {
         guard let repository else { throw ShelfError.message(L("library.unavailable")) }
         await acquireWork(); defer { releaseWork() }
         let imported = try await repository.importFile(at: file)
         if let page, let canonical = try? MakerWorldLinkPolicy.canonicalPage(page.absoluteString, includeProfile: false) {
             try await repository.updateSource(id: imported.item.id, source: MakerWorldSource(pageURL: canonical.absoluteString))
         }
+        if freshCopy { _ = try workingCopy(for: imported.item, fresh: true) }
         await reload()
         return imported.item.id
     }
@@ -629,4 +644,6 @@ struct BrowserLocation: Identifiable, Equatable {
     let id = UUID()
     let url: URL
     var opensMyCollections = false
+    var restoresSession = false
+    var opensNewTab = false
 }

@@ -564,3 +564,20 @@
 "fusion.noGeometry" = "此文件不包含可编辑的模型几何形状。请导入原始项目 3MF，而非切片文件。";
 "fusion.tooLarge" = "模型数量过多。请从 Bambu Studio 仅导出所需模型的 STL 文件。";
 "fusion.sent" = "已请求在 Fusion 中打开。几何形状将作为网格导入。";
+
+/* Browser tabs and download controls */
+"browser.savedOpened" = "文件已保存到资料库并在 Studio 中打开。";
+"browser.saved" = "文件已保存到资料库。";
+"browser.sidebarHelp" = "返回之前的标签页。再次点击已选中的栏目可回到首页。";
+"browser.newTab" = "新建标签页";
+"browser.closeTab" = "关闭标签页";
+"browser.reopenTab" = "重新打开已关闭的标签页";
+"browser.nextTab" = "下一个标签页";
+"browser.previousTab" = "上一个标签页";
+"browser.tabMenu" = "标签页菜单";
+"browser.freshDownload" = "重新下载";
+"browser.freshHint" = "请在网页上点击下载或在 Studio 中打开。本次将使用重新下载的文件，备注和打印记录会保留。";
+"browser.reuseHelp" = "同一配置或下载文件已保存在资料库中时直接复用。「重新下载」仅对下一个文件生效。";
+"browser.viewModel" = "在 MakerWorld 查看模型";
+"browser.findModel" = "在 MakerWorld 搜索";
+"browser.openClean" = "从保存的原始文件重新打开";

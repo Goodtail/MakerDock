@@ -564,3 +564,20 @@
 "fusion.noGeometry" = "編集できるモデル形状がありません。スライス済みファイルではなく、元のプロジェクト3MFを取り込んでください。";
 "fusion.tooLarge" = "モデル数が多すぎます。Bambu Studioで必要なモデルだけをSTLに書き出してください。";
 "fusion.sent" = "Fusionに開くよう要求しました。形状はメッシュとして読み込まれます。";
+
+/* Browser tabs and download controls */
+"browser.savedOpened" = "ファイルを保管し、Studioで開きました。";
+"browser.saved" = "ファイルを保管しました。";
+"browser.sidebarHelp" = "開いていたタブに戻ります。選択中のメニューをもう一度押すと最初のページに戻ります。";
+"browser.newTab" = "新しいタブ";
+"browser.closeTab" = "タブを閉じる";
+"browser.reopenTab" = "閉じたタブを開く";
+"browser.nextTab" = "次のタブ";
+"browser.previousTab" = "前のタブ";
+"browser.tabMenu" = "タブメニュー";
+"browser.freshDownload" = "新しくダウンロード";
+"browser.freshHint" = "ページでダウンロード、またはStudioで開くを押してください。今回は新しく取得したファイルを使います。メモと印刷履歴は残ります。";
+"browser.reuseHelp" = "同じプロファイルやファイルを保管済みなら再利用します。「新しくダウンロード」は次のファイルだけに適用されます。";
+"browser.viewModel" = "MakerWorldでモデルを見る";
+"browser.findModel" = "MakerWorldで探す";
+"browser.openClean" = "保管した原本から新しく開く";

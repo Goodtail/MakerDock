@@ -311,7 +311,7 @@ enum MakerWorldLinkPolicy {
         return (hash.finalize().map { String(format: "%02x", $0) }.joined(), count)
     }
 
-    private static func validateName(_ name: String) throws -> String {
+    static func validateName(_ name: String) throws -> String {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, trimmed.utf8.count <= 240,
               !trimmed.contains("/"), !trimmed.contains("\\"), !trimmed.contains(":"),
@@ -389,6 +389,14 @@ actor MakerWorldLinkService {
     init(cacheDirectory: URL, transport: any MakerWorldHTTPTransport) {
         self.cacheDirectory = cacheDirectory
         self.transport = transport
+    }
+
+    // Used only when the user explicitly prefers archived files. This is an exact asset
+    // identity and byte check, independent of HTTP conditional revalidation.
+    func cachedContentHash(for incoming: URL) -> String? {
+        guard let source = try? MakerWorldLinkPolicy.parse(incoming) else { return nil }
+        let recordURL = cacheDirectory.appendingPathComponent("records").appendingPathComponent(source.identityHash + ".json")
+        return readVerifiedRecord(recordURL, identityHash: source.identityHash, requiresETag: false)?.contentHash
     }
 
     func resolve(_ incoming: URL, forceDownload: Bool = false) async throws -> ResolvedModel {
@@ -479,13 +487,13 @@ actor MakerWorldLinkService {
         cacheDirectory.appendingPathComponent("blobs").appendingPathComponent(contentHash + ".3mf")
     }
 
-    private func readVerifiedRecord(_ url: URL, identityHash: String) -> CacheRecord? {
+    private func readVerifiedRecord(_ url: URL, identityHash: String, requiresETag: Bool = true) -> CacheRecord? {
         guard let data = try? Data(contentsOf: url), data.count <= 16_384,
               let record = try? JSONDecoder().decode(CacheRecord.self, from: data),
               record.schema == 1, record.identityHash == identityHash,
               record.contentHash.count == 64, record.contentHash.allSatisfy({ $0.isHexDigit && !$0.isUppercase }),
               record.byteCount > 0, record.byteCount <= MakerWorldLinkPolicy.maximumBytes,
-              let etag = MakerWorldLinkPolicy.strongETag(record.etag), etag == record.etag,
+              (!requiresETag || (record.etag != nil && MakerWorldLinkPolicy.strongETag(record.etag) == record.etag)),
               let actual = try? MakerWorldLinkPolicy.fileSHA256(blobURL(record.contentHash)),
               actual.hash == record.contentHash, actual.size == record.byteCount else { return nil }
         return record

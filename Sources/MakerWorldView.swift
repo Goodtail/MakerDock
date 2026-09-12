@@ -10,6 +10,14 @@ struct MakerWorldView: View {
     var body: some View {
         VStack(spacing: 0) {
             navigationBar
+            if browser.freshDownload {
+                HStack(spacing: Design.small) {
+                    Image(systemName: "arrow.down.circle").foregroundStyle(Design.accent)
+                    Text(L("browser.freshHint")).fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: 8)
+                    Button(L("취소")) { browser.freshDownload = false }
+                }.font(Design.caption).padding(Design.medium).background(Design.surface)
+            }
             if let message = browser.collectionsMessage {
                 HStack(spacing: Design.small) {
                     Image(systemName: "square.stack").foregroundStyle(Design.accent)
@@ -67,7 +75,7 @@ struct MakerWorldView: View {
             if !browser.transferMessage.isEmpty || browser.transferError != nil { transferBar }
         }.background(Design.canvas)
         .onAppear {
-            browser.start(model: model, location: model.browserRequest)
+            browser.attach(model: model)
             address = browser.currentURL.absoluteString
         }
         .onChange(of: browser.currentURL) { url in if !addressFocused { address = url.absoluteString } }
@@ -75,18 +83,18 @@ struct MakerWorldView: View {
     private var navigationBar: some View {
         VStack(spacing: Design.medium) {
             HStack(spacing: Design.small) {
-                Button { browser.back() } label: { Image(systemName: "chevron.left") }.disabled(!browser.canGoBack).help(L("뒤로")).accessibilityLabel(L("MakerWorld 뒤로"))
-                Button { browser.forward() } label: { Image(systemName: "chevron.right") }.disabled(!browser.canGoForward).help(L("앞으로")).accessibilityLabel(L("MakerWorld 앞으로"))
-                Button { browser.load(MakerWorldBrowserPolicy.home) } label: { Image(systemName: "house") }.help(L("MakerWorld 홈"))
+                Button { browser.back() } label: { navigationIcon("chevron.left") }.disabled(!browser.canGoBack).keyboardShortcut("[", modifiers: .command).help(L("뒤로") + " (⌘[)").accessibilityLabel(L("MakerWorld 뒤로"))
+                Button { browser.forward() } label: { navigationIcon("chevron.right") }.disabled(!browser.canGoForward).keyboardShortcut("]", modifiers: .command).help(L("앞으로") + " (⌘])").accessibilityLabel(L("MakerWorld 앞으로"))
+                Button { browser.load(MakerWorldBrowserPolicy.home) } label: { navigationIcon("house") }.help(L("MakerWorld 홈"))
                 HStack(spacing: Design.small) {
                     Image(systemName: addressFocused ? "magnifyingglass" : "globe").foregroundStyle(Design.secondary)
                     TextField(L("MakerWorld 검색 또는 모델 주소"), text: $address)
                         .textFieldStyle(.plain).focused($addressFocused)
                         .onSubmit { browser.navigate(address); addressFocused = false }
                     Button { browser.isLoading ? browser.stop() : browser.reload() } label: {
-                        Image(systemName: browser.isLoading ? "xmark" : "arrow.clockwise")
+                        Image(systemName: browser.isLoading ? "xmark" : "arrow.clockwise").frame(width: 30, height: 30).contentShape(Rectangle())
                     }.buttonStyle(.plain).help(browser.isLoading ? L("불러오기 중지") : L("페이지 새로고침"))
-                }.padding(Design.medium).background(Design.surface, in: RoundedRectangle(cornerRadius: Design.controlRadius))
+                }.padding(.horizontal, Design.medium).padding(.vertical, 4).background(Design.surface, in: RoundedRectangle(cornerRadius: Design.controlRadius))
                     .overlay(RoundedRectangle(cornerRadius: Design.controlRadius).stroke(Design.divider))
                 Menu {
                     Button(L("현재 주소 복사")) { browser.copyAddress() }
@@ -99,13 +107,23 @@ struct MakerWorldView: View {
                 Button { model.showMyCollections() } label: {
                     Label(L("browser.myCollections"), systemImage: "square.stack")
                 }.buttonStyle(.borderless)
-                if AppIdentity.makerWorldCaptureEnabled {
-                    Label(L("자동 보관"), systemImage: "checkmark.shield").font(Design.caption).foregroundStyle(Design.accent)
-                    Toggle(L("보관된 파일 우선"), isOn: $browser.preferStored).toggleStyle(.switch).controlSize(.small).font(Design.caption)
-                        .help(L("같은 출력 프로필을 이미 보관했다면 다운로드 없이 저장된 파일을 사용합니다. 최신 파일을 받으려면 끄세요."))
-                }
+                Toggle(L("보관된 파일 우선"), isOn: $browser.preferStored).toggleStyle(.switch).controlSize(.small).font(Design.caption)
+                    .help(L("browser.reuseHelp"))
+                Button { browser.freshDownload.toggle() } label: {
+                    Label(L("browser.freshDownload"), systemImage: "arrow.down.circle")
+                }.buttonStyle(.bordered).disabled(browser.transferCount > 0)
+                    .help(L("browser.freshHint"))
             }
-        }.padding(.horizontal, Design.large).padding(.vertical, Design.medium)
+        }.padding(.horizontal, Design.medium).padding(.vertical, Design.small)
+            .background {
+                Button("") { address = browser.currentURL.absoluteString; addressFocused = true }
+                    .keyboardShortcut("l", modifiers: .command).hidden()
+            }
+    }
+    private func navigationIcon(_ name: String) -> some View {
+        Image(systemName: name).font(.system(size: 15, weight: .medium))
+            .frame(width: 38, height: 38).contentShape(Rectangle())
+            .background(Design.surface, in: RoundedRectangle(cornerRadius: 8))
     }
     private var transferBar: some View {
         VStack(alignment: .leading, spacing: Design.small) {

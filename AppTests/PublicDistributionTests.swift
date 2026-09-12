@@ -19,7 +19,11 @@ final class PublicDistributionTests: XCTestCase {
             XCTFail("Public builds must reject remote transfers before transport")
         } catch { XCTAssertEqual(error.localizedDescription, L("integration.unavailable")) }
         let browser = MakerWorldBrowser()
-        XCTAssertTrue(browser.webView.configuration.userContentController.userScripts.isEmpty)
+        let scripts = browser.webView.configuration.userContentController.userScripts
+        XCTAssertEqual(scripts.count, 1, "Public builds install only user-gesture navigation support")
+        XCTAssertTrue(scripts[0].source.contains("User-initiated navigation only"))
+        XCTAssertFalse(scripts[0].source.contains("XMLHttpRequest"))
+        XCTAssertFalse(scripts[0].source.contains("fetch("))
         let view = RecordingBrowserWebView()
         browser.webView = view
         model.showMakerWorld(URL(string: "https://makerworld.com/en/models/123-example")!)

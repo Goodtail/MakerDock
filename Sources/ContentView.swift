@@ -4,7 +4,7 @@ import UniformTypeIdentifiers
 
 struct ContentView: View {
     @ObservedObject var model: LibraryViewModel
-    @StateObject private var browser = MakerWorldBrowser()
+    @StateObject private var browser = MakerWorldWorkspace()
     @State private var recordItem: ShelfItem?
     @State private var showBatchPrint = false
     @Environment(\.controlActiveState) private var controlActiveState
@@ -15,7 +15,7 @@ struct ContentView: View {
                 .navigationSplitViewColumnWidth(min: Design.sidebar, ideal: Design.sidebar, max: 260)
         } detail: {
             if model.filter.isBrowser {
-                MakerWorldView(model: model, browser: browser)
+                MakerWorldWorkspaceView(model: model, workspace: browser)
             } else if model.filter == .queue {
                 PrintQueueView(model: model)
             } else {
@@ -59,15 +59,15 @@ struct ContentView: View {
         .sheet(item: $model.fusionSelection) { selection in FusionSelectionSheet(model: model, selection: selection) }
         .onChange(of: model.filter) { filter in
             model.endSelection(); model.syncSelection()
-            if !filter.isBrowser { browser.cancelCollectionsNavigation() }
+            if filter.isBrowser { browser.show(model: model) }
         }
         .onChange(of: model.search) { _ in model.pruneSelection() }
         .sheet(isPresented: $showBatchPrint) { BatchPrintSheet(model: model, items: model.selectedItems) }
         .sheet(item: $recordItem) { item in PrintRecordSheet(model: model, item: item) }
         .onChange(of: model.browserRequest) { request in
-            if let request { browser.start(model: model, location: request) }
+            if request != nil { browser.show(model: model) }
         }
-        .onChange(of: model.browserReloadRequest) { _ in browser.reload() }
+        .onChange(of: model.browserReloadRequest) { _ in browser.active?.browser.reload() }
         .alert(L("error.title"), isPresented: Binding(get: { model.errorMessage != nil }, set: { if !$0 { model.errorMessage = nil } })) {
             Button(L("ok"), role: .cancel) { model.errorMessage = nil }
         } message: { Text(model.errorMessage ?? "") }
@@ -97,8 +97,8 @@ struct ContentView: View {
             }.padding(Design.large)
             List(selection: Binding<ShelfFilter?>(get: { model.filter }, set: { if let value = $0 { model.selectFilter(value) } })) {
                 Section(L("탐색")) {
-                    sideRow(.makerWorld, icon: "globe")
-                    sideRow(.makerWorldCollections, icon: "square.stack")
+                    exploreRow(.makerWorld, icon: "globe")
+                    exploreRow(.makerWorldCollections, icon: "square.stack")
                 }
                 Section(L("sidebar.library")) {
                     sideRow(.queue, icon: "list.number", count: model.printQueue.count)
@@ -133,6 +133,16 @@ struct ContentView: View {
             }.padding(Design.large)
         }.background(Design.sidebarSurface)
     }
+    private func exploreRow(_ filter: ShelfFilter, icon: String) -> some View {
+        Button { model.selectFilter(filter) } label: {
+            Label(filter.title, systemImage: icon)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.vertical, Design.tiny).contentShape(Rectangle())
+                .foregroundStyle(model.filter == filter ? Color.white : Design.ink)
+        }.buttonStyle(.plain)
+            .listRowBackground(RoundedRectangle(cornerRadius: 8).fill(model.filter == filter ? Design.action : Color.clear))
+            .help(L("browser.sidebarHelp"))
+    }
     private func sideRow(_ filter: ShelfFilter, icon: String, count: Int? = nil, title: String? = nil) -> some View {
         // Match the native blue selection; keep the inactive gray selection readable.
         let highlighted = model.filter == filter && sidebarFocused && controlActiveState != .inactive
@@ -158,8 +168,11 @@ struct ContentView: View {
                 if model.selectionMode { model.endSelection() } else { model.selectionMode = true }
             }.disabled(model.isWorking)
             Menu {
-                Picker(L("sort"), selection: $model.sort) {
-                    ForEach(ShelfSort.allCases, id: \.self) { order in Text(order.title).tag(order) }
+                ForEach(ShelfSort.allCases, id: \.self) { order in
+                    Button { model.sort = order } label: {
+                        if model.sort == order { Label(order.title, systemImage: "checkmark") }
+                        else { Text(order.title) }
+                    }
                 }
             } label: { Label(model.sort.title, systemImage: "arrow.up.arrow.down") }.menuStyle(.borderlessButton)
             Spacer(minLength: 0)
@@ -256,6 +269,7 @@ struct ContentView: View {
             else { Task { await model.enqueue([item]) } }
         }.disabled(model.isWorking)
         Button(L("studio.open")) { model.openInStudio(item) }
+        Button(L("browser.openClean")) { model.openInStudio(item, fresh: true) }
         Button(L("fusion.open")) { model.openInFusion(item) }.disabled(model.fusionOpeningID != nil || model.isWorking)
         Button(model.isPrinted(item) ? L("출력 기록 추가…") : L("출력 완료로 표시…")) { recordItem = item }.disabled(model.isWorking)
         Button(item.favorite ? L("favorite.remove") : L("favorite.add")) { model.toggleFavorite(item) }
