@@ -561,6 +561,7 @@ final class LibraryViewModel: ObservableObject {
         await reload(); selectionID = imported.item.id
         statusMessage = result.reused ? L("link.reused") : L("link.downloaded")
         if result.openStudio { openInStudio(imported.item, fresh: forceDownload || !preferStored) }
+        else if forceDownload || !preferStored { _ = try workingCopy(for: imported.item, fresh: true) }
         return BrowserImportResult(itemID: imported.item.id, name: imported.item.title, usedLibrary: false, openedStudio: result.openStudio)
     }
     func importSavedBrowserFile(_ file: URL, page: URL?, freshCopy: Bool = false) async throws -> String {
