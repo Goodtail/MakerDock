@@ -6,10 +6,12 @@ struct MakerWorldView: View {
     @ObservedObject var browser: MakerWorldBrowser
     @State private var address = ""
     @FocusState private var addressFocused: Bool
+    @FocusState private var findFocused: Bool
     private var saved: ShelfItem? { model.savedProfile(browser.context?.profileURL) }
     var body: some View {
         VStack(spacing: 0) {
             navigationBar
+            if browser.findVisible { findBar }
             if browser.freshDownload {
                 HStack(spacing: Design.small) {
                     Image(systemName: "arrow.down.circle").foregroundStyle(Design.accent)
@@ -77,7 +79,10 @@ struct MakerWorldView: View {
         .onAppear {
             browser.attach(model: model)
             address = browser.currentURL.absoluteString
+            if browser.needsAddressFocus { focusAddress() }
         }
+        .onChange(of: browser.addressFocusRequest) { _ in focusAddress() }
+        .onChange(of: browser.findFocusRequest) { _ in focusFind() }
         .onChange(of: browser.currentURL) { url in if !addressFocused { address = url.absoluteString } }
     }
     private var navigationBar: some View {
@@ -96,7 +101,17 @@ struct MakerWorldView: View {
                     }.buttonStyle(.plain).help(browser.isLoading ? L("불러오기 중지") : L("페이지 새로고침"))
                 }.padding(.horizontal, Design.medium).padding(.vertical, 4).background(Design.surface, in: RoundedRectangle(cornerRadius: Design.controlRadius))
                     .overlay(RoundedRectangle(cornerRadius: Design.controlRadius).stroke(Design.divider))
+                if browser.zoom != 1 {
+                    Button("\(Int((browser.zoom * 100).rounded()))%") { browser.resetZoom() }
+                        .font(Design.caption).help(L("browser.resetZoom") + " (⌘0)")
+                }
                 Menu {
+                    Button(L("browser.find")) { browser.showFind() }.keyboardShortcut("f", modifiers: .command)
+                    Divider()
+                    Button(L("browser.zoomIn")) { browser.changeZoom(1) }
+                    Button(L("browser.zoomOut")) { browser.changeZoom(-1) }
+                    Button(L("browser.resetZoom")) { browser.resetZoom() }
+                    Divider()
                     Button(L("현재 주소 복사")) { browser.copyAddress() }
                     Button(L("브라우저에서 열기")) { browser.openInBrowser() }
                 } label: { Image(systemName: "ellipsis.circle") }.menuStyle(.borderlessButton).fixedSize().help(L("페이지 메뉴"))
@@ -115,10 +130,49 @@ struct MakerWorldView: View {
                     .help(L("browser.freshHint"))
             }
         }.padding(.horizontal, Design.medium).padding(.vertical, Design.small)
-            .background {
-                Button("") { address = browser.currentURL.absoluteString; addressFocused = true }
-                    .keyboardShortcut("l", modifiers: .command).hidden()
+    }
+    private func focusAddress() {
+        browser.needsAddressFocus = false
+        address = browser.currentURL.absoluteString
+        findFocused = false; addressFocused = false
+        DispatchQueue.main.async {
+            addressFocused = true
+            selectEditorText()
+        }
+    }
+    private func focusFind() {
+        addressFocused = false; findFocused = false
+        DispatchQueue.main.async {
+            findFocused = true
+            selectEditorText()
+        }
+    }
+    private func selectEditorText() {
+        DispatchQueue.main.async {
+            if let editor = browser.webView.window?.firstResponder as? NSTextView, editor.isFieldEditor {
+                editor.selectAll(nil)
             }
+        }
+    }
+    private var findBar: some View {
+        HStack(spacing: Design.small) {
+            Image(systemName: "magnifyingglass").foregroundStyle(Design.secondary)
+            TextField(L("browser.find"), text: $browser.findText)
+                .textFieldStyle(.plain).focused($findFocused)
+                .onSubmit { browser.findNext(backwards: NSEvent.modifierFlags.contains(.shift)) }
+                .onChange(of: browser.findText) { _ in browser.updateFind() }
+                .frame(maxWidth: 280)
+            if browser.findHasMatch == false { Text(L("browser.noMatches")).font(Design.caption).foregroundStyle(Design.secondary) }
+            Spacer(minLength: 0)
+            Button { browser.findNext(backwards: true) } label: { Image(systemName: "chevron.up").frame(width: 30, height: 30).contentShape(Rectangle()) }
+                .help(L("browser.findPrevious") + " (⇧⌘G)").accessibilityLabel(L("browser.findPrevious"))
+            Button { browser.findNext() } label: { Image(systemName: "chevron.down").frame(width: 30, height: 30).contentShape(Rectangle()) }
+                .help(L("browser.findNext") + " (⌘G)").accessibilityLabel(L("browser.findNext"))
+            Button { browser.closeFind() } label: { Image(systemName: "xmark").frame(width: 30, height: 30).contentShape(Rectangle()) }
+                .help(L("browser.closeFind") + " (Esc)").accessibilityLabel(L("browser.closeFind"))
+        }.buttonStyle(.plain).padding(.horizontal, Design.medium).padding(.vertical, 4)
+            .background(Design.surface).overlay(alignment: .bottom) { Divider() }
+            .onAppear { focusFind() }
     }
     private func navigationIcon(_ name: String) -> some View {
         Image(systemName: name).font(.system(size: 15, weight: .medium))

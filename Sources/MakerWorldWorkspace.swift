@@ -19,28 +19,59 @@ final class MakerWorldWorkspace: ObservableObject {
     private var handledRequest: UUID?
     private weak var model: LibraryViewModel?
     private var shortcutMonitor: Any?
+    private weak var browserWindow: NSWindow?
     private let makeBrowser: @MainActor (WKWebViewConfiguration?) -> MakerWorldBrowser
     init(makeBrowser: @escaping @MainActor (WKWebViewConfiguration?) -> MakerWorldBrowser = { MakerWorldBrowser(configuration: $0) }) {
         self.makeBrowser = makeBrowser
         shortcutMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
-            guard let self, self.model?.filter.isBrowser == true,
-                  let window = self.active?.browser.webView.window, event.window === window,
-                  event.modifierFlags.contains(.command), !event.modifierFlags.contains(.option),
-                  !event.modifierFlags.contains(.control) else { return event }
-            return self.handleTabShortcut(keyCode: event.keyCode, shifted: event.modifierFlags.contains(.shift)) ? nil : event
+            self?.handleKeyEvent(event) == true ? nil : event
         }
     }
     deinit { if let shortcutMonitor { NSEvent.removeMonitor(shortcutMonitor) } }
+    func handleKeyEvent(_ event: NSEvent) -> Bool {
+        guard model?.filter.isBrowser == true else { return false }
+        if let window = active?.browser.webView.window { browserWindow = window }
+        // A newly selected WKWebView may not be attached until SwiftUI's next render.
+        // Keep the owning window stable so rapid tab changes followed by Cmd-W
+        // cannot fall through to AppKit's Close Window command.
+        guard let window = browserWindow, event.window === window,
+              let action = BrowserShortcut.resolve(key: event.keyCode, modifiers: event.modifierFlags) else { return false }
+        return handle(action)
+    }
     // A local event monitor takes precedence over macOS's Close Window menu item.
     func handleTabShortcut(keyCode: UInt16, shifted: Bool) -> Bool {
-        switch (keyCode, shifted) {
-        case (13, false): if let active { close(active.id) }; return true // Command-W
-        case (17, false): newTab(); return true // Command-T
-        case (17, true): reopen(); return true // Shift-Command-T
-        case (30, true): step(1); return true
-        case (33, true): step(-1); return true
-        default: return false
+        guard let action = BrowserShortcut.resolve(key: keyCode, modifiers: shifted ? [.command, .shift] : .command) else { return false }
+        return handle(action)
+    }
+    @discardableResult
+    func handle(_ action: BrowserShortcut) -> Bool {
+        guard let browser = active?.browser else { return false }
+        switch action {
+        case .closeTab: if let active { close(active.id) }
+        case .newTab: newTab(); active?.browser.focusAddress()
+        case .reopenTab: reopen()
+        case .nextTab: step(1)
+        case .previousTab: step(-1)
+        case .tab(let index):
+            if index == 8, let last = visibleTabs.last { select(last.id) }
+            else if visibleTabs.indices.contains(index) { select(visibleTabs[index].id) }
+        case .address: browser.focusAddress()
+        case .reload: browser.reload()
+        case .reloadFromOrigin: browser.reload(fromOrigin: true)
+        case .back: browser.back()
+        case .forward: browser.forward()
+        case .find: browser.showFind()
+        case .findNext: browser.findNext()
+        case .findPrevious: browser.findNext(backwards: true)
+        case .zoomIn: browser.changeZoom(1)
+        case .zoomOut: browser.changeZoom(-1)
+        case .resetZoom: browser.resetZoom()
+        case .escape:
+            if browser.findVisible { browser.closeFind() }
+            else if browser.isLoading { browser.stop() }
+            else { return false }
         }
+        return true
     }
     var visibleTabs: [MakerWorldTab] { tabs.filter { $0.section == section } }
     var active: MakerWorldTab? { visibleTabs.first { $0.id == selections[section] } ?? visibleTabs.first }
@@ -125,25 +156,38 @@ import SwiftUI
 struct MakerWorldWorkspaceView: View {
     @ObservedObject var model: LibraryViewModel
     @ObservedObject var workspace: MakerWorldWorkspace
+    @StateObject private var scroller = BrowserTabScroller()
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 4) {
-                ScrollViewReader { proxy in
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 4) {
+                Button { scroller.page(-1) } label: {
+                    Image(systemName: "chevron.left").frame(width: 28, height: 34).contentShape(Rectangle())
+                }.buttonStyle(.plain).disabled(!scroller.canGoBack)
+                    .help(L("browser.scrollTabsLeft")).accessibilityLabel(L("browser.scrollTabsLeft"))
+                GeometryReader { geometry in
+                    let tabWidth = BrowserTabMetrics.width(available: geometry.size.width, count: workspace.visibleTabs.count)
+                    BrowserTabStrip(scroller: scroller, ids: workspace.visibleTabs.map(\.id), selection: workspace.active?.id, tabWidth: tabWidth) {
+                        HStack(spacing: BrowserTabMetrics.gap) {
                             ForEach(workspace.visibleTabs) { tab in
-                                MakerWorldTabView(browser: tab.browser, selected: workspace.active?.id == tab.id,
+                                MakerWorldTabView(browser: tab.browser, selected: workspace.active?.id == tab.id, width: tabWidth,
                                                   select: { workspace.select(tab.id) }, close: { workspace.close(tab.id) })
-                                    .id(tab.id)
                             }
-                        }.padding(.vertical, 6)
-                    }.onChange(of: workspace.active?.id) { id in if let id { proxy.scrollTo(id) } }
-                }
+                        }
+                    }
+                }.frame(minWidth: 0, maxWidth: .infinity).frame(height: 46)
+                Button { scroller.page(1) } label: {
+                    Image(systemName: "chevron.right").frame(width: 28, height: 34).contentShape(Rectangle())
+                }.buttonStyle(.plain).disabled(!scroller.canGoForward)
+                    .help(L("browser.scrollTabsRight")).accessibilityLabel(L("browser.scrollTabsRight"))
                 Button { workspace.newTab() } label: {
                     Image(systemName: "plus").frame(width: 32, height: 32).contentShape(Rectangle())
                 }.buttonStyle(.plain).help(L("browser.newTab") + " (⌘T)").accessibilityLabel(L("browser.newTab"))
                     .keyboardShortcut("t", modifiers: .command)
                 Menu {
+                    ForEach(workspace.visibleTabs) { tab in
+                        BrowserTabMenuItem(browser: tab.browser, selected: workspace.active?.id == tab.id) { workspace.select(tab.id) }
+                    }
+                    Divider()
                     Button(L("browser.reopenTab")) { workspace.reopen() }.disabled(!workspace.canReopen)
                         .keyboardShortcut("t", modifiers: [.command, .shift])
                     Button(L("browser.closeTab")) { if let tab = workspace.active { workspace.close(tab.id) } }
@@ -152,7 +196,7 @@ struct MakerWorldWorkspaceView: View {
                     Button(L("browser.nextTab")) { workspace.step(1) }.keyboardShortcut("]", modifiers: [.command, .shift])
                     Button(L("browser.previousTab")) { workspace.step(-1) }.keyboardShortcut("[", modifiers: [.command, .shift])
                 } label: { Image(systemName: "chevron.down").frame(width: 24, height: 32) }
-                    .menuStyle(.borderlessButton).fixedSize().help(L("browser.tabMenu"))
+                    .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize().help(L("browser.tabMenu")).accessibilityLabel(L("browser.tabMenu"))
             }.padding(.horizontal, Design.medium).background(Design.sidebarSurface)
             Divider()
             if let tab = workspace.active {
@@ -165,6 +209,7 @@ struct MakerWorldWorkspaceView: View {
 private struct MakerWorldTabView: View {
     @ObservedObject var browser: MakerWorldBrowser
     let selected: Bool
+    let width: CGFloat
     let select: () -> Void
     let close: () -> Void
     var body: some View {
@@ -178,11 +223,23 @@ private struct MakerWorldTabView: View {
             }.buttonStyle(.plain)
             Button(action: close) { Image(systemName: "xmark").font(.system(size: 10, weight: .semibold)).frame(width: 28, height: 32).contentShape(Rectangle()) }
                 .buttonStyle(.plain).disabled(browser.isTransferring).help(L("browser.closeTab")).accessibilityLabel(L("browser.closeTab"))
-        }.font(Design.caption).frame(width: 194)
+        }.font(Design.caption).frame(width: width)
             .foregroundStyle(selected ? Design.ink : Design.secondary)
             .background(selected ? Design.surface : Color.clear, in: RoundedRectangle(cornerRadius: 8))
             .overlay(RoundedRectangle(cornerRadius: 8).stroke(selected ? Design.divider : Color.clear))
             .help(browser.title + "\n" + browser.currentURL.absoluteString)
             .accessibilityAddTraits(selected ? .isSelected : [])
+    }
+}
+
+private struct BrowserTabMenuItem: View {
+    @ObservedObject var browser: MakerWorldBrowser
+    let selected: Bool
+    let select: () -> Void
+    var body: some View {
+        Button(action: select) {
+            if selected { Label(browser.title, systemImage: "checkmark") }
+            else { Text(browser.title) }
+        }
     }
 }

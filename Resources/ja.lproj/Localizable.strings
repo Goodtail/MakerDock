@@ -581,3 +581,16 @@
 "browser.viewModel" = "MakerWorldでモデルを見る";
 "browser.findModel" = "MakerWorldで探す";
 "browser.openClean" = "保管した原本から新しく開く";
+
+// Browser tab navigation and page controls
+"browser.scrollTabsLeft" = "タブを左へスクロール";
+"browser.scrollTabsRight" = "タブを右へスクロール";
+"browser.openLinkInTab" = "リンクを新しいタブで開く";
+"browser.find" = "ページ内を検索";
+"browser.findNext" = "次の一致";
+"browser.findPrevious" = "前の一致";
+"browser.closeFind" = "検索を閉じる";
+"browser.noMatches" = "一致する内容がありません";
+"browser.zoomIn" = "ページを拡大";
+"browser.zoomOut" = "ページを縮小";
+"browser.resetZoom" = "表示倍率をリセット";

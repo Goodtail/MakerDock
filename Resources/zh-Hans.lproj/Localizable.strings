@@ -581,3 +581,16 @@
 "browser.viewModel" = "在 MakerWorld 查看模型";
 "browser.findModel" = "在 MakerWorld 搜索";
 "browser.openClean" = "从保存的原始文件重新打开";
+
+// Browser tab navigation and page controls
+"browser.scrollTabsLeft" = "向左滚动标签页";
+"browser.scrollTabsRight" = "向右滚动标签页";
+"browser.openLinkInTab" = "在新标签页中打开链接";
+"browser.find" = "在页面中查找";
+"browser.findNext" = "下一个匹配项";
+"browser.findPrevious" = "上一个匹配项";
+"browser.closeFind" = "关闭查找";
+"browser.noMatches" = "没有匹配项";
+"browser.zoomIn" = "放大页面";
+"browser.zoomOut" = "缩小页面";
+"browser.resetZoom" = "重置缩放";

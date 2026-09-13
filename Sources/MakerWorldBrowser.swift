@@ -10,6 +10,14 @@ final class MakerWorldBrowser: NSObject, ObservableObject, WKNavigationDelegate,
     @Published var canGoForward = false
     @Published var isLoading = false
     @Published var progress = 0.0
+    @Published var addressFocusRequest = 0
+    var needsAddressFocus = false
+    @Published var findFocusRequest = 0
+    @Published var findVisible = false
+    @Published var findText = ""
+    @Published var findHasMatch: Bool?
+    @Published private(set) var zoom = 1.0
+    private var findRequest = UUID()
     @Published var pageError: String?
     @Published var context: CapturedMakerWorldSource?
     @Published var transferCount = 0
@@ -77,7 +85,8 @@ final class MakerWorldBrowser: NSObject, ObservableObject, WKNavigationDelegate,
                 pageError = L("MakerWorld 보관 연결을 불러오지 못했습니다. 앱을 다시 설치해 주세요.")
             }
         }
-        let view = WKWebView(frame: .zero, configuration: configuration)
+        let view = MakerWorldWebView(frame: .zero, configuration: configuration)
+        view.openLinkInTab = { [weak self] url in _ = self?.openTab?(URLRequest(url: url), nil, false) }
         view.navigationDelegate = self; view.uiDelegate = self
         view.allowsBackForwardNavigationGestures = true
         observations = [
@@ -171,7 +180,36 @@ final class MakerWorldBrowser: NSObject, ObservableObject, WKNavigationDelegate,
     }
     func back() { cancelCollectionsNavigation(); webView.goBack() }
     func forward() { cancelCollectionsNavigation(); webView.goForward() }
-    func reload() { pageError = nil; webView.reload() }
+    func reload(fromOrigin: Bool = false) { pageError = nil; if fromOrigin { webView.reloadFromOrigin() } else { webView.reload() } }
+    func focusAddress() { needsAddressFocus = true; addressFocusRequest += 1 }
+    func showFind() { findVisible = true; findFocusRequest += 1 }
+    func closeFind() {
+        findVisible = false; findRequest = UUID(); findHasMatch = nil
+        webView.find("", configuration: WKFindConfiguration()) { _ in }
+        webView.window?.makeFirstResponder(webView)
+    }
+    func findNext(backwards: Bool = false) {
+        guard !findText.isEmpty else { showFind(); return }
+        findVisible = true
+        let request = UUID(); findRequest = request
+        let config = WKFindConfiguration(); config.backwards = backwards; config.wraps = true
+        webView.find(findText, configuration: config) { [weak self] result in
+            guard let self, self.findRequest == request else { return }
+            self.findHasMatch = result.matchFound
+        }
+    }
+    func updateFind() {
+        if findText.isEmpty {
+            findRequest = UUID(); findHasMatch = nil
+            webView.find("", configuration: WKFindConfiguration()) { _ in }
+        } else { findNext() }
+    }
+    func changeZoom(_ direction: Int) {
+        let steps: [Double] = [0.5, 0.67, 0.75, 0.8, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2, 2.5, 3]
+        zoom = direction > 0 ? (steps.first { $0 > zoom + 0.001 } ?? 3) : (steps.last { $0 < zoom - 0.001 } ?? 0.5)
+        webView.pageZoom = zoom
+    }
+    func resetZoom() { zoom = 1; webView.pageZoom = 1 }
     func stop() { cancelCollectionsNavigation(); webView.stopLoading() }
     func openInBrowser() { if ["https", "http"].contains(currentURL.scheme ?? "") { NSWorkspace.shared.open(currentURL) } }
     func copyAddress() { NSPasteboard.general.clearContents(); NSPasteboard.general.setString(currentURL.absoluteString, forType: .string) }

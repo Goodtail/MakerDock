@@ -581,3 +581,16 @@
 "browser.viewModel" = "MakerWorld에서 모델 보기";
 "browser.findModel" = "MakerWorld에서 찾기";
 "browser.openClean" = "보관 원본으로 새로 열기";
+
+// Browser tab navigation and page controls
+"browser.scrollTabsLeft" = "이전 탭들 보기";
+"browser.scrollTabsRight" = "다음 탭들 보기";
+"browser.openLinkInTab" = "새 탭에서 링크 열기";
+"browser.find" = "페이지에서 찾기";
+"browser.findNext" = "다음 일치 항목";
+"browser.findPrevious" = "이전 일치 항목";
+"browser.closeFind" = "찾기 닫기";
+"browser.noMatches" = "일치하는 내용 없음";
+"browser.zoomIn" = "페이지 확대";
+"browser.zoomOut" = "페이지 축소";
+"browser.resetZoom" = "기본 크기로 보기";

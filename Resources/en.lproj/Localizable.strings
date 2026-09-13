@@ -581,3 +581,16 @@
 "browser.viewModel" = "View model on MakerWorld";
 "browser.findModel" = "Find on MakerWorld";
 "browser.openClean" = "Open a clean archived copy";
+
+// Browser tab navigation and page controls
+"browser.scrollTabsLeft" = "Scroll tabs left";
+"browser.scrollTabsRight" = "Scroll tabs right";
+"browser.openLinkInTab" = "Open Link in New Tab";
+"browser.find" = "Find in page";
+"browser.findNext" = "Next match";
+"browser.findPrevious" = "Previous match";
+"browser.closeFind" = "Close find";
+"browser.noMatches" = "No matches";
+"browser.zoomIn" = "Zoom in";
+"browser.zoomOut" = "Zoom out";
+"browser.resetZoom" = "Reset zoom";
