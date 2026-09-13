@@ -15,3 +15,10 @@ DerivedData/
 __pycache__/
 .vercel
 .env*
+
+# Maintainer-only signing identity; never publish personal account information.
+Config/Signing.local.env
+Config/Signing.local.xcconfig
+
+# Generated from project.yml; local signing settings may appear here.
+*.xcodeproj/

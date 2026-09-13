@@ -60,7 +60,7 @@ See [screenshot reproduction](screenshots/README.md). Original example geometry 
 
 ## Maintainer release process
 
-See [release instructions](release.md). This project's official signing identity belongs only to **MakerDock maintainer (YOUR_PERSONAL_TEAM_ID)**. Local contributor builds should use the ad-hoc command above. Never use the separate company account named in `AGENTS.md` for MakerDock resources.
+See [release instructions](release.md). This project's official signing identity belongs only to **the approved personal developer team**. Local contributor builds should use the ad-hoc command above. Never use the separate company account named in `AGENTS.md` for MakerDock resources.
 
 Version and build numbers are in `Config/Version.xcconfig`. Keep a local commit and annotated checkpoint for verified release changes. Preserve user library data during app replacement; a source rollback does not roll back a user's files or print history.
 
@@ -92,3 +92,5 @@ MakerWorld and My Collections retain separate groups of live tabs while the libr
 Get a fresh copy applies once to the next download in that tab. It bypasses profile/asset reuse and conditional HTTP cache validation, and opens a clean working copy. Existing edited copies remain intact; the new copy becomes the default for later Studio opens. Notes, categories and print history are attached to archived file identities and are preserved. When a website update changes the actual file bytes, it appears as another version in the library. The model context menu also offers a clean copy of the archived original without a download.
 
 User-initiated native downloads capture the origin before redirects and attach it after import, including imports already seen by the folder watcher. The exact asset cache can reuse an intact archived file without an ETag only when the user enables archived-file reuse. HTTP 304 revalidation still requires a strong ETag. Signed URLs remain in session memory only. Public model links are never guessed from a 3MF internal ID, filename, or another tab.
+
+The Xcode project is generated locally by `xcodegen generate` and is not tracked, because generated signing attributes can contain maintainer account information.

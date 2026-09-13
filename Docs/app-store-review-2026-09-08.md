@@ -61,7 +61,7 @@ Bambu도 오픈소스 코드 라이선스와 클라우드 접근 권한은 별�
 
 **현재 기능을 유지한 직접 배포:** MakerWorld 허용 범위 확인 → Developer ID 서명·공증 → 다른 Mac에서 설치/계산/다운로드 시험 → 공개 배포. 공증은 악성 코드·서명 검사이며 앱스토어 심사나 제3자 서비스 이용허가를 대신하지 않는다. [Apple 공증 문서](https://developer.apple.com/documentation/security/notarizing-macos-software-before-distribution)
 
-현재 DMG는 개인 `MakerDock maintainer (YOUR_PERSONAL_TEAM_ID)` Developer ID로 서명했고 공증은 미완료다. 운영 ID는 `com.ninepiece.app.mac.makerdock`, 개발 ID는 `.dev`다. 회사 팀은 사용하지 않았다. 앱스토어용 서명/프로비저닝 및 앱 등록은 별도 단계다.
+현재 DMG는 개인 `the approved personal developer team` Developer ID로 서명했고 공증은 미완료다. 운영 ID는 `com.ninepiece.app.mac.makerdock`, 개발 ID는 `.dev`다. 회사 팀은 사용하지 않았다. 앱스토어용 서명/프로비저닝 및 앱 등록은 별도 단계다.
 
 ## 6. 이번 기능 검증
 

@@ -19,9 +19,10 @@ The user requires local Git checkpoints so changes can be rolled back.
 
 # Apple account boundary
 
-- Use only the personal Apple Developer / App Store Connect team `MakerDock maintainer (YOUR_PERSONAL_TEAM_ID)` for MakerDock and the user's personal apps.
-- Never create, register, sign, upload, transfer, or publish these resources under `the separate company (SEPARATE_COMPANY_TEAM_ID)`.
-- Before any Apple Developer or App Store Connect mutation, verify the active team/provider and stop if it is not the personal team.
+- Official releases must use only the maintainer's approved personal Apple Developer team, configured in ignored local signing files.
+- Verify the active team/provider against that local configuration before every Apple Developer or App Store Connect mutation. Never use a separate company account.
+- Keep personal names, email addresses, certificate subjects, fingerprints, team IDs, and notarization credentials out of public copy and tracked configuration.
+- Release notes describe user-facing changes and installation requirements. Do not publish private signing details or internal test transcripts.
 
 # App identity
 

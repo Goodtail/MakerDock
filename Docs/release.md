@@ -1,6 +1,6 @@
 # Official release procedure
 
-Official MakerDock releases belong only to **MakerDock maintainer (YOUR_PERSONAL_TEAM_ID)**. Verify the active personal team before any Apple Developer or App Store Connect mutation. Do not use a company certificate, provider, API key, or provisioning profile.
+Official MakerDock releases belong only to the approved personal developer team. Verify the active personal team before any Apple Developer or App Store Connect mutation. Do not use a company certificate, provider, API key, or provisioning profile.
 
 ## Version numbering
 
@@ -13,7 +13,7 @@ The former 1.6.x releases used premature version numbers and have been withdrawn
 1. Commit the verified implementation and update `Config/Version.xcconfig`.
 2. Run the relevant tests in [development](development.md), including the public-configuration boundary test.
 3. Run `bash scripts/build-production.sh`. The script checks the exact personal Developer ID identity, builds an arm64/x86_64 archive with hardened runtime and a secure timestamp, exports the app, and verifies the signature and production identity.
-4. Check `codesign --display --verbose=4` reports `TeamIdentifier=YOUR_PERSONAL_TEAM_ID` and `com.ninepiece.app.mac.makerdock`. Keep the development app separate.
+4. Check `codesign --display --verbose=4` reports `a team identifier matching the private signing configuration` and `com.ninepiece.app.mac.makerdock`. Keep the development app separate.
 5. Complete notarization as below. Do not describe an artifact as notarized before acceptance and ticket validation.
 
 ## Personal notarization credentials
@@ -50,3 +50,9 @@ The official source repository is `Goodtail/MakerDock`. Review tracked files and
 Create an annotated `vVERSION` tag only at the verified source commit. Upload the accepted and stapled universal DMG plus final `SHA256SUMS.txt` to the matching GitHub release. State macOS requirements, public-build integration limits, and changes from the previous version. Do not publish a development app or private build logs as a release asset.
 
 References: [Apple Developer ID](https://developer.apple.com/developer-id/), [Apple notarization](https://developer.apple.com/documentation/security/notarizing-macos-software-before-distribution).
+
+## Local signing configuration
+
+Keep the certificate SHA-1, exact certificate subject, and approved personal team in ignored `Config/Signing.local.env` as `MAKERDOCK_SIGNING_IDENTITY`, `MAKERDOCK_SIGNING_NAME`, and `MAKERDOCK_TEAM_ID`. Put the local Xcode team setting in ignored `Config/Signing.local.xcconfig`. These files stay on the maintainer’s machine. The build script generates export options outside the repository. Contributor builds can use ad-hoc signing.
+
+Do not copy personal signing identities, team IDs, account email addresses, or internal validation transcripts into public release notes. Say only that an installer is signed/notarized after verifying it.

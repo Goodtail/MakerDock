@@ -8,7 +8,7 @@ APP_ICON_NAME = AppIconDev
 API_BASE_URL =
 SEO_BASE_URL =
 SUPPORT_EMAIL =
-DEVELOPMENT_TEAM = YOUR_PERSONAL_TEAM_ID
+#include? "Signing.local.xcconfig"
 
 APP_URL_SCHEME = makerdock-dev
 LEGACY_URL_SCHEME = plateshelf-dev

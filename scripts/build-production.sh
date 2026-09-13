@@ -5,13 +5,8 @@ set -euo pipefail
 makerdock_repo="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 makerdock_build_dir="${1:-/private/tmp/MakerDockProduction}"
 makerdock_export_dir="${2:-$makerdock_repo/../production}"
-makerdock_identity="YOUR_SIGNING_CERTIFICATE_SHA1"
-makerdock_team="YOUR_PERSONAL_TEAM_ID"
-
-if ! security find-identity -v -p codesigning | /usr/bin/grep -F "$makerdock_identity \"Developer ID Application: MakerDock maintainer ($makerdock_team)\"" >/dev/null; then
-    echo "Required MakerDock maintainer Developer ID certificate is unavailable; no account changes were made." >&2
-    exit 1
-fi
+source "$makerdock_repo/scripts/signing-config.sh"
+makerdock_load_signing
 
 cd "$makerdock_repo"
 xcodegen generate
@@ -24,9 +19,15 @@ xcodebuild -scheme makerdock-desktop -configuration Release \
     DEVELOPMENT_TEAM="$makerdock_team" OTHER_CODE_SIGN_FLAGS=--timestamp \
     ENABLE_HARDENED_RUNTIME=YES 'ARCHS=arm64 x86_64' ONLY_ACTIVE_ARCH=NO archive
 
+python3 - "$makerdock_repo/Config/ExportOptions-DeveloperID.plist" "$makerdock_build_dir/ExportOptions.plist" "$makerdock_identity" "$makerdock_team" <<'EXPORT'
+import plistlib, sys
+with open(sys.argv[1], 'rb') as f: options = plistlib.load(f)
+options.update(signingCertificate=sys.argv[3], teamID=sys.argv[4])
+with open(sys.argv[2], 'wb') as f: plistlib.dump(options, f)
+EXPORT
 xcodebuild -exportArchive \
     -archivePath "$makerdock_build_dir/MakerDock.xcarchive" \
-    -exportOptionsPlist "$makerdock_repo/Config/ExportOptions-DeveloperID.plist" \
+    -exportOptionsPlist "$makerdock_build_dir/ExportOptions.plist" \
     -exportPath "$makerdock_export_dir"
 
 makerdock_app="$makerdock_export_dir/MakerDock.app"
@@ -38,7 +39,7 @@ test "$(/usr/libexec/PlistBuddy -c 'Print :LSMinimumSystemVersion' "$makerdock_i
 codesign --verify --deep --strict "$makerdock_app"
 makerdock_signature="$(codesign --display --verbose=4 "$makerdock_app" 2>&1)"
 /usr/bin/grep -Fx "TeamIdentifier=$makerdock_team" <<< "$makerdock_signature"
-/usr/bin/grep -Fx "Authority=Developer ID Application: MakerDock maintainer ($makerdock_team)" <<< "$makerdock_signature"
+/usr/bin/grep -Fx "Authority=$makerdock_signing_name" <<< "$makerdock_signature"
 /usr/bin/grep -E '^CodeDirectory .*flags=.*runtime' <<< "$makerdock_signature"
 /usr/bin/grep -E '^Timestamp=' <<< "$makerdock_signature"
 lipo "$makerdock_app/Contents/MacOS/MakerDock" -verify_arch arm64 x86_64

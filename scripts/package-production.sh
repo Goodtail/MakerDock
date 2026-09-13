@@ -3,13 +3,13 @@ set -euo pipefail
 makerdock_repo="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 makerdock_output="${1:-$makerdock_repo/../production}"
 makerdock_app="$makerdock_output/MakerDock.app"
-makerdock_identity="YOUR_SIGNING_CERTIFICATE_SHA1"
-security find-identity -v -p codesigning | /usr/bin/grep -F "$makerdock_identity \"Developer ID Application: MakerDock maintainer (YOUR_PERSONAL_TEAM_ID)\"" >/dev/null
+source "$makerdock_repo/scripts/signing-config.sh"
+makerdock_load_signing
 test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$makerdock_app/Contents/Info.plist")" = com.ninepiece.app.mac.makerdock
 makerdock_version="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$makerdock_app/Contents/Info.plist")"
 makerdock_build="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$makerdock_app/Contents/Info.plist")"
 codesign --verify --deep --strict "$makerdock_app"
-codesign -dv --verbose=4 "$makerdock_app" 2>&1 | /usr/bin/grep -Fx 'TeamIdentifier=YOUR_PERSONAL_TEAM_ID'
+codesign -dv --verbose=4 "$makerdock_app" 2>&1 | /usr/bin/grep -Fx "TeamIdentifier=$makerdock_team"
 makerdock_work="$(mktemp -d /private/tmp/MakerDock-Package.XXXXXX)"
 makerdock_mount="$makerdock_work/mount"
 makerdock_mounted=false
@@ -45,7 +45,6 @@ source page. The Chrome companion extension is planned separately.
 Source, updates, documentation, and license:
 https://github.com/Goodtail/MakerDock
 
-Developer ID: MakerDock maintainer (YOUR_PERSONAL_TEAM_ID)
 EOF
 cp "$makerdock_repo/LICENSE" "$makerdock_work/stage/LICENSE.txt"
 makerdock_dmg="$makerdock_output/MakerDock-$makerdock_version-universal.dmg"
@@ -72,7 +71,7 @@ digest = hashlib.sha256(dmg.read_bytes()).hexdigest()
 (out/'SHA256SUMS.txt').write_text(f'{digest}  {dmg.name}\n')
 info = dict(version=version, build=build, appName='MakerDock',
     bundleIdentifier='com.ninepiece.app.mac.makerdock', minimumMacOS='13.0',
-    architectures=['arm64','x86_64'], signingIdentity='Developer ID Application: MakerDock maintainer (YOUR_PERSONAL_TEAM_ID)',
+    architectures=['arm64','x86_64'],
     hardenedRuntime=True, secureTimestamp=True, appSignatureVerified=True,
     dmgSignatureVerified=True, dmgMountedAndVerified=True, dmg=dmg.name,
     dmgBytes=dmg.stat().st_size, dmgSHA256=digest,
