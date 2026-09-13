@@ -10,6 +10,13 @@ The user requires local Git checkpoints so changes can be rolled back.
 - Follow `Docs/rollback.md` when asked to roll back. Prefer a separate worktree or a revert commit that preserves later history. Never discard uncommitted user changes.
 - Git checkpoints restore source and tracked configuration. Library models, notes, and print records live outside Git; preserve them during app replacement and inspect compatibility before any requested data rollback.
 
+# Preserve the user's running production session
+
+- The user explicitly requires that updates must not interrupt the running production app. A request to fix, build, update, or release MakerDock is not permission to quit, replace, or relaunch the app they are using.
+- Prepare and verify changes in an isolated development app and library. Keep production builds and packages in a separate output directory. Do not use the user's live production session for UI tests or change its tabs and navigation.
+- Wait for explicit permission for the current installation/restart before running any installer or command that terminates, replaces, or relaunches the production app. Until then, leave the prepared build ready and the running app untouched.
+- Reopening URLs does not restore a browser session: history, scroll positions, forms, overlays, and other page state may be lost. Never describe reopening addresses as restoring that state.
+
 # Apple account boundary
 
 - Use only the personal Apple Developer / App Store Connect team `MakerDock maintainer (YOUR_PERSONAL_TEAM_ID)` for MakerDock and the user's personal apps.
