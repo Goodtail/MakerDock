@@ -30,7 +30,7 @@ Mark a model complete and save the prefilled duration, or adjust it. Add filamen
 
 Add models to **Print Queue**, drag them into order, and set a start time, available hours, and changeover time. See which prints fit, or move the models that fit to the front. Saved estimates fill the schedule; enter your own time when needed. Record a completed print right from the queue to remove it and keep its history. The library also sorts by shortest or longest print time.
 
-This is a plan you manage yourself, based on whole-model estimates. MakerDock does not monitor the printer or start jobs automatically.
+Mark a queued model as printing to track its start. Missing estimates can be calculated with your configured compatible Studio and saved across the library. An optional [local printer connection](Docs/printer-connection.md) reads status and remaining time after you explicitly link a live job. MakerDock never starts prints automatically.
 
 ![Print planning with available time and ordered models](Docs/screenshots/en/queue.png)
 
@@ -55,13 +55,15 @@ Bambu Studio is optional for library browsing and manual records. It is required
 
 An unsliced 3MF may have no saved time. MakerDock can request a calculation from a compatible installed Bambu Studio using your chosen printer, nozzle, and quality. You can also import the current printer selection from Studio. Slicing is still required; selecting a printer alone does not produce an estimate.
 
-Completion is **recorded by you**. MakerDock does not automatically detect a finished printer job, read live AMS spool inventory, or measure actual filament consumption. Prefilled estimates and filament values should be adjusted if your result differs.
+Completion is **confirmed by you**. Started prints use editable start/end timestamps to calculate elapsed time, including pauses. Without a start record, a saved estimate can prefill the duration. Optional printer reports can suggest observed filament type and color; actual grams consumed are not measured.
 
 ## Coming next
 
 A **Chrome companion extension is coming soon**, to connect model and profile information with files already in your library.
 
-Browse MakerWorld without leaving MakerDock. Open saved model and profile links in the app, or jump to **My Collections** after signing in to MakerWorld. Automatic download capture remains experimental and disabled in the public DMG. See [integration status](Docs/integration-status.md).
+Browse MakerWorld and **My Collections** in tabs inside MakerDock. Downloads started here retain the observed original model URL. Reuse archived files, request a fresh download, or open a clean Studio working copy. Command-click, right-click link menus, and familiar browser shortcuts are supported. Experimental network/profile capture and external browser handoff downloads remain disabled in the public DMG. See [integration status](Docs/integration-status.md).
+
+**Open in Fusion** exports an STL mesh using a compatible installed Studio and opens it in your separately installed Autodesk Fusion. It does not restore CAD design history.
 
 ## Development and license
 
