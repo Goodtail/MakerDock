@@ -1,5 +1,10 @@
-import type { MetadataRoute } from "next";
-import { locales, localePath, siteUrl } from "@/lib/content";
+import type { MetadataRoute } from 'next';
+import { locales, localePath, siteUrl } from '@/lib/content';
+import { languageAlternates } from '@/lib/metadata';
 export default function sitemap(): MetadataRoute.Sitemap {
-  return locales.map(locale => ({ url: siteUrl + localePath(locale), alternates: { languages: { en: siteUrl, ko: siteUrl + "/ko", ja: siteUrl + "/ja", "zh-CN": siteUrl + "/zh-CN" } } }));
+  // Change only when the page content changes, not on each request or build.
+  return ['', 'guide'].flatMap(page => locales.map(locale => ({
+    url: siteUrl + localePath(locale, page), lastModified: '2026-09-14',
+    alternates: { languages: languageAlternates(page) },
+  })));
 }

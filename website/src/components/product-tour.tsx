@@ -27,10 +27,10 @@ export function ProductTour({ copy, locale }: { copy: Copy["tour"]; locale: Loca
       <p className="tour-detail">{tab.detail}</p>
     </div>
     {copy.tabs.map((item, index) => <div key={item.id} id={"panel-" + item.id} role="tabpanel" aria-labelledby={"tab-" + item.id} className="tour-panel" tabIndex={0} hidden={index !== active}>
-      {index === active && <>
-      <Screenshot src={"/screenshots/" + assetLocale(locale) + "/" + tab.id + ".webp"} alt={tab.alt} label={copy.enlarge} close={copy.close} />
-      <div className="tour-caption" key={tab.id}><h3>{tab.title}</h3><p>{tab.body}</p></div>
-      </>}
+      <>
+      <Screenshot src={"/screenshots/" + assetLocale(locale) + "/" + item.id + ".webp"} alt={item.alt} label={copy.enlarge} close={copy.close} />
+      <div className="tour-caption"><h3>{item.title}</h3><p>{item.body}</p></div>
+      </>
     </div>)}
   </div>;
 }

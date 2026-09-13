@@ -17,7 +17,7 @@ export function Screenshot({ src, alt, label, close, hero = false }: Props) {
   }, [open]);
   return <>
     <button type="button" className={"screenshot-button" + (hero ? " hero-screenshot" : "")} aria-label={label} aria-haspopup="dialog" onClick={() => setOpen(true)}>
-      <Image src={src} alt={alt} width={2640} height={1720} sizes={hero ? "(max-width: 768px) 96vw, (max-width: 1400px) 94vw, 1280px" : "(max-width: 768px) 92vw, (max-width: 1200px) 65vw, 920px"} preload={hero} />
+      <Image src={src} alt={alt} width={2640} height={1720} sizes={hero ? "(max-width: 768px) 96vw, (max-width: 1400px) 94vw, 1280px" : "(max-width: 768px) 92vw, (max-width: 1200px) 65vw, 920px"} preload={hero} fetchPriority={hero ? "high" : undefined} />
       <span className="expand-corner" aria-hidden="true"><ArrowsOutIcon size={19} /></span>
     </button>
     <dialog ref={dialog} className="lightbox" aria-label={label} onCancel={() => setOpen(false)} onClick={(event) => { if (event.target === event.currentTarget) setOpen(false); }}>

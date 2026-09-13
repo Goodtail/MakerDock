@@ -1,13 +1,15 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { notFound } from "next/navigation";
-import { isLocale, siteUrl } from "@/lib/content";
+import { isLocale, locales, siteUrl } from "@/lib/content";
 import "../globals.css";
 
 const manrope = localFont({
   src: "../../fonts/manrope-latin-wght-normal.woff2",
   variable: "--font-display", display: "swap", weight: "200 800",
 });
+export const dynamicParams = false;
+export function generateStaticParams() { return locales.map(lang => ({ lang })); }
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   icons: { icon: "/icon.png", apple: "/apple-touch-icon.png" },

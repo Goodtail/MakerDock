@@ -1,44 +1,25 @@
 # MakerDock website
 
-The public Next.js website for [MakerDock](https://makerdock.goodtail.app). English is served at the root, with Korean at /ko, Japanese at /ja, and Simplified Chinese at /zh-CN.
+Next.js landing page and getting-started guide for [MakerDock](https://makerdock.goodtail.app). English is the default, with Korean, Japanese, and Simplified Chinese pages and screenshots.
 
-## Run locally
+## Local development
 
-Requires Node.js 24 and npm.
+Use Node.js 24. Run `npm ci`, then `npm run dev`. Before release, run `npm run lint`, `npm run typecheck`, and `npm run build`. Preview the production build with `npm run start`.
 
-```sh
-cd website
-npm ci
-npm run dev
-```
+## Content and SEO
 
-Before committing, run npm run lint, npm run typecheck, and npm run build. The production server can be started with npm start.
+- `src/lib/content.ts` contains landing copy and the public download version.
+- `src/lib/guide.ts` contains localized browser copy and usage guides.
+- `src/lib/metadata.ts` defines canonical URLs, reciprocal language alternates, and localized social previews.
+- `src/app/sitemap.ts` includes all eight canonical pages. Change its date only when page content changes.
+- The pages render application/organization/site data and guide breadcrumbs as JSON-LD. No reviews, ratings, or testimonials are fabricated.
+- `public/social/` contains 1200 × 630 share cards. Regenerate from the repository root with Node 24: `node scripts/generate-social-images.mjs`. It uses a locally installed CJK-capable TTF font (`MAKERDOCK_SOCIAL_FONT` overrides the default macOS Arial Unicode path); only rendered images are distributed.
+- Actual app captures use original demonstration models. See `../Docs/screenshots/README.md` for provenance.
 
-## Content
+The site has no application analytics or advertising scripts. Appearance preference stays in local storage. Do not add tracking without deciding and documenting its privacy implications.
 
-Edit src/lib/content.ts for the four translations. Keep public feature claims consistent with the Mac release. Automatic MakerWorld download capture is disabled in the public app; printer completion records are manual, and the Chrome companion is planned.
+## Deployment
 
-The download URL intentionally points to the existing 0.1.0 release. Website changes do not change the Mac app version.
+Existing Vercel project: `makerdock`, scope `blick9s-projects`, root directory `website`, production branch `main`, Node.js 24. Domain: `makerdock.goodtail.app`. Project linkage lives in the repository root's ignored `.vercel` directory; do not create another project.
 
-The feature tour, accessible image dialog, and appearance selector are client components. Page content and localized metadata are rendered on the server and prerendered. The site has no analytics, contact form, or third-party font requests. Only the appearance preference is stored in the visitor's browser.
-
-## Images and fonts
-
-public/screenshots contains optimized copies of the actual localized captures in ../Docs/screenshots. They show original public demo models. Images were resized and encoded as WebP without changing their contents. public/og.png is an optimized library screenshot for link previews. No private user library is included.
-
-src/fonts contains the Manrope variable Latin font, distributed under the accompanying SIL Open Font License. Body text and CJK use native system fonts. See DESIGN.md for the visual direction.
-
-## Vercel
-
-- Project: makerdock
-- Scope: blick9s-projects, the personal scope that owns goodtail.app
-- Repository: Goodtail/MakerDock
-- Root directory: website
-- Framework: Next.js
-- Node.js: 24.x
-- Domain: makerdock.goodtail.app
-- Production branch: main
-
-Vercel builds from the linked GitHub repository. The root .vercelignore limits CLI uploads to website sources. Preview and production deployments are separate; the requested custom domain points to production.
-
-To roll back the website, promote an earlier successful Vercel deployment or revert the website commit. Mac application files, library data, and existing public releases are independent.
+Publish and verify the GitHub DMG asset before deploying a website version that links to it. Deploy from the linked repository root with `npx vercel --prod --scope blick9s-projects`. Verify all four home pages, guides, redirects, social images, robots, sitemap, and the release download afterward. Search-engine indexing is separate from successful deployment; submit the sitemap in the domain owner's Search Console when access is available.
